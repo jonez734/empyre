@@ -365,7 +365,7 @@ def town(opts, player):
         credits = bbsengine.getmembercredits(opts, player.memberid)
 
         if amount > credits:
-            ttyio.echo("Get REAL! You don't have %s!" % (pluralize(amount, "coin", "coins")))
+            ttyio.echo("Get REAL! You only have {reverse} %s {/reverse}!" % (pluralize(amount, "credit", "credits")))
             return
 
         credits -= amount
@@ -619,7 +619,7 @@ def trade(opts, player:object, attr:str, name:str, price:int, singular:str="sing
             prompt += " {reverse}[E]{/reverse}dit"
             choices += "E"
         prompt += ": "
-        ch = ttyio.inputchar(prompt, choices, "")
+        ch = ttyio.inputchar(prompt, choices, "C")
         if ch == "":
             ttyio.echo("{/all}")
         elif ch == "E":
