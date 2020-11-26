@@ -99,28 +99,30 @@ class Player(object):
         self.playerid = None
         self.name = None # na$
         self.memberid = bbsengine.getcurrentmemberid()
-        self.acres = 5000 # la
-        self.soldiers = 20 # wa
-        self.serfs = 2000+random.randint(0, 200) # sf
-        self.nobles = 2 # nb
-        self.grain = 10000 # gr
-        self.taxrate = 15 # tr
-        self.coins = 1000 # pn
-        self.palaces = 0 # f%(1) 0
-        self.markets = 0 # f%(2) 0
-        self.mills = 0 # f%(3) 0
-        self.foundries = 2 # f%(4) 0
-        self.shipyards = 0 # f%(5) 0 or yc
-        self.diplomats = 0 # f%(6) 0
-        self.ships = 0 # yc?
-        self.colonies = 0 # i8
-        self.training = 1 # z9
+        self.opts = opts
         self.rank = 0
         self.previousrank = 0
         self.turncount = 0
         self.soldierpromotioncount = 0
-        self.opts = opts
         self.weatherconditions = 0
+        self.datelastplayed = "now()"
+        #self.acres = 5000 # la
+        #self.soldiers = 20 # wa
+        #self.serfs = 2000+random.randint(0, 200) # sf
+        #self.nobles = 2 # nb
+        #self.grain = 10000 # gr
+        #self.taxrate = 15 # tr
+        #self.coins = 1000 # pn
+        #self.palaces = 0 # f%(1) 0
+        #self.markets = 0 # f%(2) 0
+        #self.mills = 0 # f%(3) 0
+        #self.foundries = 2 # f%(4) 0
+        #self.shipyards = 0 # f%(5) 0 or yc
+        #self.diplomats = 0 # f%(6) 0
+        #self.ships = 0 # yc?
+        #self.colonies = 0 # i8
+        #self.training = 1 # z9
+
         self.attributes = (
             {"name": "name", "default": "a. nonymous", "type":"name"}, # na$
             {"name": "serfs", "default": 2000+random.randint(0, 200), "type":"int"}, # sf
@@ -162,6 +164,7 @@ class Player(object):
             n = a["name"]
             d = a["default"]
             v = getattr(self, n) if n in self else d
+            t = a["type"] if "type" in a else "integer"
             ttyio.echo("%s=%r" % (n, v))
             if n == "name":
                 x = ttyio.inputstring(opts, "%s: " % (n), v)
@@ -232,7 +235,7 @@ class Player(object):
         if updatecredits is True:
             bbsengine.setmembercredits(self.opts, self.memberid, self.credits)
         dbh.commit()
-        ttyio.echo("player record saved{/all}", level="success")
+        ttyio.echo("player record saved", level="success")
         return None
 
     def verifyNameNotFound(self, opts, name):
@@ -830,7 +833,7 @@ def adjust(opts, player):
 
     # if pn>1e6 then a%=pn/1.5:pn=pn-a%:&"{f6}{lt. blue}You pay {lt. green}${pound}%f {lt. blue}to the monks for this{f6}year's provisions for your subjects' survival.{f6}"        
     if player.coins > 1000000:
-        a = player.coins/1.5
+        a = player.coins / 1.5
         player.coins -= a
         ttyio.echo("You donate {reverse}%s{/reverse} to the monks." % (pluralize(a, "coin", "coins")))
 
@@ -1075,43 +1078,6 @@ def weather(opts, player):
 
     return
 
-def land(opts, player):
-
-    done = False
-
-    while not done:
-        ttyio.echo("You have %s of land and %s" % (pluralize(player.land, "acre", "acres")), pluralize(player.coins, "coin", "coins"))
-        ttyio.echo()
-        ch = ttyio.inputchar("{reverse}[B]{/reverse}uy, {reverse}[S]{/reverse}ell, {reverse}[C]{/reverse}ontinue: ", "BSC", "")
-        if ch == "B":
-            price = player.weathercondition*3+12
-            ttyio.echo("Buy")
-            ttyio.echo("The barbarians will sell their land for %s per acre." % (pluralize(price, "coin", "coins")))
-            acres = ttyio.inputinteger("Buy how many acres?: ")
-            ttyio.echo("acres="+acres, level="debug")
-            cost = acres*price
-            if player.coins < cost:
-                ttyio.echo("You have %s and you need %s more" % (pluralize(player.coins, "coin", "coins"), abs(player.coins - cost)))
-            else:
-                player.coins -= cost
-                player.land += acres
-                ttyio.echo("Bought!")
-        elif ch == "S":
-            ttyio.echo("Sell")
-            wb = int(6/player.weathercondition)
-            price = int(wb/int(player.land/875)+1)
-            ttyio.echo("The barbarians will buy your land for {reverse}%s{/reverse} per acre." % (pluralize(price, "coin", "coins")))
-            acres = ttyio.inputinteger("Sell how many?: ")
-            if acres > player.land - 1:
-                ttyio.echo("You only have {reverse}%s{/reverse} available to sell" % (pluralize(player.land-1, "acre", "acres")))
-                continue
-            acres = ttyio.inputinteger("Sell how many?: ")
-            cost = acres*price
-        elif ch == "C":
-            ttyio.echo("Continue")
-            done = True
-            break
-
 def menu():
     ttyio.echo("empire menu")
     ttyio.echo()
@@ -1181,9 +1147,9 @@ def maint(opts, player):
     return
     
 def harvest(opts, player):
-    x = int((player.acres*player.weathercondition+(random.random()*player.serfs)+player.grain*player.weathercondition)/3)
-    if x > (player.acres+player.serfs)*4:
-        x = (player.acres+player.serfs)*4
+    x = int((player.land*player.weathercondition+(random.random()*player.serfs)+player.grain*player.weathercondition)/3)
+    if x > (player.land+player.serfs)*4:
+        x = (player.land+player.serfs)*4
     ttyio.echo()
     ttyio.echo("{lightblue}This year's harvest is {reverse}%s{/reverse}{/all}" % (pluralize(x, "bushel", "bushels")))
     ttyio.echo()
@@ -1195,7 +1161,7 @@ def harvest(opts, player):
     ttyio.echo("{cyan}Your people require {reverse}%s{/reverse} of grain this year{/all}" % (pluralize(serfsrequire, "bushel", "bushels")))
     ttyio.echo()
     price = player.weatherconditions*3+12
-    price = int(price/(int(player.acres/875)+1))
+    price = int(price/(int(player.land/875)+1))
     # prompt = "You have {reverse}%s{/reverse} and {reverse}%s{/reverse}" % (pluralize(player.grain, "bushel", "bushels"), pluralize(player.credits, "credit", "credits"))
     trade(opts, player, "grain", "grain", price, "bushel", "bushels")
     howmany = serfsrequire if player.grain >= serfsrequire else player.grain
@@ -1230,9 +1196,14 @@ def harvest(opts, player):
         player.grain = 0
     return
 
-def buildinvestmentoptions(opts, player):
+def investmentoptions(opts, player):
+    return options
+
+def investments(opts, player):
+    bbsengine.title("Investments", hrcolor="{green}", titlecolor="{bggray}{white}")
+    ttyio.echo("{/all}")
+
     terminalwidth = ttyio.getterminalwidth()
-    bbsengine.title("Investment Options", titlecolor="{bggray}{white}", hrcolor="{green}")
     ttyio.echo("{/all}")
     maxlen = 0
     for a in player.attributes:
@@ -1241,25 +1212,21 @@ def buildinvestmentoptions(opts, player):
             maxlen = len(name)
 
     index = 0
+    options = ""
     for a in player.attributes:
         price = a["price"] if "price" in a else None
         if price is None:
             continue
-        index += 1
+        options += chr(65+index)
         name = a["name"].title()
-        buf = "{reverse}[%s]{/reverse} %s: %s " % (index, name.ljust(maxlen+2, "-"), " {:>6n}".format(price)) # int(terminalwidth/4)-2)
+        buf = "{reverse}[%s]{/reverse} %s: %s " % (chr(65+index), name.ljust(maxlen+2, "-"), " {:>6n}".format(price)) # int(terminalwidth/4)-2)
+        index += 1
         ttyio.echo(buf)
     ttyio.echo("{/all}")
-    return
-
-def investments(opts, player):
-    ttyio.echo("investments...")
-    buildinvestmentoptions(opts, player)
-    ttyio.echo()
 
     done = False
     while not done:
-        ch = ttyio.inputchar("{cyan}Investments [1-9,Q,?]: {lightgreen}", "123456789Q?", "")
+        ch = ttyio.inputchar("{cyan}Investments [1-9,Q,?]: {lightgreen}", options + "Q?", "")
         if ch == "Q":
             ttyio.echo("{lightgreen}Q{cyan} -- Quit")
             done = True
@@ -1268,6 +1235,13 @@ def investments(opts, player):
             ttyio.echo("{lightgreen}? -- {cyan}Help")
             buildinvestmentoptions(opts, player)
             continue
+        else:
+            if ch in options:
+                ttyio.echo("ch=%r options=%r ord=%s" % (ch, options, ord(ch)))
+                continue
+            else:
+                ttyio.echo("{lightgreen}%s -- {cyan}not implemented yet")
+                continue
     ttyio.echo("{/all}leaving investments...")
     return
 
@@ -1325,7 +1299,9 @@ def main():
 #    otherrulers(opts)
 #    return
     currentplayer = startup(opts)
-    
+#    investments(opts, currentplayer)
+#    return
+
     if startturn(opts, currentplayer) is False:
         ttyio.echo("You cannot continue to play today.")
         return
