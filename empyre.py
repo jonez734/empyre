@@ -71,17 +71,6 @@ def calculaterank(opts, player):
 
     return rank
 
-def hr(color="", chars="-=", width=None):
-    if width is None:
-        width = ttyio.getterminalwidth()
-    hr = " "
-    if color != "":
-        hr += "{%s}" % (color)
-    hr += chars*int(width/len(chars)-1)
-    if color != "":
-        hr += "{/%s}" % (color)
-    return hr
-    
 def getranktitle(opts, rank):
     if rank == 0:
         return "lord"
