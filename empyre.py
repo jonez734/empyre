@@ -1,4 +1,5 @@
-from optparse import OptionParser
+# from optparse import OptionParser
+import argparse
 import random
 import locale
 
@@ -335,9 +336,6 @@ class Player(object):
             # &"{f6}Training : ":x=z9:gosub {:sub.comma_value} 0
     
 
-def yourstatus(opts, player):
-    return player.status()
-
 def town(opts, player):
     # @since 20200816
     # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_town.lbl#L293
@@ -541,6 +539,10 @@ def town(opts, player):
         if player.serfs < 1500 or eligible > (player.serfs // 2):
             ttyio.echo("You do not have enough serfs of training age.")
             return
+    
+    def yourstatus(opts, player):
+        return player.status()
+
     options = (
         ("C", "Cyclone's National Disaster Bank", bank),
         ("L", "Lucifer's Den", lucifersden),
@@ -765,7 +767,8 @@ def mainmenu(opts, player):
             continue
         elif ch == "P":
             ttyio.echo("{lightgreen}P{cyan} -- Play Empire{/all}")
-            return True
+            play(opts, player)
+            continue
         elif ch == "Y":
             ttyio.echo("{lightgreen}Y{cyan} -- Your Status{/all}")
             player.status() # yourstats(opts, player)
@@ -795,9 +798,10 @@ def startturn(opts, player):
         ttyio.echo("{red}The other rulers unite against you for hogging the game!{/red}")
         return False
 
-    if mainmenu(opts, player) is True:
-        return True
-    return False
+#    if mainmenu(opts, player) is True:
+#        return True
+#    return False
+    return True
 
 def adjust(opts, player):
     soldierpay = (player.soldiers*(player.combatvictory+2))+(player.taxrate*player.palaces*10)/40 # py
@@ -882,6 +886,7 @@ def endturn(opts, player):
     p4 = int(p4-(p4*player.taxrate/200))
     p5 = int(p5-(p5*player.taxrate/150))
     # py=(wa*(ff+2))+(tr*f%(1)*10)/40:xx=int(tr*(rnd(0)*nb))*100/4
+
     noblegifts = int(player.taxrate*(random.random()*player.nobles))*100/4 # xx
     if noblegifts < 1 and player.nobles > 67:
         a = player.nobles / 5
@@ -1185,48 +1190,59 @@ def harvest(opts, player):
         player.grain = 0
     return
 
-def investmentoptions(opts, player):
-    return options
+def buildinvestmentoptions(opts, player):
+    pass
 
-def investments(opts, player):
-    bbsengine.title("Investments", hrcolor="{green}", titlecolor="{bggray}{white}")
-    ttyio.echo("{/all}")
-
-    terminalwidth = ttyio.getterminalwidth()
-    ttyio.echo("{/all}")
+def displayinvestmentoptions(opts, player):
     maxlen = 0
     for a in player.attributes:
         name = a["name"] if "name" in a else ""
         if len(name) > maxlen:
             maxlen = len(name)
 
+    ttyio.echo("{/all}")
     index = 0
     options = ""
     for a in player.attributes:
         price = a["price"] if "price" in a else None
         if price is None:
             continue
-        options += chr(65+index)
         name = a["name"].title()
         buf = "{reverse}[%s]{/reverse} %s: %s " % (chr(65+index), name.ljust(maxlen+2, "-"), " {:>6n}".format(price)) # int(terminalwidth/4)-2)
+        options += chr(65+index)
         index += 1
         ttyio.echo(buf)
     ttyio.echo("{/all}")
 
+    options += "Q?"
+    
+    return options
+
+def investments(opts, player):
+    bbsengine.title("Investments", hrcolor="{green}", titlecolor="{bggray}{white}")
+
+    terminalwidth = ttyio.getterminalwidth()
+
+    options = displayinvestmentoptions(opts, player)
+
     done = False
     while not done:
-        ch = ttyio.inputchar("{cyan}Investments [1-9,Q,?]: {lightgreen}", options + "Q?", "")
+        ch = ttyio.inputchar("{cyan}Investments [%s]: {lightgreen}" % (options), options, "")
         if ch == "Q":
             ttyio.echo("{lightgreen}Q{cyan} -- Quit")
             done = True
             continue
         elif ch == "?":
             ttyio.echo("{lightgreen}? -- {cyan}Help")
-            buildinvestmentoptions(opts, player)
+            displayinvestmentoptions(opts, player)
             continue
         else:
             if ch in options:
                 ttyio.echo("ch=%r options=%r ord=%s" % (ch, options, ord(ch)))
+                index = ord(ch)-65
+                attr = None
+                price = None
+                ttyio.echo()
                 continue
             else:
                 ttyio.echo("{lightgreen}%s -- {cyan}not implemented yet")
@@ -1265,47 +1281,50 @@ def otherrulers(opts:object):
     ttyio.echo(bbsengine.hr(chars="-=", color="yellow"))
     return
 
+def play(opts, player):
+    startturn(opts, player)
+    weather(opts, player)
+    disaster(opts, player)
+    trading(opts, player)
+    harvest(opts, player)
+    colonytrip(opts, player)
+    town(opts, player)
+    combat(opts, player)
+    investments(opts, player)
+    endturn(opts, player)
+
 def main():
-    parser = OptionParser(usage="usage: %prog [options] projectid")
-    parser.add_option("--verbose", default=True, action="store_true", help="run %prog in verbose mode")
-    parser.add_option("--debug", default=False, action="store_true", help="run %prog in debug mode")
-
-    parser.add_option("--databasename", dest="databasename", action="store", default="zoidweb4", help="database name (%default)")
-    parser.add_option("--databasehost", dest="databasehost", action="store", default="localhost", help="database host (%default)")
-    parser.add_option("--databaseuser", dest="databaseuser", action="store", default=bbsengine.getcurrentmemberlogin(), help="database user (%default)")
-    parser.add_option("--databasepassword", dest="databasepassword", action="store", default=None, help="database password")
-    parser.add_option("--databaseport", dest="databaseport", action="store", default="5432", help="database port")
-
-    (opts, args) = parser.parse_args()
-#    print(opts.limit)
-#    return
     
+    # parser = OptionParser(usage="usage: %prog [options] projectid")
+    parser = argparse.ArgumentParser()
+    
+    # parser.add_option("--verbose", default=True, action="store_true", help="run %prog in verbose mode")
+    parser.add_argument("--verbose", action="store_true", dest="verbose")
+    
+    # parser.add_option("--debug", default=False, action="store_true", help="run %prog in debug mode")
+    parser.add_argument("--debug", action="store_true", dest="debug")
 
-    dbh = bbsengine.databaseconnect(opts)
+    databaseargs = parser.add_argument_group("database options")
+    databaseargs.add_argument("--databasename", action="store", dest="databasename", default="zoidweb4", help="specify database name")
+    databaseargs.add_argument("--databasehost", action="store", dest="databasehost", default="localhost", help="specify database host")
+    databaseargs.add_argument("--databaseuser", action="store", dest="databaseuser", help="specify database user")
+    databaseargs.add_argument("--databasepassword", action="store", dest="databasepassword", default=None, help="specify database password")
+    databaseargs.add_argument("--databaseport", action="store", dest="databaseport", default=5432, type=int, help="specify database port")
+    
+    # parser.add_option("--databasename", dest="databasename", action="store", default="zoidweb4", help="database name (%default)")
+    # parser.add_option("--databasehost", dest="databasehost", action="store", default="localhost", help="database host (%default)")
+    # parser.add_option("--databaseuser", dest="databaseuser", action="store", default=bbsengine.getcurrentmemberlogin(), help="database user (%default)")
+    # parser.add_option("--databasepassword", dest="databasepassword", action="store", default=None, help="database password")
+    # parser.add_option("--databaseport", dest="databaseport", action="store", default="5432", help="database port")
+
+    # (opts, args) = parser.parse_args()
+    opts = parser.parse_args()
+    ttyio.echo("opts=%r" % (opts), level="debug")
 
     locale.setlocale(locale.LC_ALL, "")
 
-#    otherrulers(opts)
-#    return
     currentplayer = startup(opts)
-#    investments(opts, currentplayer)
-#    return
-
-    if startturn(opts, currentplayer) is False:
-        ttyio.echo("You cannot continue to play today.")
-        return
-
-    weather(opts, currentplayer)
-    disaster(opts, currentplayer)
-    trading(opts, currentplayer)
-    harvest(opts, currentplayer)
-    colonytrip(opts, currentplayer)
-    town(opts, currentplayer)
-    combat(opts, currentplayer)
-    # quests (not ready)
-    investments(opts, currentplayer)
-    endturn(opts, currentplayer)
-#    menu()
+    mainmenu(opts, currentplayer)
     return    
 
 if __name__ == "__main__":
