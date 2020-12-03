@@ -25,12 +25,15 @@ def newsentry(opts:object, player:object, message:str):
 
 def shownews(opts:object, player:object):
     dbh = bbsengine.databaseconnect(opts)
-    sql = "select * from empire.news where dateposted > %s"
-    dat = (player.lastplayed,)
+    sql = "select * from empire.newsentry where coalesce(dateupdated, datecreated) > %s"
+    dat = (player.datelastplayed,)
     cur = dbh.cursor()
     cur.execute(sql, dat)
     res = cur.fetchall()
     ttyio.echo("shownews.100: res=%r" % (res), level="debug")
+    for rec in res:
+        ttyio.echo("{yellow}%s{green} ({yellow}#%d{green}) on %s: %s" % (rec["createdbyname"], rec["createdbyid"], rec["datecreated"], rec["message"]), level="debug")
+    ttyio.echo("{/all}")
     
 def calculaterank(opts, player):
     #i1=f%(1) palaces
@@ -668,6 +671,7 @@ def trade(opts, player:object, attr:str, name:str, price:int, singular:str="sing
             break
     
     ttyio.echo()
+    player.save()
     return
 
 # barbarians are selling
@@ -691,13 +695,14 @@ def trading(opts, player):
 def colonytrip(opts, player):
     ttyio.echo("colony trip...")
     ttyio.echo()
-    ttyio.echo("King George wishes you a safe and prosperous trip to your %s" % (pluralize(player.colonies, "colony", "colonies", quantity=False)))
+    if player.colonies > 0:
+        ttyio.echo("King George wishes you a safe and prosperous trip to your %s" % (pluralize(player.colonies, "colony", "colonies", quantity=False)))
+        ttyio.echo()
     return
 
 def combat(opts, player):
     ttyio.echo("combat...")
     return
-
 
 def newplayer(opts):
     player = Player(opts)
@@ -772,6 +777,10 @@ def mainmenu(opts, player):
         elif ch == "Y":
             ttyio.echo("{lightgreen}Y{cyan} -- Your Status{/all}")
             player.status() # yourstats(opts, player)
+            continue
+        elif ch == "N":
+            ttyio.echo("{lightgreen}N{cyan} -- Empire News{/all}")
+            shownews(opts, player)
             continue
         else:
             if ch != "":
@@ -1190,43 +1199,49 @@ def harvest(opts, player):
         player.grain = 0
     return
 
-def buildinvestmentoptions(opts, player):
-    pass
-
-def displayinvestmentoptions(opts, player):
-    maxlen = 0
+def buildinvestopts(opts, player):
+    investopts = {}
+    index = 0
     for a in player.attributes:
+        if "price" in a and a["price"] > 0:
+            investopts[chr(65+index)] = a
+            index += 1
+    return investopts
+
+def displayinvestmentoptions(investopts): # opts, player):
+    maxlen = 0
+    for ch, a in investopts.items(): # player.attributes:
         name = a["name"] if "name" in a else ""
         if len(name) > maxlen:
             maxlen = len(name)
 
     ttyio.echo("{/all}")
-    index = 0
-    options = ""
-    for a in player.attributes:
-        price = a["price"] if "price" in a else None
-        if price is None:
-            continue
-        name = a["name"].title()
-        buf = "{reverse}[%s]{/reverse} %s: %s " % (chr(65+index), name.ljust(maxlen+2, "-"), " {:>6n}".format(price)) # int(terminalwidth/4)-2)
-        options += chr(65+index)
-        index += 1
-        ttyio.echo(buf)
-    ttyio.echo("{/all}")
-
-    options += "Q?"
     
-    return options
+    # investopts = buildinvestopts(opts, player)
+    for ch, a in investopts.items():
+        name = a["name"].title()
+        price = a["price"]
+        buf = "{bggray}{white}[%s]{/all}{green} %s: %s " % (ch, name.ljust(maxlen+2, "-"), " {:>6n}".format(price)) # int(terminalwidth/4)-2)
+        ttyio.echo(buf)
+    return
 
 def investments(opts, player):
     bbsengine.title("Investments", hrcolor="{green}", titlecolor="{bggray}{white}")
 
     terminalwidth = ttyio.getterminalwidth()
 
-    options = displayinvestmentoptions(opts, player)
+    investopts = buildinvestopts(opts, player)
+
+    options = ""
+    for ch, a in investopts.items():
+        options += ch
+    options += "Q?"
+
+    displayinvestmentoptions(investopts)
 
     done = False
     while not done:
+        ttyio.echo(pluralize(player.coins, "coin", "coins"))
         ch = ttyio.inputchar("{cyan}Investments [%s]: {lightgreen}" % (options), options, "")
         if ch == "Q":
             ttyio.echo("{lightgreen}Q{cyan} -- Quit")
@@ -1234,16 +1249,17 @@ def investments(opts, player):
             continue
         elif ch == "?":
             ttyio.echo("{lightgreen}? -- {cyan}Help")
-            displayinvestmentoptions(opts, player)
+            displayinvestmentoptions(investopts) # opts, player)
             continue
         else:
-            if ch in options:
-                ttyio.echo("ch=%r options=%r ord=%s" % (ch, options, ord(ch)))
-                index = ord(ch)-65
-                attr = None
-                price = None
-                ttyio.echo()
-                continue
+            for opt, a in investopts.items():
+                if ch == opt:
+                    name = a["name"]
+                    price = a["price"]
+                    attr = a["name"]
+                    ttyio.echo("%s: %s %s" % (ch, price, name))
+                    trade(opts, player, attr, name, price)
+                    break
             else:
                 ttyio.echo("{lightgreen}%s -- {cyan}not implemented yet")
                 continue
@@ -1282,6 +1298,13 @@ def otherrulers(opts:object):
     return
 
 def play(opts, player):
+    player.datelastplayed = bbsengine.datestamp()
+    player.save()
+    # player.status()
+
+    investments(opts, player)
+    return
+    
     startturn(opts, player)
     weather(opts, player)
     disaster(opts, player)
@@ -1292,11 +1315,12 @@ def play(opts, player):
     combat(opts, player)
     investments(opts, player)
     endturn(opts, player)
+    return
 
 def main():
     
     # parser = OptionParser(usage="usage: %prog [options] projectid")
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser("empyre")
     
     # parser.add_option("--verbose", default=True, action="store_true", help="run %prog in verbose mode")
     parser.add_argument("--verbose", action="store_true", dest="verbose")
@@ -1319,7 +1343,7 @@ def main():
 
     # (opts, args) = parser.parse_args()
     opts = parser.parse_args()
-    ttyio.echo("opts=%r" % (opts), level="debug")
+    # ttyio.echo("opts=%r" % (opts), level="debug")
 
     locale.setlocale(locale.LC_ALL, "")
 
