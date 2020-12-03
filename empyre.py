@@ -30,9 +30,9 @@ def shownews(opts:object, player:object):
     cur = dbh.cursor()
     cur.execute(sql, dat)
     res = cur.fetchall()
-    ttyio.echo("shownews.100: res=%r" % (res), level="debug")
+    # ttyio.echo("shownews.100: res=%r" % (res), level="debug")
     for rec in res:
-        ttyio.echo("{yellow}%s{green} ({yellow}#%d{green}) on %s: %s" % (rec["createdbyname"], rec["createdbyid"], rec["datecreated"], rec["message"]), level="debug")
+        ttyio.echo(" As of {yellow}%s{green} ({yellow}#%d{green}) on %s: %s" % (rec["createdbyname"], rec["createdbyid"], bbsengine.datestamp(rec["datecreated"]), rec["message"]), level="debug")
     ttyio.echo("{/all}")
     
 def calculaterank(opts, player):
@@ -1300,11 +1300,7 @@ def otherrulers(opts:object):
 def play(opts, player):
     player.datelastplayed = bbsengine.datestamp()
     player.save()
-    # player.status()
 
-    investments(opts, player)
-    return
-    
     startturn(opts, player)
     weather(opts, player)
     disaster(opts, player)
