@@ -7,11 +7,65 @@ import ttyio4 as ttyio
 import bbsengine4 as bbsengine
 from bbsengine4 import pluralize
 
-def newsentry(opts:object, player:object, message:str):
+# @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_tourney.lbl#L3
+def tourney(opts, player, otherplayer):
+    en = otherplayer.nobles
+    nb = player.nobles
+
+    if nb == 0:
+        ttyio.echo("You haven't a noble to challenge anyone with!")
+        return
+    
+    if player.serfs < 900:
+        ttyio.echo("Not enough serfs attend. The joust is cancelled.")
+        return
+
+    if en < 2:
+        ttyio.echo("Your opponent does not have enough nobles.")
+        return
+
+    ttyio.echo("{f6}{f6}Your Noble mounts his mighty steed and aims his lance...")
+    ttyio.echo()
+    result = []
+    x = random.randint(1, 10)
+    if x == 1:
+        player.land += 100
+        result.append("gained 100 acres")
+    elif x == 2:
+        player.land -= 100
+        result.append("lost 100 acres")
+    elif x == 3:
+        player.coins += 1000
+    elif x == 4:
+        player.coins -= 1000
+    elif x == 5:
+        player.nobles += 1
+    elif x == 6:
+        player.nobles -= 1
+    elif x == 7:
+        player.grain += 7000
+    elif x == 8:
+        player.grain -= 7000
+    elif x == 9:
+        player.shipyards += 1
+        player.land += 100
+    elif x == 10:
+        player.shipyards -= 1
+        player.land -= 100
+    
+    if player.land < 0:
+        ttyio.echo("You lost your last %s." % (pluralize(abs(player.land), "acre", "acres")))
+        player.land = 0
+    if player.coins < 0:
+        ttyio.echo("You lost your last %s." % (pluralize(abs(player.coins), "coin", "coins")))
+        player.coins = 0
+
+def newsentry(opts:object, player:object, message:str, otherplayer:object=None):
     attributes = {}
     attributes["message"] = message
     attributes["playerid"] = player.playerid
     attributes["memberid"] = player.memberid
+#    attributes["otherplayer"] = otherplayer.memberid
 
     node = {}
     node["attributes"] = attributes
@@ -32,7 +86,7 @@ def shownews(opts:object, player:object):
     res = cur.fetchall()
     # ttyio.echo("shownews.100: res=%r" % (res), level="debug")
     for rec in res:
-        ttyio.echo(" As of {yellow}%s{green} ({yellow}#%d{green}) on %s: %s" % (rec["createdbyname"], rec["createdbyid"], bbsengine.datestamp(rec["datecreated"]), rec["message"]), level="debug")
+        ttyio.echo(" %s: %s (#%s): %s" % (bbsengine.datestamp(rec["datecreated"]), rec["createdbyname"], rec["createdbyid"], rec["message"]))
     ttyio.echo("{/all}")
     
 def calculaterank(opts, player):
@@ -125,17 +179,17 @@ class Player(object):
             {"name": "previousrank", "default":0},
             {"name": "memberid", "default":None},
             {"name": "weatherconditions", "default":0},
-            {"name": "land", "default":5000}, # la
-            {"name": "coins", "default":1000}, # pn
-            {"name": "grain", "default":10000}, # gr
+            {"name": "land", "default":5000, "singular":"acre", "plural":"acres"}, # la
+            {"name": "coins", "default":1000, "singular":"coin", "plural":"coins"}, # pn
+            {"name": "grain", "default":10000, "singular": "bushel", "plural": "bushels"}, # gr
             {"name": "taxrate", "default":15}, # tr
             {"name": "soldiers", "default":20, "price": 20},
-            {"name": "nobles", "default":2, "price":25000},
+            {"name": "nobles", "default":2, "price":25000, "singular":"noble", "plural":"nobles"},
             {"name": "palaces", "default":1, "price":20}, # f%(1)
             {"name": "markets", "default":1, "price":1000}, # f%(2)
             {"name": "mills", "default":1, "price":2000}, # f%(3)
             {"name": "foundries", "default":0, "price":7000}, # f%(4) 0
-            {"name": "shipyards", "default":0, "price":8000}, # yc or f%(5)?
+            {"name": "shipyards", "default":0, "price":8000, "singular":"shipyard", "plural":"shipyards"}, # yc or f%(5)?
             {"name": "diplomats", "default":0, "price":50000}, # f%(6) 0
             {"name": "ships", "default":0, "price":5000}, # 5000 each, yc?
             {"name": "colonies", "default":0}, # i8
@@ -158,9 +212,11 @@ class Player(object):
             d = a["default"]
             v = getattr(self, n) if n in self else d
             t = a["type"] if "type" in a else "integer"
-            ttyio.echo("%s=%r" % (n, v))
-            if n == "name":
+            ttyio.echo("%s=%r" % (n, v), level="debug")
+            if t == "name":
                 x = ttyio.inputstring(opts, "%s: " % (n), v)
+            elif t == "date":
+                x = ttyio.inputdate(opts, "%s: " % (n), v)
             else:
                 x = ttyio.inputinteger(opts, "%s: " % (n), v)
 
@@ -338,6 +394,9 @@ class Player(object):
             # &"{f6}Colonies : ":x=i8:gosub {:sub.comma_value} 0
             # &"{f6}Training : ":x=z9:gosub {:sub.comma_value} 0
     
+
+def yourstatus(opts, player):
+    return player.status()
 
 def town(opts, player):
     # @since 20200816
@@ -543,8 +602,6 @@ def town(opts, player):
             ttyio.echo("You do not have enough serfs of training age.")
             return
     
-    def yourstatus(opts, player):
-        return player.status()
 
     options = (
         ("C", "Cyclone's National Disaster Bank", bank),
@@ -749,53 +806,47 @@ def mainmenu(opts, player):
     bbsengine.title("main menu", titlecolor="{bggray}{white}", hrcolor="{green}")
 
     options = (
-        ("I", "Instructions"),
-        ("M", "Maintenance"),
-        ("N", "News"),
-        ("O", "Other Rulers"),
-        ("P", "Play Empire"),
-        ("T", "Town Activities"),
-        ("Y", "Your Stats"),
-        ("Q", "Quit Game")
+        ("I", "Instructions", None), # instructions),
+        ("M", "Maintenance", maint),
+        ("N", "News", shownews),
+        ("O", "Other Rulers", otherrulers),
+        ("P", "Play Empire", play),
+        ("T", "Town Activities", town),
+        ("Y", "Your Stats", yourstatus)
+        # ("Q", "Quit Game", None)
     )
     done = False
     while not done:
-        for opt, title in options:
+        for opt, title, callback in options:
             ttyio.echo("{bggray}{white}[%s]{/bgcolor}{green} %s{/all}" % (opt, title))
         ttyio.echo("{/all}")
-        ch = ttyio.inputchar("{green}Your command, %s %s? {lightgreen}" % (getranktitle(opts, player.rank), player.name), "IMNOPTYQ", "")
+        ch = ttyio.inputchar("{green}Your command, %s %s? {lightgreen}" % (getranktitle(opts, player.rank).title(), player.name.title()), "IMNOPTYQ", "")
         if ch == "Q":
             ttyio.echo("{lightgreen}Q{cyan} -- quit game{/all}")
             return False
-        elif ch == "T":
-            town(opts, player)
-            continue
-        elif ch == "P":
-            ttyio.echo("{lightgreen}P{cyan} -- Play Empire{/all}")
-            play(opts, player)
-            continue
-        elif ch == "Y":
-            ttyio.echo("{lightgreen}Y{cyan} -- Your Status{/all}")
-            player.status() # yourstats(opts, player)
-            continue
-        elif ch == "N":
-            ttyio.echo("{lightgreen}N{cyan} -- Empire News{/all}")
-            shownews(opts, player)
-            continue
         else:
-            if ch != "":
-                ttyio.echo("{lightgreen}%s{cyan} -- not implemented{/all}" % (ch))
-                ttyio.echo()
+            for opt, title, callback in options:
+                if opt == ch:
+                    ttyio.echo("{lightgreen}%s{cyan} -- %s{/all}" % (opt, title), end="")
+                    if callable(callback) is True:
+                        ttyio.echo()
+                        callback(opts, player)
+                    else:
+                        ttyio.echo(" (not yet implemented)")
+                    ttyio.echo()
+                    break
     player.save()
     return True
 
 def startturn(opts, player):
+    ttyio.echo()
     ttyio.echo("{cyan}it is a new year...{/all}")
     ttyio.echo()
 
     player.turncount += 1
 
     admin = bbsengine.checkflag(opts, "ADMIN")
+    ttyio.echo("startturn.100: admin=%r" % (admin), level="debug")
     if admin is True:
         bbsengine.title(": SysOp Options :", titlecolor="{bggray}{white}", hrcolor="{green}")
         player.turncount = ttyio.inputinteger("{cyan}turncount: {lightgreen}", player.turncount)
@@ -855,14 +906,22 @@ def adjust(opts, player):
         ttyio.echo("{red}Some market owners retire; %s closed." % (pluralize(a, "market is", "markets are")))
  
     if player.mills > 500:
-        a = player.mills / 4
+        a = player.mills // 4
         player.mills -= a
         ttyio.echo("{green}The mills are overworked! %s mills have broken millstones and are closed.{/green}" % (a))
 
     if player.coins < 0:
         ttyio.echo("{red}You are overdrawn by %s!{/red}" % (pluralize(abs(player.coins), "coin", "coins")))
-        # player.coins = 0
-        
+        player.coins = 0
+
+    lost = []
+    for a in player.attributes:
+        name = a["name"]
+        attr = getattr(player, name)
+        singular = a["singular"] if "singular" in a else "singular"
+        plural = a["plural"] if "plural" in a else "plural"
+        if attr < 0:
+            lost.append(pluralize(attr, singular, plural))
     player.rank = calculaterank(opts, player)
     player.save()
     
@@ -1241,6 +1300,7 @@ def investments(opts, player):
 
     done = False
     while not done:
+        ttyio.echo()
         ttyio.echo(pluralize(player.coins, "coin", "coins"))
         ch = ttyio.inputchar("{cyan}Investments [%s]: {lightgreen}" % (options), options, "")
         if ch == "Q":
@@ -1257,8 +1317,10 @@ def investments(opts, player):
                     name = a["name"]
                     price = a["price"]
                     attr = a["name"]
-                    ttyio.echo("%s: %s %s" % (ch, price, name))
-                    trade(opts, player, attr, name, price)
+                    singular = a["singular"] if "singular" in a else "singular"
+                    plural = a["plural"] if "plural" in a else "plural"
+                    ttyio.echo("{lightgreen}%s{green} -- {cyan}%s{/all} %s" % (ch, name.title(), pluralize(price, "coin", "coins")))
+                    trade(opts, player, attr, name, price, singular, plural)
                     break
             else:
                 ttyio.echo("{lightgreen}%s -- {cyan}not implemented yet")
@@ -1267,7 +1329,7 @@ def investments(opts, player):
     return
 
 # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/Empire6.lbl#L69
-def otherrulers(opts:object):
+def otherrulers(opts:object, player=None):
     terminalwidth = ttyio.getterminalwidth()
     dbh = bbsengine.databaseconnect(opts)
     sql = "select id from empire.player where memberid > 0 limit 25"
@@ -1277,7 +1339,7 @@ def otherrulers(opts:object):
     res = cur.fetchall()
     #ttyio.echo("res=%r" % (res), level="debug")
     ttyio.echo("{green} ####  name %s{/green}" % ("land".rjust(terminalwidth-len("land")-2-8)))
-    ttyio.echo(bbsengine.hr(chars="-=", color="yellow"))
+    ttyio.echo(bbsengine.hr(chars="-=", color="{yellow}"))
     player = Player(opts)
     sysop = bbsengine.checkflag(opts, "ADMIN")
     cycle = 1
@@ -1300,6 +1362,8 @@ def otherrulers(opts:object):
 def play(opts, player):
     player.datelastplayed = bbsengine.datestamp()
     player.save()
+    # investments(opts, player)
+    # return
 
     startturn(opts, player)
     weather(opts, player)
@@ -1309,6 +1373,7 @@ def play(opts, player):
     colonytrip(opts, player)
     town(opts, player)
     combat(opts, player)
+    tourney(opts, player)
     investments(opts, player)
     endturn(opts, player)
     return
