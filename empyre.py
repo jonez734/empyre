@@ -7,8 +7,67 @@ import ttyio4 as ttyio
 import bbsengine4 as bbsengine
 from bbsengine4 import pluralize
 
-# @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_tourney.lbl#L3
-def tourney(opts, player, otherplayer):
+class completePlayerName(object):
+    def __init__(self, opts):
+        self.dbh = bbsengine.databaseconnect(opts)
+        self.matches = []
+        self.debug = opts.debug
+
+    def getmatches(self, text):
+        if text == "":
+            sql = "select name from empire.player"
+            dat = ()
+        else:
+            sql = "select name from empire.player where name ~ %s"
+            dat = (text,)
+        
+        cur = self.dbh.cursor()
+        cur.execute(sql, dat)
+        if cur.rowcount == 0:
+            cur.close()
+            return []
+
+        res = cur.fetchall()
+        cur.close()
+        foo = []
+        for rec in res:
+            foo.append(rec["name"])
+        ttyio.echo("completePlayerName.getmatches.100: foo=%r" % (foo), level="debug")
+        return foo
+
+    @classmethod 
+    def completer(self, text, state):
+        if state == 0:
+            self.matches = self.getmatches(text)
+        return self.matches[state]
+
+def inputplayername(opts:object, prompt:str="player name: ", oldvalue:str="", multiple:bool=False, verify=None, **kw):
+    name = ttyio.inputstring(prompt, oldvalue, opts=opts, verify=verify, multiple=multiple, completer=completePlayerName(opts), returnseq=False, **kw)
+
+    dbh = bbsengine.databaseconnect(opts)
+    sql = "select id from empire.player where name=%s"
+    dat = (name,)
+    cur = dbh.cursor()
+    cur.execute(sql, dat)
+    if cur.rowcount == 0:
+        return None
+
+    res = cur.fetchone()
+    cur.close()
+    return res["id"]
+    
+
+# @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_tourney.lbl#L2
+def tourney(opts, player):
+    otherplayer = Player(opts)
+    otherplayerid = None
+    # otherplayerid = inputplayername(opts, "Attack Whom? >> ", multiple=False) # , verify=verifyOpponent)
+    if player.playerid == otherplayerid:
+        ttyio.echo("You cannot joust against yourself!")
+        return
+
+    ttyio.echo("tourney.100: otherplayerid=%r, otherplayer=%r" % (otherplayerid, otherplayer), level="debug")
+
     en = otherplayer.nobles
     nb = player.nobles
 
@@ -25,7 +84,13 @@ def tourney(opts, player, otherplayer):
         return
 
     ttyio.echo("{f6}{f6}Your Noble mounts his mighty steed and aims his lance...")
-    ttyio.echo()
+    # @see https://github.com/Pinacolada64/ImageBBS/blob/e9f033af1f0b341d0d435ee23def7120821c3960/v1.2/games/empire6/plus_emp6_tourney.lbl#L12
+    #if en*2 < nb:
+    #    nb += 1
+    #    en -= 1
+    #    ttyio.echo("Your noble's lance knocks their opponent to the ground. They get up and swear loyalty to you!")
+    #    return
+
     result = []
     x = random.randint(1, 10)
     if x == 1:
@@ -36,23 +101,38 @@ def tourney(opts, player, otherplayer):
         result.append("lost 100 acres")
     elif x == 3:
         player.coins += 1000
+        result.append("gained 1000 coins")
     elif x == 4:
         player.coins -= 1000
+        result.append("lost 1000 coins")
     elif x == 5:
         player.nobles += 1
+        result.append("gained 1 noble")
     elif x == 6:
         player.nobles -= 1
+        result.append("lost 1 noble")
     elif x == 7:
         player.grain += 7000
+        result.append("gained 7000 bushels")
     elif x == 8:
         player.grain -= 7000
+        result.append("lost 7000 bushels")
     elif x == 9:
         player.shipyards += 1
+        result.append("gained 1 shipyard")
         player.land += 100
+        result.append("gained 100 acres")
     elif x == 10:
         player.shipyards -= 1
+        result.append("lost 1 shipyard")
         player.land -= 100
+        result.append("lost 100 acres")
     
+    ttyio.echo("You have %s." % (ttyio.readablelist(result)))
+    adjust(opts, player)
+    
+    return
+
     if player.land < 0:
         ttyio.echo("You lost your last %s." % (pluralize(abs(player.land), "acre", "acres")))
         player.land = 0
@@ -142,8 +222,8 @@ def getranktitle(opts, rank):
         return "rank-error"
 
 class Player(object):
-    def __init__(self, opts):
-        self.playerid = None
+    def __init__(self, opts, playerid:int=None):
+        self.playerid = playerid
         self.name = None # na$
         self.memberid = bbsengine.getcurrentmemberid()
         self.opts = opts
@@ -198,6 +278,13 @@ class Player(object):
             {"name": "combatvictory", "default":0},
             {"name": "datelastplayed", "default":None, "type":"date"}
         )
+
+        for a in self.attributes:
+            setattr(self, a["name"], a["default"])
+
+        if self.playerid is not None:
+            ttyio.echo("Player.__init__.100: calling load()", level="debug")
+            self.load(self.playerid)
 
 #        tz=0:i1=self.palaces:i2=self.markets:i3=self.mills:i4=self.foundries:i5=self.shipyards:i6=self.diplomats
     def remove(self):
@@ -604,7 +691,7 @@ def town(opts, player):
     
 
     options = (
-        ("C", "Cyclone's National Disaster Bank", bank),
+        ("C", "Cyclone's Natural Disaster Bank", bank),
         ("L", "Lucifer's Den", lucifersden),
         ("P", "Soldier Promotion", soldierpromotion),
         ("R", "Realtor's Advice", realtorsadvice),
@@ -1360,10 +1447,8 @@ def otherrulers(opts:object, player=None):
     return
 
 def play(opts, player):
-    player.datelastplayed = bbsengine.datestamp()
-    player.save()
-    # investments(opts, player)
-    # return
+    tourney(opts, player)
+    return
 
     startturn(opts, player)
     weather(opts, player)
