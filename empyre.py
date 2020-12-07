@@ -688,7 +688,6 @@ def town(opts, player):
         if player.serfs < 1500 or eligible > (player.serfs // 2):
             ttyio.echo("You do not have enough serfs of training age.")
             return
-    
 
     options = (
         ("C", "Cyclone's Natural Disaster Bank", bank),
@@ -1003,12 +1002,18 @@ def adjust(opts, player):
 
     lost = []
     for a in player.attributes:
+        type = a["type"] if "type" in a else "int"
+        if type != "int":
+            continue
         name = a["name"]
         attr = getattr(player, name)
         singular = a["singular"] if "singular" in a else "singular"
         plural = a["plural"] if "plural" in a else "plural"
         if attr < 0:
             lost.append(pluralize(attr, singular, plural))
+    if len(lost) > 0:
+        ttyio.echo("You have lost %s" % (ttyio.readablelist(lost)))
+
     player.rank = calculaterank(opts, player)
     player.save()
     
