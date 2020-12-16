@@ -59,9 +59,9 @@ def inputplayername(opts:object, prompt:str="player name: ", oldvalue:str="", mu
     
 
 # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_tourney.lbl#L2
-def tourney(opts, player):
-    otherplayer = Player(opts)
-    otherplayerid = None
+def tourney(opts, player, otherplayer):
+    # otherplayer = Player(opts)
+    # otherplayerid = None
     # otherplayerid = inputplayername(opts, "Attack Whom? >> ", multiple=False) # , verify=verifyOpponent)
     if player.playerid == otherplayerid:
         ttyio.echo("You cannot joust against yourself!")
@@ -438,9 +438,7 @@ class Player(object):
         dbh.commit()
         if self.opts.debug is True:
             ttyio.echo("Player.new.100: res=%r" % (res), level="debug")
-        ttyio.echo()
-        ttyio.echo("new player!", level="success")
-        ttyio.echo()
+        ttyio.echo("{F6}new player!{F6}", level="success")
         return
 
     def status(self):
@@ -549,7 +547,7 @@ def town(opts, player):
             ttyio.echo("no change")
             return
         if x > 50:
-            ttyio.echo("maximum tax rate of 50. no change.", level="error")
+            ttyio.echo("King George looks at you sternly for trying to set such an exhorbitent tax rate, and vetoes the change.", level="error")
             return
             
         player.taxrate = x
@@ -559,8 +557,7 @@ def town(opts, player):
     # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_town.lbl#L162
     def lucifersden(opts, player):
         if player.coins > 10000 or player.land > 15000:
-            ttyio.echo()
-            ttyio.echo("I checked our inventory and we have plenty of souls. Maybe we can deal some other time.")
+            ttyio.echo("{F6}I checked our inventory and we have plenty of souls. Maybe we can deal some other time.")
             return
 
         buf = "LUCIFER'S DEN - Where Gamblin's no Sin!"
@@ -585,8 +582,7 @@ def town(opts, player):
                 ttyio.echo("You must have at least {reverse}%s{/reverse} to gamble here!" % pluralize(1000, "serf", "serfs"))
                 done = True
                 break
-            ttyio.echo()
-            ttyio.echo("You have {reverse}%s{/reverse} and {reverse}%s{/reverse}" % (pluralize(player.coins, "coin", "coins"), pluralize(player.serfs, "serf", "serfs")))
+            ttyio.echo("{F6}You have {reverse}%s{/reverse} and {reverse}%s{/reverse}" % (pluralize(player.coins, "coin", "coins"), pluralize(player.serfs, "serf", "serfs")))
             bet = ttyio.inputinteger("{cyan}Bet how many coins? (No Limit){/cyan} {blue}-->{/blue}{green} ")
             ttyio.echo("{/all}")
             if bet is None or bet < 1 or bet > player.coins:
@@ -607,8 +603,7 @@ def town(opts, player):
                 ttyio.echo("dice=%s" % (dice), level="debug")
 
             if dice == pick:
-                ttyio.echo("{green}MATCH!{/green}")
-                ttyio.echo()
+                ttyio.echo("{green}MATCH!{/green}{F6}")
                 player.coins += bet*odds
                 player.serfs -= 50
             else:
@@ -644,17 +639,14 @@ def town(opts, player):
                 player.adjust()
                 
         if player.soldiers < 10:
-            ttyio.echo("None of your soldiers are eligible for promotion to Noble right now.")
-            ttyio.echo()
+            ttyio.echo("None of your soldiers are eligible for promotion to Noble right now.{F6}")
             return
             
         promotable = random.randint(0, 4)
         
         bbsengine.title(": Soldier Promotions :", titlecolor="{bggray}{white}", hrcolor="{green}")
 #        ttyio.echo("{autogreen}{reverse}%s{/reverse}{/green}" % (": Soldier Promotions :".center(terminalwidth-2)))
-        ttyio.echo()
-        ttyio.echo("{yellow}Good day, I take it that you are here to see if any of your soldiers are eligible for promotion to the status of noble.")
-        ttyio.echo()
+        ttyio.echo("{F6}{yellow}Good day, I take it that you are here to see if any of your soldiers are eligible for promotion to the status of noble.{F6}")
         ttyio.echo("Well, after checking all of them, I have found that ", end="")
         if promotable == 1:
             ttyio.echo("{reverse}1 soldier{/reverse} is eligible.{/yellow}")
@@ -672,7 +664,7 @@ def town(opts, player):
         player.soldiers -= promotable
         player.nobles += promotable
 
-        ttyio.echo("OK, all have been promoted! We hope they serve you well.")
+        ttyio.echo("{F6}OK, all have been promoted! We hope they serve you well.")
         
         # &"{f6}{yellow}Good day, I take it that you are here to{pound}$l"
         # &"see if any of your warriors are eligible for promotion{f6}"
@@ -712,7 +704,7 @@ def town(opts, player):
 
     options = (
         ("C", "Cyclone's Natural Disaster Bank", bank),
-        ("L", "Lucifer's Den", lucifersden),
+        ("L", "Lucifer's Den", None), # lucifersden),
         ("P", "Soldier Promotion", soldierpromotion),
         ("R", "Realtor's Advice", realtorsadvice),
         ("S", "Slave Market", None),
@@ -875,22 +867,28 @@ def combat(opts, player):
         ttyio.echo("{bggray}{white}[4]{/bgcolor} {green}Cease Fighting")
         ttyio.echo("{bggray}{white}[5]{/bgcolor} {green}Send Diplomat")
         ttyio.echo("{bggray}{white}[6]{/bgcolor} {green}Joust")
-        ttyio.echo("{bggray}{white}[7]{/bgcolor} {green}Donate to {yellow}%s{/all}" % (getranktitle(opts, otherplayer.rank).title()))
+        ttyio.echo("{bggray}{white}[7]{/bgcolor} {green}Donate to {yellow}%s %s{/all}" % (getranktitle(opts, otherplayer.rank).title()), otherplayer.name)
         ttyio.echo()
         return
     
+    otherplayerlevel = random.randint(0, min(3, player.rank + 1))
     otherplayer = Player(opts)
+
+    menu()
 
     done = False
     while not done:
-        menu()
-        ch = ttyio.inputchar("combat [1-7,?,Q]: ", "1234567Q?")
+        ch = ttyio.inputchar("combat [1-7,?]: ", "1234567Q?")
         if ch == "Q" or ch == "4":
             ttyio.echo("{lightgreen}%s{cyan} -- Cease Fighting" % (ch))
             done = True
             continue
-        elif ch == "1":
-            pass
+        elif ch == "6":
+            tourney(opts, player, otherplayer)
+            continue
+        elif ch == "?":
+            menu()
+            continue
     return
 
 def newplayer(opts):
@@ -1506,7 +1504,7 @@ def play(opts, player):
     colonytrip(opts, player)
     town(opts, player)
     combat(opts, player)
-    tourney(opts, player)
+    # tourney(opts, player)
     investments(opts, player)
     endturn(opts, player)
     return
