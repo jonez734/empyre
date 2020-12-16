@@ -1,4 +1,5 @@
 # from optparse import OptionParser
+import time
 import argparse
 import random
 import locale
@@ -83,7 +84,7 @@ def tourney(opts, player):
         ttyio.echo("Your opponent does not have enough nobles.")
         return
 
-    ttyio.echo("{f6}{f6}Your Noble mounts his mighty steed and aims his lance...")
+    ttyio.echo("{f6:2}Your Noble mounts his mighty steed and aims his lance...")
     # @see https://github.com/Pinacolada64/ImageBBS/blob/e9f033af1f0b341d0d435ee23def7120821c3960/v1.2/games/empire6/plus_emp6_tourney.lbl#L12
     #if en*2 < nb:
     #    nb += 1
@@ -91,44 +92,56 @@ def tourney(opts, player):
     #    ttyio.echo("Your noble's lance knocks their opponent to the ground. They get up and swear loyalty to you!")
     #    return
 
-    result = []
+    lost = []
+    gained = []
     x = random.randint(1, 10)
     if x == 1:
         player.land += 100
-        result.append("gained 100 acres")
+        gained.append("100 acres")
     elif x == 2:
         player.land -= 100
-        result.append("lost 100 acres")
+        lost.append("100 acres")
     elif x == 3:
         player.coins += 1000
-        result.append("gained 1000 coins")
+        gained.append("1000 coins")
     elif x == 4:
-        player.coins -= 1000
-        result.append("lost 1000 coins")
+        if player.coins >= 1000:
+            player.coins -= 1000
+            lost.append("1000 coins")
     elif x == 5:
         player.nobles += 1
-        result.append("gained 1 noble")
+        gained.append("1 noble")
     elif x == 6:
-        player.nobles -= 1
-        result.append("lost 1 noble")
+        if player.nobles > 0:
+            player.nobles -= 1
+            lost.append("1 noble")
     elif x == 7:
         player.grain += 7000
-        result.append("gained 7000 bushels")
+        gained.append("7000 bushels")
     elif x == 8:
-        player.grain -= 7000
-        result.append("lost 7000 bushels")
+        if player.grain >= 7000:
+            player.grain -= 7000
+            lost.append("7000 bushels")
     elif x == 9:
         player.shipyards += 1
-        result.append("gained 1 shipyard")
+        gained.append("1 shipyard")
         player.land += 100
-        result.append("gained 100 acres")
+        gained.append("100 acres")
     elif x == 10:
-        player.shipyards -= 1
-        result.append("lost 1 shipyard")
-        player.land -= 100
-        result.append("lost 100 acres")
+        if player.shipyards > 0:
+            player.shipyards -= 1
+            lost.append("1 shipyard")
+        if player.land >= 100:
+            player.land -= 100
+            lost.append("100 acres")
     
-    ttyio.echo("You have %s." % (ttyio.readablelist(result)))
+    res = []
+    if len(lost) > 0:
+        res.append("lost " + ttyio.readablelist(lost))
+    if len(gained) > 0:
+        res.append("gained " + ttyio.readablelist(gained))
+    
+    ttyio.echo("You have %s" % (ttyio.readablelist(res)))
     adjust(opts, player)
     
     return
@@ -187,7 +200,7 @@ def calculaterank(opts, player):
         (player.land/player.serfs > 5.1) and 
         player.nobles > 15 and 
         player.serfs > 3000):
-            rank = 1 # prince? lord?
+            rank = 1 # prince
     if (player.markets > 15 and 
         player.mills>9 and 
         player.diplomats > 2 and 
@@ -232,7 +245,7 @@ class Player(object):
         self.turncount = 0
         self.soldierpromotioncount = 0
         self.weatherconditions = 0
-        self.datelastplayed = "now()"
+        #self.datelastplayed = "now()"
         #self.acres = 5000 # la
         #self.soldiers = 20 # wa
         #self.serfs = 2000+random.randint(0, 200) # sf
@@ -276,7 +289,8 @@ class Player(object):
             {"name": "training", "default":1}, # z9
             {"name": "warriors", "default":0}, # wa soldier -> warrior or noble?
             {"name": "combatvictory", "default":0},
-            {"name": "datelastplayed", "default":None, "type":"date"}
+            {"name": "datelastplayedepoch", "default":0, "type": "epoch"}
+            # {"name": "datelastplayed", "default":None, "type":"date"}
         )
 
         for a in self.attributes:
@@ -294,18 +308,26 @@ class Player(object):
     # @since 20200901
     # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_maint.lbl#L22
     def edit(self):
-        for a in self.attributes():
+        for a in self.attributes:
             n = a["name"]
             d = a["default"]
-            v = getattr(self, n) if n in self else d
+            v = getattr(self, n)
             t = a["type"] if "type" in a else "integer"
-            ttyio.echo("%s=%r" % (n, v), level="debug")
+
+            # ttyio.echo("%s: %s" % (n, v), level="debug")
+
+            if t != "epoch":
+                continue
+
             if t == "name":
-                x = ttyio.inputstring(opts, "%s: " % (n), v)
-            elif t == "date":
-                x = ttyio.inputdate(opts, "%s: " % (n), v)
+                x = ttyio.inputstring("%s: " % (n), v)
+            elif t == "epoch":
+                x = bbsengine.inputdate("%s: " % (n), v)
             else:
-                x = ttyio.inputinteger(opts, "%s: " % (n), v)
+                x = ttyio.inputinteger("%s: " % (n), v)
+            setattr(self, n, x)
+
+        self.save()
 
     def load(self, playerid):
         if self.opts.debug is True:
@@ -360,8 +382,11 @@ class Player(object):
 
         attributes = {}
         for a in self.attributes:
-            name = a["name"]
-            attributes[name] = getattr(self, name)
+            n = a["name"]
+            t = a["type"] if "type" in a else "int"
+            v = getattr(self, n)
+            # ttyio.echo("player.save.100: v=type(%r)" % (type(v)))
+            attributes[n] = v # getattr(self, n)
         # node = {}
         # node["attributes"] = attributes
         if self.opts.debug is True:
@@ -432,14 +457,14 @@ class Player(object):
                 maxlen = len(name)
         
         for a in self.attributes:
-            name = a["name"]
-            value  = getattr(self, name)
-            type = a["type"] if "type" in a else "int"
-            if type == "int":
-                v = "{:n}".format(value)
-            else:
-                v = value
-            ttyio.echo("{yellow}%s : %s{/yellow}" % (name.ljust(maxlen), v))
+            n = a["name"]
+            v  = getattr(self, name)
+            t = a["type"] if "type" in a else "int"
+            if t == "int":
+                v = "{:n}".format(v)
+            elif t == "epoch":
+                v = "%d %s" % (v, bbsengine.datestamp(v))
+            ttyio.echo("{yellow}%s : %s{/yellow}" % (n.ljust(maxlen), v))
         ttyio.echo("{/all}")
         return
         
@@ -662,10 +687,6 @@ def town(opts, player):
         terminalwidth = ttyio.getterminalwidth()-2
         buf = " : Hood's Real Deals! : "
         bbsengine.title(buf, titlecolor="{bggray}{white}", hrcolor="{green}")
-        #ttyio.echo("{autoblue}{reverse}%s{/reverse}{/autoblue}" % ((" "*len(buf)).center(terminalwidth)))
-        #ttyio.echo("{autoblue}{reverse}%s{/reverse}{/autoblue}" % (buf.center(terminalwidth)))
-        #ttyio.echo("{autoblue}{reverse}%s{/reverse}{/autoblue}" % ((" "*len(buf)).center(terminalwidth)))
-        #ttyio.echo()
         
         # you have 10 shipyards, BSC
         # you have 10 acres of land
@@ -843,8 +864,33 @@ def colonytrip(opts, player):
         ttyio.echo()
     return
 
+# @since 20201207
+# @see https://github.com/Pinacolada64/ImageBBS/blob/e9f033af1f0b341d0d435ee23def7120821c3960/v1.2/games/empire6/plus_emp6_combat.lbl#L178
 def combat(opts, player):
-    ttyio.echo("combat...")
+    def menu():
+        bbsengine.title("Fight Menu")
+        ttyio.echo("{bggray}{white}[1]{/bgcolor} {green}Attack Army")
+        ttyio.echo("{bggray}{white}[2]{/bgcolor} {green}Attack Palace")
+        ttyio.echo("{bggray}{white}[3]{/bgcolor} {green}Attack Nobles")
+        ttyio.echo("{bggray}{white}[4]{/bgcolor} {green}Cease Fighting")
+        ttyio.echo("{bggray}{white}[5]{/bgcolor} {green}Send Diplomat")
+        ttyio.echo("{bggray}{white}[6]{/bgcolor} {green}Joust")
+        ttyio.echo("{bggray}{white}[7]{/bgcolor} {green}Donate to {yellow}%s{/all}" % (getranktitle(opts, otherplayer.rank).title()))
+        ttyio.echo()
+        return
+    
+    otherplayer = Player(opts)
+
+    done = False
+    while not done:
+        menu()
+        ch = ttyio.inputchar("combat [1-7,?,Q]: ", "1234567Q?")
+        if ch == "Q" or ch == "4":
+            ttyio.echo("{lightgreen}%s{cyan} -- Cease Fighting" % (ch))
+            done = True
+            continue
+        elif ch == "1":
+            pass
     return
 
 def newplayer(opts):
@@ -889,8 +935,6 @@ def startup(opts):
 # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_startturn.lbl#L6
 # @since 20200913
 def mainmenu(opts, player):
-    bbsengine.title("main menu", titlecolor="{bggray}{white}", hrcolor="{green}")
-
     options = (
         ("I", "Instructions", None), # instructions),
         ("M", "Maintenance", maint),
@@ -898,11 +942,13 @@ def mainmenu(opts, player):
         ("O", "Other Rulers", otherrulers),
         ("P", "Play Empire", play),
         ("T", "Town Activities", town),
-        ("Y", "Your Stats", yourstatus)
-        # ("Q", "Quit Game", None)
+        ("Y", "Your Stats", yourstatus),
+        ("Q", "Quit Game", None)
     )
     done = False
     while not done:
+        bbsengine.title("empyre main menu", hrcolor="{green}", titlecolor="{bggray}{white}")
+        ttyio.echo()
         for opt, title, callback in options:
             ttyio.echo("{bggray}{white}[%s]{/bgcolor}{green} %s{/all}" % (opt, title))
         ttyio.echo("{/all}")
@@ -1010,7 +1056,8 @@ def adjust(opts, player):
         singular = a["singular"] if "singular" in a else "singular"
         plural = a["plural"] if "plural" in a else "plural"
         if attr < 0:
-            lost.append(pluralize(attr, singular, plural))
+            lost.append(pluralize(abs(attr), singular, plural))
+            setattr(player, name, 0)
     if len(lost) > 0:
         ttyio.echo("You have lost %s" % (ttyio.readablelist(lost)))
 
@@ -1024,7 +1071,7 @@ def endturn(opts, player):
     ttyio.echo()
     
     if player.serfs < 100:
-        ttyio.echo("You haven't enough serfs to maintain the empire! It's turned over to King George and you are {red}beheaded{/red}{green}.{/green}")
+        ttyio.echo("{green}You haven't enough serfs to maintain the empire! It's turned over to King George and you are {yellow}beheaded{/fgcolor}{green}.{/green}")
         player.memberid = None
         player.save(updatecredits=True)
         return
@@ -1265,14 +1312,12 @@ def maint(opts, player):
         ttyio.echo("[D] Auto-Reset & Credit/Money Exchange Rate")
         ttyio.echo("[E] Edit Player's profile")
         ttyio.echo("[L] List Players")
-        ttyio.echo("[P] Play Empire")
+        # ttyio.echo("[P] Play Empire")
         ttyio.echo("[R] Reset Empire")
         ttyio.echo("[S] Scratch News")
-        ttyio.echo("[Q] Quit")
-        ttyio.echo()
-        ttyio.echo()
+        ttyio.echo("{F6}[Q] Quit{F6:2}")
 
-        ch = ttyio.inputchar("Maintenance: ", "DELPRSQ", "")
+        ch = ttyio.inputchar("Maintenance: ", "DELRSQ", "")
         if ch == "Q":
             ttyio.echo("Quit")
             done = True
@@ -1452,9 +1497,7 @@ def otherrulers(opts:object, player=None):
     return
 
 def play(opts, player):
-    tourney(opts, player)
-    return
-
+    player.datelastplayedepoch = time.time()
     startturn(opts, player)
     weather(opts, player)
     disaster(opts, player)
