@@ -312,7 +312,7 @@ class Player(object):
             n = a["name"]
             d = a["default"]
             v = getattr(self, n)
-            t = a["type"] if "type" in a else "integer"
+            t = a["type"] if "type" in a else "int"
 
             # ttyio.echo("%s: %s" % (n, v), level="debug")
 
