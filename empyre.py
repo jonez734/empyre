@@ -235,12 +235,12 @@ def getranktitle(opts, rank):
         return "rank-error"
 
 class Player(object):
-    def __init__(self, opts, playerid:int=None):
+    def __init__(self, opts, playerid:int=None, rank=0):
         self.playerid = playerid
         self.name = None # na$
         self.memberid = bbsengine.getcurrentmemberid()
         self.opts = opts
-        self.rank = 0
+        self.rank = rank
         self.previousrank = 0
         self.turncount = 0
         self.soldierpromotioncount = 0
@@ -268,7 +268,7 @@ class Player(object):
             {"name": "serfs", "default": 2000+random.randint(0, 200), "type":"int"}, # sf
             {"name": "soldierpromotioncount", "default":0},
             {"name": "turncount", "default":0},
-            {"name": "rank", "default":0},
+            {"name": "rank", "default":rank},
             {"name": "previousrank", "default":0},
             {"name": "memberid", "default":None},
             {"name": "weatherconditions", "default":0},
@@ -870,9 +870,24 @@ def combat(opts, player):
         ttyio.echo("{bggray}{white}[7]{/bgcolor} {green}Donate to {yellow}%s %s{/all}" % (getranktitle(opts, otherplayer.rank).title()), otherplayer.name)
         ttyio.echo()
         return
+    def senddiplomat(opts, player, otherplayer):
+        if player.diplomats < 1:
+            ttyio.echo("{F6:2}{yellow}You have no diplomats!{F6:2}")
+            return
+        ttyio.echo("{F6}{purple}Your diplomat rides to the enemy camp...")
+        if otherplayer.soldiers < player.soldiers*2:
+            land = otherplayer.acres // 15
+            otherplayer -= land
+            player += land
+            ttyio.echo("{F6}{green}Your noble returns with good news! To avoid attack, you have been given %s of land!" % (pluralize(land, "acre", "acres")))
+        else:
+            player.nobles -= 1
+            ttyio.echo("{orange}%s {red}BEHEADS{orange} your diplomat and tosses their corpse into the moat!" % (otherplayer.name.title()))
+        player.save()
+        otherplayer.save()
     
     otherplayerlevel = random.randint(0, min(3, player.rank + 1))
-    otherplayer = Player(opts)
+    otherplayer = Player(opts, level=otherplayerlevel)
 
     menu()
 
@@ -883,6 +898,8 @@ def combat(opts, player):
             ttyio.echo("{lightgreen}%s{cyan} -- Cease Fighting" % (ch))
             done = True
             continue
+        elif ch == "5":
+            senddiplomat(opts, player, otherplayer)
         elif ch == "6":
             tourney(opts, player, otherplayer)
             continue
