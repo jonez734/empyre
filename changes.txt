@@ -1,0 +1,12 @@
+# empyre changes
+
+## 2020-dec-16
+- added generatename() function. ty ryan for the link that generates random
+  character names
+- working on combat()
+
+## 2020-dec-03 
+- 'datelastplayed' is now populated properly
+- investments() is nearly complete
+- tourney()
+- player attributes can now have a 'singular' and 'plural'
