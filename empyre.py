@@ -191,34 +191,34 @@ def calculaterank(opts, player):
     #i6=f%(6) diplomats
 
     rank = 0
-    if (player.markets > 9 and 
-        player.diplomats > 0 and 
-        player.mills > 5 and 
-        player.foundries > 1 and 
-        player.shipyards > 1 and 
-        player.palaces > 2 and 
-        (player.land/player.serfs > 5.1) and 
-        player.nobles > 15 and 
-        player.serfs > 3000):
-            rank = 1 # prince
-    if (player.markets > 15 and 
-        player.mills>9 and 
-        player.diplomats > 2 and 
-        player.foundries > 6 and 
-        player.shipyards > 4 and 
-        player.palaces > 6 and 
-        (player.land / player.serfs > 10.5) and 
-        player.serfs > 3500 and 
-        player.nobles > 30):
-            rank = 2 # king
-    if (player.markets > 23 and 
-        player.mills > 9 and 
-        player.foundries > 13 and 
-        player.shipyards > 11 and 
-        player.palaces > 9 and 
-        (player.land / player.serfs > 23.4) and 
+    if (player.markets > 23 and
+        player.mills > 9 and
+        player.foundries > 13 and
+        player.shipyards > 11 and
+        player.palaces > 9 and
+        (player.land / player.serfs > 23.4) and
         player.serfs > 2499): # b? > 62
             rank = 3 # emperor
+    elif (player.markets > 15 and
+        player.mills > 9 and
+        player.diplomats > 2 and
+        player.foundries > 6 and
+        player.shipyards > 4 and
+        player.palaces > 6 and
+        (player.land / player.serfs > 10.5) and
+        player.serfs > 3500 and
+        player.nobles > 30):
+            rank = 2 # king
+    elif (player.markets > 9 and
+        player.diplomats > 0 and
+        player.mills > 5 and
+        player.foundries > 1 and
+        player.shipyards > 1 and
+        player.palaces > 2 and
+        (player.land/player.serfs > 5.1) and
+        player.nobles > 15 and
+        player.serfs > 3000):
+            rank = 1 # prince
 
     return rank
 
@@ -233,6 +233,10 @@ def getranktitle(opts, rank):
         return "emperor"
     else:
         return "rank-error"
+
+def generatename(opts):
+    # http://donjon.bin.sh/fantasy/name/#type=me;me=english_male ty ryan
+    namelist = ("Richye", "Gerey", "Andrew", "Ryany", "Mathye Burne", "Enryn", "Andes", "Piersym Jordye", "Vyncis", "Gery Aryn", "Hone Sharcey", "Kater", "Erix", "Abell", "Wene Noke", "Jane Folcey", "Abel", "Bilia", "Cilia", "Joycie")
 
 class Player(object):
     def __init__(self, opts, playerid:int=None, rank=0):
