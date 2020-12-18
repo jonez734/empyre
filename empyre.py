@@ -182,7 +182,7 @@ def shownews(opts:object, player:object):
         ttyio.echo(" %s: %s (#%s): %s" % (bbsengine.datestamp(rec["datecreated"]), rec["createdbyname"], rec["createdbyid"], rec["message"]))
     ttyio.echo("{/all}")
     
-def calculaterank(opts, player):
+def calculaterank(opts:object, player:object) -> int:
     #i1=f%(1) palaces
     #i2=f%(2) markets
     #i3=f%(3) mills
@@ -192,15 +192,15 @@ def calculaterank(opts, player):
 
     rank = 0
     if (player.markets > 23 and
-        player.mills > 9 and
+        player.mills >= 10 and
         player.foundries > 13 and
         player.shipyards > 11 and
         player.palaces > 9 and
         (player.land / player.serfs > 23.4) and
-        player.serfs > 2499): # b? > 62
+        player.serfs >= 2500): # b? > 62
             rank = 3 # emperor
     elif (player.markets > 15 and
-        player.mills > 9 and
+        player.mills >= 10 and
         player.diplomats > 2 and
         player.foundries > 6 and
         player.shipyards > 4 and
@@ -209,7 +209,7 @@ def calculaterank(opts, player):
         player.serfs > 3500 and
         player.nobles > 30):
             rank = 2 # king
-    elif (player.markets > 9 and
+    elif (player.markets >= 10 and
         player.diplomats > 0 and
         player.mills > 5 and
         player.foundries > 1 and
@@ -239,7 +239,7 @@ def generatename(opts):
     namelist = ("Richye", "Gerey", "Andrew", "Ryany", "Mathye Burne", "Enryn", "Andes", "Piersym Jordye", "Vyncis", "Gery Aryn", "Hone Sharcey", "Kater", "Erix", "Abell", "Wene Noke", "Jane Folcey", "Abel", "Bilia", "Cilia", "Joycie")
 
 class Player(object):
-    def __init__(self, opts, playerid:int=None, rank=0):
+    def __init__(self, opts, playerid:int=None, rank=0, npc=False):
         self.playerid = playerid
         self.name = None # na$
         self.memberid = bbsengine.getcurrentmemberid()
@@ -308,7 +308,7 @@ class Player(object):
     def remove(self):
         self.memberid = None
         return
-
+ 
     # @since 20200901
     # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_maint.lbl#L22
     def edit(self):
@@ -507,6 +507,13 @@ class Player(object):
             # &"{f6}Ships    : ":x=yc:gosub {:sub.comma_value} 0
             # &"{f6}Colonies : ":x=i8:gosub {:sub.comma_value} 0
             # &"{f6}Training : ":x=z9:gosub {:sub.comma_value} 0
+    def generate(self):
+        self.name = generatename()
+        if self.rank == 1:
+            self.markets = random.randint(10, 15)
+            self.mills = random.randint(6, 9)
+            self.diplomats = random.randint(1, 2)
+            self.serfs = random.randint()
     
 
 def yourstatus(opts, player):
@@ -874,13 +881,14 @@ def combat(opts, player):
         ttyio.echo("{bggray}{white}[7]{/bgcolor} {green}Donate to {yellow}%s %s{/all}" % (getranktitle(opts, otherplayer.rank).title()), otherplayer.name)
         ttyio.echo()
         return
+
     def senddiplomat(opts, player, otherplayer):
         if player.diplomats < 1:
             ttyio.echo("{F6:2}{yellow}You have no diplomats!{F6:2}")
             return
         ttyio.echo("{F6}{purple}Your diplomat rides to the enemy camp...")
         if otherplayer.soldiers < player.soldiers*2:
-            land = otherplayer.acres // 15
+            land = otherplayer.land // 15
             otherplayer -= land
             player += land
             ttyio.echo("{F6}{green}Your noble returns with good news! To avoid attack, you have been given %s of land!" % (pluralize(land, "acre", "acres")))
@@ -890,9 +898,10 @@ def combat(opts, player):
         player.save()
         otherplayer.save()
     
-    otherplayerlevel = random.randint(0, min(3, player.rank + 1))
-    otherplayer = Player(opts, level=otherplayerlevel)
-
+    otherplayerank = random.randint(0, min(3, player.rank + 1))
+    otherplayer = Player(opts, npc=True, rank=otherplayerrank)
+    otherplayer.generate()
+    otherplayer.save()
     menu()
 
     done = False
