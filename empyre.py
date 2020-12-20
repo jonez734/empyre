@@ -173,7 +173,7 @@ def newsentry(opts:object, player:object, message:str, otherplayer:object=None):
 def shownews(opts:object, player:object):
     dbh = bbsengine.databaseconnect(opts)
     sql = "select * from empire.newsentry where coalesce(dateupdated, datecreated) > %s"
-    dat = (player.datelastplayed,)
+    dat = (player.datelastplayedepoch,)
     cur = dbh.cursor()
     cur.execute(sql, dat)
     res = cur.fetchall()
@@ -269,30 +269,36 @@ class Player(object):
 
         self.attributes = (
             {"name": "name", "default": "a. nonymous", "type":"name"}, # na$
-            {"name": "serfs", "default": 2000+random.randint(0, 200), "type":"int"}, # sf
+            {"name": "serfs", "default": 2000+random.randint(0, 200), "type":"int"}, # sf x(19)
             {"name": "soldierpromotioncount", "default":0},
             {"name": "turncount", "default":0},
             {"name": "rank", "default":rank},
             {"name": "previousrank", "default":0},
             {"name": "memberid", "default":None},
             {"name": "weatherconditions", "default":0},
-            {"name": "land", "default":5000, "singular":"acre", "plural":"acres"}, # la
-            {"name": "coins", "default":1000, "singular":"coin", "plural":"coins"}, # pn
+            {"name": "land", "default":5000, "singular":"acre", "plural":"acres"}, # la x(2)
+            {"name": "coins", "default":1000, "singular":"coin", "plural":"coins"}, # pn x(3)
             {"name": "grain", "default":10000, "singular": "bushel", "plural": "bushels"}, # gr
             {"name": "taxrate", "default":15}, # tr
             {"name": "soldiers", "default":20, "price": 20},
             {"name": "nobles", "default":2, "price":25000, "singular":"noble", "plural":"nobles"},
             {"name": "palaces", "default":1, "price":20}, # f%(1)
-            {"name": "markets", "default":1, "price":1000}, # f%(2)
-            {"name": "mills", "default":1, "price":2000}, # f%(3)
-            {"name": "foundries", "default":0, "price":7000}, # f%(4) 0
-            {"name": "shipyards", "default":0, "price":8000, "singular":"shipyard", "plural":"shipyards"}, # yc or f%(5)?
+            {"name": "markets", "default":1, "price":1000}, # f%(2) x(7)
+            {"name": "mills", "default":1, "price":2000}, # f%(3) x(8)
+            {"name": "foundries", "default":0, "price":7000}, # f%(4) x(9)
+            {"name": "shipyards", "default":0, "price":8000, "singular":"shipyard", "plural":"shipyards"}, # yc or f%(5)? x(10)
             {"name": "diplomats", "default":0, "price":50000}, # f%(6) 0
             {"name": "ships", "default":0, "price":5000}, # 5000 each, yc?
             {"name": "colonies", "default":0}, # i8
             {"name": "training", "default":1}, # z9
             {"name": "warriors", "default":0}, # wa soldier -> warrior or noble?
             {"name": "combatvictory", "default":0},
+            {"name": "spices", "default":0}, # 
+            {"name": "stables", "default":0, "price": 10000},
+            {"name": "cannons", "default":0},
+            {"name": "forts", "default":0},
+            {"name": "dragons", "default":0},
+            {"name": "horses", "default":0}, # x(23)
             {"name": "datelastplayedepoch", "default":0, "type": "epoch"}
             # {"name": "datelastplayed", "default":None, "type":"date"}
         )
@@ -518,6 +524,172 @@ class Player(object):
 
 def yourstatus(opts, player):
     return player.status()
+
+# @see https://github.com/Pinacolada64/ImageBBS/blob/e9f033af1f0b341d0d435ee23def7120821c3960/v1.2/games/empire6/mdl.emp.delx3.txt#L337
+def quests(opts, player):
+    # @see https://github.com/Pinacolada64/ImageBBS/blob/e9f033af1f0b341d0d435ee23def7120821c3960/v1.2/games/empire6/emp.menu5.txt
+    def menu():
+        ttyio.echo("{bggray}{white}[1]{/bgcolor} {green}Raid the Pirates Camp")
+        ttyio.echo("{bggray}{white}[2]{/bgcolor} {green}Mystery of the Haunted Cave")
+        ttyio.echo("{bggray}{white}[3]{/bgcolor} {green}Rescue the Maiden's Sister")
+        ttyio.echo("{bggray}{white}[4]{/bgcolor} {green}The Quest of the Gods")
+        ttyio.echo("{bggray}{white}[5]{/bgcolor} {green}Eradicate the Evil Cult")
+        ttyio.echo("{bggray}{white}[6]{/bgcolor} {green}Search for the Island of Spice")
+        ttyio.echo("{bggray}{white}[7]{/bgcolor} {green}Quest for the Legendary Bird City")
+        ttyio.echo("{bggray}{white}[8]{/bgcolor} {green}Look for the Mountain Side Ship")
+        ttyio.echo("{bggray}{white}[9]{/bgcolor} {green}Seek Arch-Mage Zircon's Help {yellow}Warning: Zircon's Help is a {blink}GAMBLE{/blink}")
+        ttyio.echo("{/all}")
+    def zircon1():
+        x = random.randint(1, 40)
+        if x >= 19:
+            return
+        gifts = []
+        ttyio.echo("{purple}Zircon says he must consult the bones...")
+        x = random.randint(1, 5)
+        if x == 1:
+            gifts.append(pluralize(8000, "acre", "acres"))
+            player.land += 8000 # x(2)
+        elif x == 2:
+            gifts.append(pluralize(30000, "coin", "coins"))
+            player.coins += 30000 # x(3)
+        elif x == 3:
+            gifts.append(pluralize(5, "noble", "nobles"))
+            player.nobles += 5 # x(6)
+        elif x == 4:
+            gifts.append(pluralize(40000, "bushel", "bushels"))
+            player.grain += 40000 # x(17)
+        return gifts
+    def zircon2():
+        gifts = []
+        x = random.randint(1, 5)
+        if x == 1:
+            gifts.append(pluralize(1000, "serf", "serfs"))
+            player.serfs += 1000 # x(19)
+        elif x == 2:
+            gifts.append(pluralize(4, "shipyard", "shipyards"))
+            player.shipyards += 4 # x(10)
+        elif x == 3:
+            gifts.append(pluralize(2, "fort", "forts"))
+            player.forts += 2
+            gifts.append(pluralize(8, "cannon", "cannons"))
+            player.cannons += 8
+        elif x == 4:
+            gifts.append(pluralize(50, "horse", "horses"))
+            player.horses += 50
+        return gifts
+    def zircon3():
+        gifts = []
+        x = random.randint(1, 5)
+        if x == 1:
+            player.foundries += 4 # x(9)
+            gifts.append(pluralize(4, "foundry", "foundries"))
+        elif x == 2:
+            player.markets += 10 # x(7)
+            gifts.append(pluralize(10, "market", "markets"))
+        elif x == 3:
+            player.mills += 10 # x(8)
+            gifts.append(pluralize(10, "mill", "mills"))
+        elif x == 4:
+            player.spices += 10 # x(25)
+        elif x == 5:
+            player.ships += 4 # x(12)
+            gifts.append(pluralize(4, "ship", "ships"))
+        return gifts
+    def zircon4():
+        gifts = []
+        x = random.randint(1, 20)
+        if x < 4:
+            return gifts
+        gifts.append(pluralize(10, "ton of spices", "tons of spices"))
+        player.spices += 10 # x(15)
+        return gifts
+    def zircon5():
+        gifts = []
+        x = random.randint(1, 50)
+        if x > 3:
+            return gifts
+        gifts.append("a dragon")
+        player.dragons += 1
+        return gifts
+    def zircon6():
+        x = random.randint(1, 30)
+        return
+
+    menu()
+    done = False
+    while not done:
+        ch = ttyio.inputchar("quest [1-9,Q]: ", "123456789Q", "Q")
+        if ch == "9":
+            # @see https://github.com/Pinacolada64/ImageBBS/blob/e9f033af1f0b341d0d435ee23def7120821c3960/v1.2/games/empire6/mdl.emp.delx3.txt#L362
+            ttyio.echo("9 -- zircon")
+            ttyio.echo("""
+    Your rivals are pressing you hard!  In desperation, you have undertaken
+a long and dangerous journey.  Now at last you stand before Castle
+Dragonmare, the home of Arch-mage Zircon.  It is your hope that you can
+convince him to help you..{F6:2}""")
+            remuneration = []
+            remuneration += zircon1(opts, player)
+            remuneration += zircon2(opts, player)
+            remuneration += zircon3(opts, player)
+            remuneration += zircon4(opts, player)
+            remuneration += zircon5(opts, player)
+            if len(remuneration) > 0:
+                newsentry()
+            continue
+
+        elif random.randint(1, 20) > 5:
+            ttyio.echo("You failed to complete the quest.")
+            return
+
+        elif ch == "1":
+            ttyio.echo("1 -- Raid the Pirates Camp")
+            ttyio.echo("""    
+You have heard that a band of pirates has been raiding the area recently, causing much strife to the poor serfs in your dominion. Thus it is with a stout heart and a sharp sword that you determine to rid your kingdom of these pests once and for all.{F6:2}
+After a meeting with your nobles, you decide that the best route of invasion would be through a secret tunnel which one of your spies discovered about a month ago.  It leads into a storage room to the north of the pirates' main cave.{F6:2}
+This course determined, your hardy band sets out for the cave less than a week later.  You arrive at the secret tunnel and, after checking for sentries, enter the passage.{F6:2}
+Your invasion is swift and merciless, and the pirate camp is soon under your control.  Flushed with victory, your band counts the treasure which you have received.{F6:2}
+You gain 30,000 coins!{F6:2}
+""")
+            ttyio.echo("You win quest #1")
+            player.coins += 30000
+        elif ch == "2":
+            ttyio.echo("""
+With the need for good horses, and also having heard of wild horses, in the mountains, you set out with some of your Nobles to try to find them.{F6:2}
+Questioning the people you meet you discover that the horses have been seen near a haunted cave.  Not believing in ghosts, you head for the location.{F6:2}
+Finally, you find the cave, seeing one of the horses entering it.  Quietly you and your men approach the cave.  You are within a hundred yards when you hear some spooky sounds coming from it.{F6:2}
+Determined to discover the secret of the sounds, you advance toward the cave.  Upon reaching the cave's entrance, you see daylight quite far back. Boldly entering, you discover a tunnel through a mountain.  The tunnel distorted the sounds you heard, producing the "ghostly" manifestations!{F6:2}
+There is a hidden valley on the other end of the tunnel.  In the valley you find a herd of horses.{F6:2}
+You gain 30 horses!{F6:2}
+""")
+            ttyio.echo("You win quest #2")
+            player.horses += 30 # x(23)
+        elif ch == "3":
+            ttyio.echo("""
+You are in need of timber for your forts and ships.  Your land is well-suited for growing grain, but you have very little timber.{F6:2}
+So, at last you decide if your empire is to survive, you must find a source of timber.  Discussing this with your Nobles, you decide to lead an expedition into the mountains. Though most of the trees are bent from the high winds, you have heard of a small valley, with good timber.{F6:2}
+You and your men have been searching for some weeks, when you come upon a young woman.  She is in tears, explaining a band of brigands had captured her and her sister.  They were being used as slave labor at the brigands' camp. She further explains she managed to slip away, and begs you to come and free her sister.{F6:2}
+Considering that these brigands may some day become a threat to your land, you agree.  So it was that when you and your men came upon the brigands, you were prepared to fight. The brigands, believing themselves safe, were caught off guard.{F6:2}
+Your seasoned troops make quick work of the task.  But you have found something more.  The brigands' camp is in a small valley with good timber!{F6:2}
+You gain 15 tons of timber!{F6:2}
+""")
+            ttyio.echo("You win quest #3")
+            player.timber += 15 # x(16)
+        elif ch == "4":
+            ttyio.echo("You win quest #4")
+            player.grain += 30000
+        elif ch == "5":
+            ttyio.echo("You win quest #5")
+            player.acres += 4000
+        elif ch == "6":
+            ttyio.echo("You win quest #6")
+            player.spices += 20 # x(25)
+        elif ch == "7":
+            ttyio.echo("You win quest #7")
+            player.nobles += 4 # x(6)
+        elif ch == "8":
+            ttyio.echo("You win quest #8")
+            player.cannons += 6 # x(14)
+
 
 def town(opts, player):
     # @since 20200816
