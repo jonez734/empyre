@@ -326,8 +326,8 @@ class Player(object):
 
             # ttyio.echo("%s: %s" % (n, v), level="debug")
 
-            if t != "epoch":
-                continue
+            #if t != "epoch":
+            #    continue
 
             if t == "name":
                 x = ttyio.inputstring("%s: " % (n), v)
@@ -466,7 +466,7 @@ class Player(object):
         
         for a in self.attributes:
             n = a["name"]
-            v  = getattr(self, name)
+            v  = getattr(self, n)
             t = a["type"] if "type" in a else "int"
             if t == "int":
                 v = "{:n}".format(v)
@@ -920,7 +920,7 @@ def town(opts, player):
     while not done:
         player.save()
         menu()
-        ch = ttyio.accept("Town: ", hotkeys, "")
+        ch = ttyio.inputchar("Town: ", hotkeys, "")
         if ch == "Q":
             ttyio.echo("Return to the Empire")
             done = True
@@ -1152,21 +1152,31 @@ def mainmenu(opts, player):
         for opt, title, callback in options:
             ttyio.echo("{bggray}{white}[%s]{/bgcolor}{green} %s{/all}" % (opt, title))
         ttyio.echo("{/all}")
-        ch = ttyio.inputchar("{green}Your command, %s %s? {lightgreen}" % (getranktitle(opts, player.rank).title(), player.name.title()), "IMNOPTYQ", "")
-        if ch == "Q":
-            ttyio.echo("{lightgreen}Q{cyan} -- quit game{/all}")
-            return False
-        else:
-            for opt, title, callback in options:
-                if opt == ch:
-                    ttyio.echo("{lightgreen}%s{cyan} -- %s{/all}" % (opt, title), end="")
-                    if callable(callback) is True:
+
+        try:
+            ch = ttyio.inputchar("{green}Your command, %s %s? {lightgreen}" % (getranktitle(opts, player.rank).title(), player.name.title()), "IMNOPTYQ", "")
+
+            if ch == "Q":
+                ttyio.echo("{lightgreen}Q{cyan} -- quit game{/all}")
+                return False
+            else:
+                for opt, title, callback in options:
+                    if opt == ch:
+                        ttyio.echo("{lightgreen}%s{cyan} -- %s{/all}" % (opt, title), end="")
+                        if callable(callback) is True:
+                            ttyio.echo()
+                            callback(opts, player)
+                        else:
+                            ttyio.echo(" (not yet implemented)")
                         ttyio.echo()
-                        callback(opts, player)
-                    else:
-                        ttyio.echo(" (not yet implemented)")
-                    ttyio.echo()
-                    break
+                        break
+        except EOFError:
+            ttyio.echo("{lightgreen}EOF{/all}")
+            return False
+        except KeyboardInterrupt:
+            ttyio.echo("{lightgreen}INTR{/all}")
+            return False
+
     player.save()
     return True
 
@@ -1518,6 +1528,7 @@ def maint(opts, player):
         ttyio.echo("{F6}[Q] Quit{F6:2}")
 
         ch = ttyio.inputchar("Maintenance: ", "DELRSQ", "")
+
         if ch == "Q":
             ttyio.echo("Quit")
             done = True
