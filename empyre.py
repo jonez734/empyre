@@ -94,7 +94,7 @@ def tourney(opts, player, otherplayer):
 
     lost = []
     gained = []
-    x = random.randint(1, 10)
+    x = bbsengine.diceroll(10)
     if x == 1:
         player.land += 100
         gained.append("100 acres")
@@ -540,12 +540,12 @@ def quests(opts, player):
         ttyio.echo("{bggray}{white}[9]{/bgcolor} {green}Seek Arch-Mage Zircon's Help {yellow}Warning: Zircon's Help is a {blink}GAMBLE{/blink}")
         ttyio.echo("{/all}")
     def zircon1():
-        x = random.randint(1, 40)
+        x = bbsengine.diceroll(40) # random.randint(1, 40)
         if x >= 19:
             return
         gifts = []
         ttyio.echo("{purple}Zircon says he must consult the bones...")
-        x = random.randint(1, 5)
+        x = bbsengine.diceroll(5) # random.randint(1, 5)
         if x == 1:
             gifts.append(pluralize(8000, "acre", "acres"))
             player.land += 8000 # x(2)
@@ -561,7 +561,7 @@ def quests(opts, player):
         return gifts
     def zircon2():
         gifts = []
-        x = random.randint(1, 5)
+        x = bbsengine.diceroll(5) # random.randint(1, 5)
         if x == 1:
             gifts.append(pluralize(1000, "serf", "serfs"))
             player.serfs += 1000 # x(19)
@@ -579,7 +579,7 @@ def quests(opts, player):
         return gifts
     def zircon3():
         gifts = []
-        x = random.randint(1, 5)
+        x = bbsengine.diceroll(5) # random.randint(1, 5)
         if x == 1:
             player.foundries += 4 # x(9)
             gifts.append(pluralize(4, "foundry", "foundries"))
@@ -597,7 +597,7 @@ def quests(opts, player):
         return gifts
     def zircon4():
         gifts = []
-        x = random.randint(1, 20)
+        x = bbsengine.diceroll(20) # random.randint(1, 20)
         if x < 4:
             return gifts
         gifts.append(pluralize(10, "ton of spices", "tons of spices"))
@@ -605,14 +605,14 @@ def quests(opts, player):
         return gifts
     def zircon5():
         gifts = []
-        x = random.randint(1, 50)
+        x = bbsengine.diceroll(50) # random.randint(1, 50)
         if x > 3:
             return gifts
         gifts.append("a dragon")
         player.dragons += 1
         return gifts
     def zircon6():
-        x = random.randint(1, 30)
+        x = bbsengine.diceroll(30) # random.randint(1, 30)
         return
 
     menu()
@@ -637,7 +637,7 @@ convince him to help you..{F6:2}""")
                 newsentry()
             continue
 
-        elif random.randint(1, 20) > 5:
+        elif bbsengine.diceroll(20) > 5: # random.randint(1, 20) > 5:
             ttyio.echo("You failed to complete the quest.")
             return
 
@@ -780,7 +780,7 @@ def town(opts, player):
                 done = True
                 return
             
-            dice = random.randint(1, 6)
+            dice = bbsengine.diceroll(6) # random.randint(1, 6)
 
             if opts.debug is True:
                 ttyio.echo("dice=%s" % (dice), level="debug")
@@ -1277,8 +1277,7 @@ def adjust(opts, player):
     return
 
 def endturn(opts, player):
-    ttyio.echo("end turn...")
-    ttyio.echo()
+    ttyio.echo("end turn...{F6}")
     
     if player.serfs < 100:
         ttyio.echo("{green}You haven't enough serfs to maintain the empire! It's turned over to King George and you are {yellow}beheaded{/fgcolor}{green}.{/green}")
@@ -1311,7 +1310,7 @@ def endturn(opts, player):
         ttyio.echo("{blue}%s{/blue}" % (pluralize(a, "noble defects", "nobles defect")))
 
     # pn=int(pn+p2+p3+p4+p5):tg=int((p2+p3+p4+p5)*tr/100):pn=pn+tg
-    taxes = int((p2+p3+p4+p5)*player.taxrate/100)
+    taxes = (p2+p3+p4+p5)*player.taxrate//100
     # player.credits += (p2+p3+p4+p5+tg)
     receivables = int(p2+p3+p4+p5+taxes)
 
@@ -1380,9 +1379,9 @@ def endturn(opts, player):
 
     return
 
-def disaster(opts, player, disaster=None):
+def disaster(opts:object, player:object, disaster:int=None):
     if disaster is None:
-        disaster = int(random.random()*12)+1
+        disaster = bbsengine.diceroll(12) # int(random.random()*12)+1
 
     if opts.debug is True:
         ttyio.echo("disaster.200: disaster=%s" % (disaster), level="debug")
@@ -1392,17 +1391,17 @@ def disaster(opts, player, disaster=None):
     if disaster == 2:
         res = []
         
-        x = int(random.random()*player.serfs/4)
+        x = random.randint(0, player.serfs//4) # int(random.random()*player.serfs/4)
         player.serfs -= x
         if x > 0:
             res.append("{reverse}%s{/reverse}" % (pluralize(x, "serf", "serfs")))
 
-        x = int(random.random()*player.soldiers/2)
+        x = random.randint(0, player.soldiers//2) # int(random.random()*player.soldiers/2)
         if x > 0:
             player.soldiers -= x
             res.append("{reverse}%s{/reverse}" % (pluralize(x, "soldier", "soldiers")))
 
-        x = int(random.random()*player.nobles/3)
+        x = random.randint(0, player.nobles//3) # int(random.random()*player.nobles/3)
         if x > 0:
             player.nobles -= x
             res.append("{reverse}%s{/reverse}" % (pluralize(x, "noble", "nobles")))
@@ -1410,12 +1409,12 @@ def disaster(opts, player, disaster=None):
         if len(res) > 0:
             ttyio.echo("P L A G U E ! %s died" % (ttyio.readablelist(res)))
     elif disaster == 3:
-        x = int(random.random()*player.grain/3)
+        x = random.randint(1, player.grain//3) # int(random.random()*player.grain/3)
         player.grain -= x
         ttyio.echo("EEEK! rats eat {reverse}%s{/reverse} of grain!" % (pluralize(x, "bushel", "bushels")))
         return
     elif disaster == 4:
-        x = int(random.randint(1, 100))
+        x = bbsengine.diceroll(100) # random.randint(1, 100))
         if x < 85:
             return
         if player.palaces > 0 and player.nobles > 0:
@@ -1434,41 +1433,34 @@ def disaster(opts, player, disaster=None):
     elif disaster == 5:
         res = []
 
-        x = int(random.random()*player.markets/3)
+        x = random.randint(0, player.markets//3) # int(random.random()*player.markets/3)
         if x > 0:
             res.append(pluralize(x, "market", "markets"))
 
-        x = int(random.random()*player.mills/4)
+        x = random.randint(0, player.mills//4) # int(random.random()*player.mills/4)
         if x > 0:
             res.append(pluralize(x, "mill", "mills"))
 
-        x = int(random.random()*player.foundries/3)
+        x = random.randint(0, player.foundries//3) # int(random.random()*player.foundries/3)
         if x > 0:
             res.append(pluralize(x, "foundry", "foundries"))
 
         if len(res) > 0:
-            ttyio.echo("Mount Apocolypse has erupted!")
-            ttyio.echo("Lava wipes out %s" % (ttyio.readablelist(res)))
+            ttyio.echo("Mount Apocolypse has erupted!{F6}Lava wipes out %s" % (ttyio.readablelist(res)))
     elif disaster == 6:
         if player.shipyards > 0:
-            x = int(random.random()*player.shipyards/2)
+            x = random.randint(0, player.shipyards//2) # int(random.random()*player.shipyards/2)
             if x > 0:
-                ttyio.echo("TIDAL WAVE!")
-                ttyio.echo()
-                s = pluralize(x, "shipyard", "shipyards")
-                if x == 1:
-                    ttyio.echo("{blue}{reverse}%s{/reverse} is under water!{/blue}" % (s))
-                elif x > 1:
-                    ttyio.echo("{blue}{reverse}%s{/reverse} are under water!{/blue}" % (s))
+                ttyio.echo("TIDAL WAVE!{F6:2}{blue}{reverse}%s under water!" % (pluralize(x, "shipyard is", "shipyards are")))
     ttyio.echo("{/all}")
-
+    return
 
 def weather(opts, player):
     # if you are a KING, you only get average weather
     if player.rank == 2:
-        weathercondition = random.randint(1, 4)
+        weathercondition = bbsengine.diceroll(4) # random.randint(1, 4)
     else:
-        weathercondition = random.randint(1, 6)
+        weathercondition = bbsengine.diceroll(6) # random.randint(1, 6)
 
     ttyio.echo("{cyan}")
     if weathercondition == 1:
@@ -1558,8 +1550,9 @@ def maint(opts, player):
     
 def harvest(opts, player):
     x = int((player.land*player.weathercondition+(random.random()*player.serfs)+player.grain*player.weathercondition)/3)
-    if x > (player.land+player.serfs)*4:
-        x = (player.land+player.serfs)*4
+    x = min(x, player.land+player.serfs*4)
+    #if x > (player.land+player.serfs)*4:
+    #    x = (player.land+player.serfs)*4
     ttyio.echo()
     ttyio.echo("{lightblue}This year's harvest is {reverse}%s{/reverse}{/all}" % (pluralize(x, "bushel", "bushels")))
     ttyio.echo()
@@ -1723,7 +1716,6 @@ def play(opts, player):
     return
 
 def main():
-    
     # parser = OptionParser(usage="usage: %prog [options] projectid")
     parser = argparse.ArgumentParser("empyre")
     
@@ -1733,22 +1725,18 @@ def main():
     # parser.add_option("--debug", default=False, action="store_true", help="run %prog in debug mode")
     parser.add_argument("--debug", action="store_true", dest="debug")
 
-    databaseargs = parser.add_argument_group("database options")
-    databaseargs.add_argument("--databasename", action="store", dest="databasename", default="zoidweb4", help="specify database name")
-    databaseargs.add_argument("--databasehost", action="store", dest="databasehost", default="localhost", help="specify database host")
-    databaseargs.add_argument("--databaseuser", action="store", dest="databaseuser", help="specify database user")
-    databaseargs.add_argument("--databasepassword", action="store", dest="databasepassword", default=None, help="specify database password")
-    databaseargs.add_argument("--databaseport", action="store", dest="databaseport", default=5432, type=int, help="specify database port")
-    
-    # parser.add_option("--databasename", dest="databasename", action="store", default="zoidweb4", help="database name (%default)")
-    # parser.add_option("--databasehost", dest="databasehost", action="store", default="localhost", help="database host (%default)")
-    # parser.add_option("--databaseuser", dest="databaseuser", action="store", default=bbsengine.getcurrentmemberlogin(), help="database user (%default)")
-    # parser.add_option("--databasepassword", dest="databasepassword", action="store", default=None, help="database password")
-    # parser.add_option("--databaseport", dest="databaseport", action="store", default="5432", help="database port")
+    defaults = {"databasename": "zoidweb4", "databasehost":"localhost", "databaseuser": None, "databaseport":5432, "databasepassword":None}
+    bbsengine.buildargdatabasegroup(parser, defaults)
 
-    # (opts, args) = parser.parse_args()
-    opts = parser.parse_args()
-    # ttyio.echo("opts=%r" % (opts), level="debug")
+    # databaseargs = parser.add_argument_group("database options")
+    # databaseargs.add_argument("--databasename", action="store", dest="databasename", default="zoidweb4", help="specify database name")
+    # databaseargs.add_argument("--databasehost", action="store", dest="databasehost", default="localhost", help="specify database host")
+    # databaseargs.add_argument("--databaseuser", action="store", dest="databaseuser", help="specify database user")
+    # databaseargs.add_argument("--databasepassword", action="store", dest="databasepassword", default=None, help="specify database password")
+    # databaseargs.add_argument("--databaseport", action="store", dest="databaseport", default=5432, type=int, help="specify database port")
+
+    args = parser.parse_args()
+    # ttyio.echo("args=%r" % (args), level="debug")
 
     locale.setlocale(locale.LC_ALL, "")
 
