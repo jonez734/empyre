@@ -1557,9 +1557,9 @@ def maint(args, player):
         # ttyio.echo("[P] Play Empire")
         ttyio.echo("{yellow}[R]{gray} Reset Empire")
         ttyio.echo("{yellow}[S]{gray} Scratch News")
-        ttyio.echo("{F6}[Q] Quit{F6}")
+        ttyio.echo("{F6}{yellow}[Q]{gray} Quit{F6}")
 
-        ch = ttyio.inputchar("Maintenance: ", "DXELRSQ", "")
+        ch = ttyio.inputchar("{cyan}Maintenance: {lightgreen}", "DXELRSQ", "")
 
         if ch == "Q":
             ttyio.echo("Quit")
