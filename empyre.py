@@ -57,6 +57,28 @@ def inputplayername(args:object, prompt:str="player name: ", oldvalue:str="", mu
     cur.close()
     return res["id"]
     
+class completeAttributeName(object):
+    def __init__(self, args, attrs):
+        self.dbh = bbsengine.databaseconnect(args)
+        self.matches = []
+        self.debug = args.debug
+        self.attrs = attrs
+
+    @classmethod 
+    def completer(self, text, state):
+        ttyio.echo("completeAttributeName.completer.100: called. self.attrs=%s" % (self.attrs))
+        vocab = []
+        for a in self.attrs:
+            print("foo!")
+            vocab.append(a["name"])
+        ttyio.echo("completeAttributeName.completer.120: vocab=%r" % (vocab))
+        results = [x for x in vocab if x.startswith(text)] + [None]
+        return results[state]
+
+def inputattributename(args:object, prompt:str="attribute name: ", oldvalue:str="", multiple:bool=False, verify=None, **kw):
+    attrs = kw["attrs"] if "attrs" in kw else None
+    print("inputattributename.100: attrs="+str(attrs))
+    return ttyio.inputstring(prompt, oldvalue, opts=args, verify=verify, multiple=multiple, completer=completeAttributeName(args, attrs), returnseq=False, **kw)
 
 # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_tourney.lbl#L2
 def tourney(args, player, otherplayer):
@@ -317,9 +339,15 @@ class Player(object):
         self.memberid = None
         return
  
+    def verifyPlayerAttributeName(args, name):
+        return False
+
     # @since 20200901
     # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_maint.lbl#L22
     def edit(self):
+        attrname = inputattributename(self.args, "attribute: ", multiple=False, noneok=True, attrs=self.attributes)
+        ttyio.echo("attrname=%r" % (attrname), level="debug")
+        return
         for a in self.attributes:
             n = a["name"]
             d = a["default"]
@@ -422,6 +450,7 @@ class Player(object):
         return False
 
     def new(self):
+        ttyio.echo("player.new() called!")
         attributes = {}
         for a in self.attributes:
             name = a["name"]
@@ -1080,7 +1109,7 @@ def combat(args, player):
     otherplayerrank = random.randint(0, min(3, player.rank + 1))
     otherplayer = Player(args, npc=True)
     otherplayer.generate(otherplayerrank)
-    otherplayer.new()
+    # otherplayer.new()
     menu()
 
     done = False
@@ -1520,23 +1549,24 @@ def maint(args, player):
     while not done:
         bbsengine.title("Empire Maintenance", titlecolor="{bggray}{white}", hrcolor="{green}")
         ttyio.echo()
-        ttyio.echo("{purple}Options:{/purple}{white}")
-        ttyio.echo("[D] Auto-Reset & Credit/Money Exchange Rate")
-        ttyio.echo("[E] Edit Player's profile")
-        ttyio.echo("[L] List Players")
+        ttyio.echo("{purple}Options:{/purple}")
+        ttyio.echo("{yellow}[D]{gray} Auto-Reset")
+        ttyio.echo("{yellow}[X]{gray} bbs credit / empyre coin exchange rate")
+        ttyio.echo("{yellow}[E]{gray} Edit Player's profile")
+        ttyio.echo("{yellow}[L]{gray} List Players")
         # ttyio.echo("[P] Play Empire")
-        ttyio.echo("[R] Reset Empire")
-        ttyio.echo("[S] Scratch News")
-        ttyio.echo("{F6}[Q] Quit{F6:2}")
+        ttyio.echo("{yellow}[R]{gray} Reset Empire")
+        ttyio.echo("{yellow}[S]{gray} Scratch News")
+        ttyio.echo("{F6}[Q] Quit{F6}")
 
-        ch = ttyio.inputchar("Maintenance: ", "DELRSQ", "")
+        ch = ttyio.inputchar("Maintenance: ", "DXELRSQ", "")
 
         if ch == "Q":
             ttyio.echo("Quit")
             done = True
             continue
         elif ch == "D":
-            ttyio.echo("Auto-Reset & Credit/Money Exchange Rate")
+            ttyio.echo("Auto-Reset")
             continue
         elif ch == "E":
             ttyio.echo("Edit Player's Profile")
@@ -1554,6 +1584,9 @@ def maint(args, player):
             continue
         elif ch == "S":
             ttyio.echo("Scratch News")
+            continue
+        elif ch == "X":
+            ttyio.echo("bbs credit -> empyre coin exchange rate")
             continue
     ttyio.echo()
     return
