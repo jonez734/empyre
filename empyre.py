@@ -172,7 +172,7 @@ def newsentry(args:object, player:object, message:str, otherplayer:object=None):
 
 def shownews(args:object, player:object):
     dbh = bbsengine.databaseconnect(args)
-    sql = "select * from empire.newsentry where coalesce(dateupdated, datecreated) > %s"
+    sql = "select * from empire.newsentry where (extract(epoch from (coalesce(dateupdated, datecreated)))) > %s"
     dat = (player.datelastplayedepoch,)
     cur = dbh.cursor()
     cur.execute(sql, dat)
@@ -643,11 +643,11 @@ convince him to help you..{F6:2}""")
                 # newsentry()
             continue
 
-        elif bbsengine.diceroll(20) > 5: # random.randint(1, 20) > 5:
+        if bbsengine.diceroll(20) > 5: # random.randint(1, 20) > 5:
             ttyio.echo("You failed to complete the quest.")
             return
 
-        elif ch == "1":
+        if ch == "1":
             ttyio.echo("1 -- Raid the Pirates Camp")
             ttyio.echo("""    
 You have heard that a band of pirates has been raiding the area recently, causing much strife to the poor serfs in your dominion. Thus it is with a stout heart and a sharp sword that you determine to rid your kingdom of these pests once and for all.{F6:2}
@@ -660,7 +660,7 @@ You gain 30,000 coins!{F6:2}
             player.coins += 30000
         elif ch == "2":
             ttyio.echo("""
-With the need for good horses, and also having heard of wild horses, in the mountains, you set out with some of your Nobles to try to find them.{F6:2}
+With the need for good horses, and also having heard of wild horses in the mountains, you set out with some of your Nobles to try to find them.{F6:2}
 Questioning the people you meet you discover that the horses have been seen near a haunted cave.  Not believing in ghosts, you head for the location.{F6:2}
 Finally, you find the cave, seeing one of the horses entering it.  Quietly you and your men approach the cave.  You are within a hundred yards when you hear some spooky sounds coming from it.{F6:2}
 Determined to discover the secret of the sounds, you advance toward the cave.  Upon reaching the cave's entrance, you see daylight quite far back. Boldly entering, you discover a tunnel through a mountain.  The tunnel distorted the sounds you heard, producing the "ghostly" manifestations!{F6:2}
@@ -1033,7 +1033,7 @@ def trading(args, player):
     ttyio.echo()
 
     prompt = "You have {reverse}%s of grain{/reverse} and {reverse}%s{/reverse}" % (pluralize(player.grain, "bushel", "bushels"), pluralize(player.coins, "coin", "coins"))
-    price = price//(int(player.land//875)+1))
+    price = price//(player.land//875)+1
     trade(args, player, "grain", "grain", price, "bushel", "bushels")
     return
 
