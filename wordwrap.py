@@ -9,7 +9,8 @@ import ttyio4 as ttyio
 # >>> os.system("tput setaf 1 ; echo -n 'foo!'; tput sgr0; echo")
 #
 
-buf = """{red}Lorem {reverse}ipsum {blink}dolor{/blink} sit amet,
+buf = """
+{red}Lorem {reverse}ipsum {blink}dolor{/blink} sit amet,
 consectetur {cyan}adipiscing elit,{/reverse} {purple}sed do eiusmod tempor
 incididunt ut labore{green} et dolore {blue}magna aliqua.  {yellow}Ut enim
 ad minim {orange}veniam, quis nostrud exercitation ullamco {brown}laboris
