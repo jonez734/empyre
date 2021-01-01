@@ -1,12 +1,252 @@
-# empyre changes
+commit 293c9e1a7d56780cdd91cd05c32896bf0782c083
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Thu Dec 31 17:15:27 2020 -0500
 
-## 2020-dec-16
-- added generatename() function. ty ryan for the link that generates random
-  character names
-- working on combat()
+    empyre/wordwrap.py: added leading \\n to buf.
 
-## 2020-dec-03 
-- 'datelastplayed' is now populated properly
-- investments() is nearly complete
-- tourney()
-- player attributes can now have a 'singular' and 'plural'
+commit fe5a3f67a0092928fae0bc4e520b4f5672ee6238
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Wed Dec 30 22:53:15 2020 -0500
+
+    empyre/empyre.py: in maint(), changed color of 'Q' option and changed prompt color to cyan.
+
+commit 120a219b1efae1454ecdb8686d6d05e2aab12909
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Wed Dec 30 22:32:41 2020 -0500
+
+    empyre/empyre.py: added completer for player.attributes (does not work); changed colors for maint() menu; split 'Auto-Reset' and 'Credit/Money Exchange Rate' into diff options.
+
+commit 3b839fdff851a2420165381136fbc407b512e0bc
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Wed Dec 30 19:55:46 2020 -0500
+
+    empyre/empyre.py: fixed syntax error in trading() for price; fixed shownews(), which had an sql syntax error regarding comparing dates and epochs; in quests(), slightly reworked if statements which handle failing to win a quest, and processing an individual quest.
+
+commit 27d3408846ccd90f445f8021cb10518648838968
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Wed Dec 30 19:33:19 2020 -0500
+
+    empyre/empyre.py: as part of upgrade to argparse, pass 'args' instead of 'opts'; use // (integer division) in places where int() is being called; in combat(), call otherplayer.new() instead of otherplayer.save().
+
+commit f27aa3103102a6c97e636f747d0b146b784799e2
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Tue Dec 29 21:52:37 2020 -0500
+
+    empyre/empyre.py: use bbsengine.buildargdatabasegroup(); replace many calls to random.random() with bbsengine.diceroll(); in harvest(), use min() instead of an if; use integer division (//) as needed.
+
+commit 159f89793528ebbddbd88055a6161bb73765117e
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Sun Dec 27 21:21:21 2020 -0500
+
+    empyre/.gitignore: added __pycache__/ and build/
+
+commit 5a950d173f12bc6ace47d16dd684e629049df136
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Thu Dec 24 21:14:38 2020 -0500
+
+    empyre/empyre.py: wrapped mainmenu handler in try/except block to trap ^C (intr) and ^D (EOF); fixed issue in player.status() which would show the lastplayedepoch value for every attribute.
+
+commit 510d50c556f948fb74a36c159a8cf54a9116409a
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Tue Dec 22 19:05:31 2020 -0500
+
+    empyre/README.md: added a note about what this code is based upon
+
+commit 5fd04c4578c79005d804e24eecf9d04921eca825
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Mon Dec 21 23:54:28 2020 -0500
+
+    empyre/setup.py: copied socrates/setup.py then customized.
+
+commit 7458d06c962c2d8f183eead807b201af1606e96a
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Sat Dec 19 20:04:31 2020 -0500
+
+    empyre/empyre.py: worked on quests, ported from pinacolada64's repo; added spices, horses, stables, cannons, forts, and dragons; in player.attributes, added comments to document some var refs from 'empire ii'.
+
+commit acb62eb0920feef4ae14d5f2baf586ccc2cce5b4
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Thu Dec 17 19:15:10 2020 -0500
+
+    empyre/empyre.py: in combat(), pick otherplayerrank at random ('random.randint(0, min(3, player.rank + 1))'); added player.generate(), intended to generate NPCs with a given rank and proper stats; tweaked calculate rank to use '>= x' instead of '> x-1'.
+
+commit c4e56f0ac8544895ed39ac197ebf33255a9757ff
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Wed Dec 16 19:42:36 2020 -0500
+
+    empyre/changes.txt: hand-edited terse list of changes with rough dates.
+
+commit f1a854d5b0ddb06b8763cc90a15b004c7e25dbd8
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Wed Dec 16 19:37:36 2020 -0500
+
+    empyre/empyre.py: added 'generatename' (ty ryan); changed calculaterank() so it runs from highest to lowest-- the original way would max out at rank=1.
+
+commit e59f0c2276934193126a5f90f24bfa36ac459ca6
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Tue Dec 15 22:48:25 2020 -0500
+
+    empyre/empyre.py: added senddiplomat() to combat(); started on an NPC system which creates a player with a defined rank.
+
+commit 5cda746fa4acfbb3626217c9f0acf07b8b18b0b7
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Tue Dec 15 21:20:37 2020 -0500
+
+    empyre/empyre.py: in Player, default type is 'int' not 'integer'.
+
+commit c4429f42337265513495a681dd28a6855db31074
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Tue Dec 15 21:01:32 2020 -0500
+
+    empyre/empyre.py: tourney() now accepts 'otherplayer', since combat() either creates it or loads an existing player; changed a few ttyio.echo() (empty) calls to {F6} MCI commands instead-- minor perf boost; added handling of option '6' in combat (tourney()); commented out call to lucifersden(); in combat.menu(), pick an 'otherplayerlevel' for the NPC which equals a randint() between 0 and the currentplayer.rank+1, clamped to 3..; otherplayer.name should be generated (and saved?)
+
+commit 89b869804658a0a49f2d93f008f0890527bdfe63
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Tue Dec 15 19:50:53 2020 -0500
+
+    sql/player.sql: added 'datelastplayedepoch' attribute.
+
+commit ebcce6b04220d8a47bcba73ade98b3d6ffcaab7b
+Merge: 05bc169 f300a51
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Tue Dec 15 19:48:15 2020 -0500
+
+    Merge branch 'master' of github.com:jonez734/empyre
+
+commit 05bc169db97f4a45ce39d60be1050ba8bdb01a40
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Tue Dec 15 19:47:43 2020 -0500
+
+    empyre/empyre.py: started work on combat().. so far only the menu and joust work; fixed bbsengine.inputdate() and handling of player.datelastplayed by changing it to an epoch and calling bbsengine.datestamp() as needed; in tourney(), started work on a list w proper grammar of gains/losses; in combat()'s menu, show the rank and name of the otherplayer; also in tourney(), small patch to use {F6:2} instead of {F6}{F6} for slight perf boost.
+
+commit f300a51649b6d1ca195a22d9bbe891a5c0069668
+Author: jonez734 <jam@zoidtechnologies.com>
+Date:   Mon Dec 7 23:13:01 2020 -0500
+
+    Create README.md
+
+commit 6499b95e64eafbef74ed7dec6df6f9be5cc8319b
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Mon Dec 7 17:18:04 2020 -0500
+
+    empyre/empyre.py: in adjust(), compose a list of any attribute that is < 0.
+
+commit 99db1e2625ac2075ad1db8ef0eb525059423908c
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Sat Dec 5 16:08:46 2020 -0500
+
+    empyre/empyre.py: added a call to tourney() at the top of play(); fixed typo 'National' instead of 'Natural' (ty ryan); in Player() __init__, copy self.attributes to player instance attributes w default values; added inputplayername() (not yet working); worked on tourney(); added completerPlayerName class which is used by inputplayername().
+
+commit dfbf2adc9830c82c43f94380a8e0a3715b2e55b8
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Sat Dec 5 16:04:09 2020 -0500
+
+    empyre/Makefile: added 'push' target to push up to github
+
+commit 9175adc77b049a25e03aea1cc44674adf62c2de2
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Fri Dec 4 12:57:49 2020 -0500
+
+    empyre/empyre.py: added tourney() ported from ryan's empire6; otherrulers() now has a 'player' arg, and has been fixed; added a loop in adjust() that shows a list of the attributes with values below 0 (untested); investments() works properly thanks to buildinvestopts(); in mainmenu(), add an optional callback to the tuple instead of hard-coding menu options; added 'singular' and 'plural' keys to some player attributes for use by tourney().
+
+commit 465907954233cf10031c0782b6fbd99209cc694d
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Thu Dec 3 17:46:14 2020 -0500
+
+    empyre/empyre.py: removed call to investments() in play(), used for debugging; changed echo() call inside loop in shownews().
+
+commit 28c0151954e31c785b6d405aabd33b733cc4d6e7
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Thu Dec 3 17:26:02 2020 -0500
+
+    empyre/sql/: renamed 'empire.sql' to 'empyre.sql'
+
+commit ea8b639b1273d2ed9b9d86a5510eeffe931cdcab
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Thu Dec 3 17:25:15 2020 -0500
+
+    empyre/sql/empire.sql: added include of 'newsentry'
+
+commit 038404a1f2518388a84e06e9188a722ebb9bd456
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Thu Dec 3 17:24:35 2020 -0500
+
+    empyre/empyre: renamed to 'empyre'
+
+commit 4f58b602e70b53ee114444042653d8a4f3ba3d06
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Wed Dec 2 21:54:05 2020 -0500
+
+    empyre/empyre.py: slightly altered call to argparse.ArgumentParser(); fixed investments(); implemented empire news handling (shownews()).
+
+commit 3e7af4fcd1e394b721123a30eb44c8a654686172
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Tue Dec 1 17:55:05 2020 -0500
+
+    empyre/empyre.py: converted from optparse (deprecated) -> argparse; added mainmenu() and play() and refactored code to use them; restored yourstatus() which calls player.status().
+
+commit d49989d4a7d0912054e1dec0acdcb342b0d546be
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Fri Nov 27 19:26:57 2020 -0500
+
+    empyre/empyre.py: moved hr() to bbsengine4
+
+commit effeeed1b9f8899754a766a517390475927ff2d5
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Fri Nov 27 19:14:11 2020 -0500
+
+    empyre/: renamed 'empire' and 'empire.py' to 'empyre'
+
+commit 626ed37e1e26be6873778b6db4f74c192caa30c4
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Fri Nov 27 19:13:35 2020 -0500
+
+    empyre/: renamed 'empire' and 'empire.py' to 'empyre'
+
+commit b09ed9fbb8712a38e1a2337eacc15a78f930760f
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Fri Nov 27 19:11:43 2020 -0500
+
+    empire/: added 'whiteboard' (text) and 'wordwrap.py'
+
+commit 1cc0cef5397a8d6741a0639afc1f99e6eb543761
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Wed Nov 25 19:38:06 2020 -0500
+
+    empire/empire.py: worked on investments() by changing the menu from 0-9 to A-Z; changed buildinvestmentoptions() to use alphabetic options; changed player.acres to player.land; removed all player attributes in favor of letting Player.load() handle it; removed land().
+
+commit dc091768d520a5421df21fa8533916865761e7b7
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Wed Nov 11 21:28:03 2020 -0500
+
+    empire/empire.py: in town(), changed wording in bank when credits > amount; in trade(), default is now 'C' (continue)
+
+commit 6baa693604d82700a36aa4c226e8a7f4a063c4b4
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Sun Nov 8 11:42:11 2020 -0500
+
+    empire/sql/Makefile: added.
+
+commit 3f0e2ed9c7cdfa55adf2aa00f0f90e2ab21179dd
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Sun Nov 8 11:41:11 2020 -0500
+
+    empire/sql/: added empire, newsentry, player, and schema
+
+commit 4642290a9a4267b0afe5e3390661c0355f91578b
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Sat Nov 7 22:21:52 2020 -0500
+
+    empire/.gitignore: initial revision
+
+commit a54fccdb39e7aece90826e7db909cb0ec9181bf9
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Sat Nov 7 22:19:52 2020 -0500
+
+    empire/empire.py: lots of mci command changes, especially w bbsengine.title() which now requires a full mci command (iow, include braces); added verifyNameNotFound; call verifyNameNotFound in player.new() when prompting for a player name; player name defaults to 'name' field in member record; s/eligable/eligible/g; renamed 'handle' attribute to 'name'.
+
+commit 77f3be656e4ea20a60d289a0da4c9d16a5ee676c
+Author: Jeff MacDonald <jam@zoidtechnologies.com>
+Date:   Sat Nov 7 16:35:07 2020 -0500
+
+    empire/: added empire.py, empire, and Makefile
