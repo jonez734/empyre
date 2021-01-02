@@ -3,6 +3,7 @@ import time
 import argparse
 import random
 import locale
+import traceback
 
 import ttyio4 as ttyio
 import bbsengine4 as bbsengine
@@ -57,18 +58,28 @@ def inputplayername(args:object, prompt:str="player name: ", oldvalue:str="", mu
     cur.close()
     return res["id"]
     
+def log_exceptions(fun):
+    def wrapped(*a, **kw):
+        try:
+            return fun(*a, **kw)
+        except Exception:
+            print(traceback.format_exc())
+            raise
+
 class completeAttributeName(object):
     def __init__(self, args, attrs):
         ttyio.echo("completeAttributeName.100: called")
         self.attrs = attrs
 
+    # @log_exceptions
     def completer(self:object, text:str, state:int):
-      vocab = []
-      for c in self.attrs:
-        vocab.append(c["name"])
-      results = [x for x in vocab if x.startswith(text)] + [None]
-      return results[state]
+        vocab = []
+        for a in self.attrs:
+            vocab.append("%s" % (a["name"]))
+        results = [x for x in vocab if x.startswith(text)] + [None]
+        return results[state]
 
+# @see https://stackoverflow.com/questions/15304522/how-can-i-make-my-program-properly-crash-when-using-the-cmd-python-module/15304735
 def inputattributename(args:object, prompt:str="attribute name: ", oldvalue:str="", multiple:bool=False, verify=None, **kw):
   attrs = kw["attrs"] if "attrs" in kw else None
   completer = completeAttributeName(args, attrs)
@@ -76,7 +87,8 @@ def inputattributename(args:object, prompt:str="attribute name: ", oldvalue:str=
 
 # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_tourney.lbl#L2
 def tourney(args, player, otherplayer):
-    # otherplayer = Player(opts)
+    otherplayer = Player(args)
+    otherplayer.generate()
     # otherplayerid = None
     # otherplayerid = inputplayername(opts, "Attack Whom? >> ", multiple=False) # , verify=verifyOpponent)
     if player.playerid == otherplayerid:
@@ -347,10 +359,12 @@ class Player(object):
                 done = True
                 break
 
+            found = False
             for a in self.attributes:
                 n = a["name"]
                 if n != attrname:
                     continue
+
                 t = a["type"] if "type" in a else "int"
                 v = getattr(self, n)
                 if t == "name":
@@ -360,7 +374,10 @@ class Player(object):
                 else:
                     x = ttyio.inputinteger("%s: " % (n), v)
                 setattr(self, n, x)
-
+                found = True
+                break
+            if found is False:
+                ttyio.echo("attribute %r not found." % (attrname))
         self.save()
         return
 
@@ -1082,11 +1099,12 @@ def combat(args, player):
         ttyio.echo("{bggray}{white}[6]{/bgcolor} {green}Joust")
         ttyio.echo("{bggray}{white}[7]{/bgcolor} {green}Donate to {yellow}%s %s{/all}" % (getranktitle(args, otherplayer.rank).title(), otherplayer.name))
         ttyio.echo()
+        ttyio.echo("{bggray}{white}[Q]{/bgcolor} {green}Quit{/all}")
         return
 
     def senddiplomat(args, player, otherplayer):
         if player.diplomats < 1:
-            ttyio.echo("{F6:2}{yellow}You have no diplomats!{F6:2}")
+            ttyio.echo("{F6:2}{yellow}You have no diplomats!{F6:2}{/all}")
             return
         ttyio.echo("{F6}{purple}Your diplomat rides to the enemy camp...")
         if otherplayer.soldiers < player.soldiers*2:
@@ -1109,7 +1127,7 @@ def combat(args, player):
 
     done = False
     while not done:
-        ch = ttyio.inputchar("combat [1-7,?]: ", "1234567Q?")
+        ch = ttyio.inputchar("combat [1-7,?,Q]: ", "1234567Q?")
         if ch == "Q" or ch == "4":
             ttyio.echo("{lightgreen}%s{cyan} -- Cease Fighting" % (ch))
             done = True
@@ -1673,6 +1691,7 @@ def investments(args, player):
     options = ""
     for ch, a in investopts.items():
         options += ch
+    ttyio.echo("{bggray}{white}[Q]{/all}{green} Quit")
     options += "Q?"
 
     displayinvestmentoptions(investopts)
