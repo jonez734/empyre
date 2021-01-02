@@ -59,26 +59,20 @@ def inputplayername(args:object, prompt:str="player name: ", oldvalue:str="", mu
     
 class completeAttributeName(object):
     def __init__(self, args, attrs):
-        self.dbh = bbsengine.databaseconnect(args)
-        self.matches = []
-        self.debug = args.debug
+        ttyio.echo("completeAttributeName.100: called")
         self.attrs = attrs
 
-    @classmethod 
-    def completer(self, text, state):
-        ttyio.echo("completeAttributeName.completer.100: called. self.attrs=%s" % (self.attrs))
-        vocab = []
-        for a in self.attrs:
-            print("foo!")
-            vocab.append(a["name"])
-        ttyio.echo("completeAttributeName.completer.120: vocab=%r" % (vocab))
-        results = [x for x in vocab if x.startswith(text)] + [None]
-        return results[state]
+    def completer(self:object, text:str, state:int):
+      vocab = []
+      for c in self.attrs:
+        vocab.append(c["name"])
+      results = [x for x in vocab if x.startswith(text)] + [None]
+      return results[state]
 
 def inputattributename(args:object, prompt:str="attribute name: ", oldvalue:str="", multiple:bool=False, verify=None, **kw):
-    attrs = kw["attrs"] if "attrs" in kw else None
-    print("inputattributename.100: attrs="+str(attrs))
-    return ttyio.inputstring(prompt, oldvalue, opts=args, verify=verify, multiple=multiple, completer=completeAttributeName(args, attrs), returnseq=False, **kw)
+  attrs = kw["attrs"] if "attrs" in kw else None
+  completer = completeAttributeName(args, attrs)
+  return ttyio.inputstring(prompt, oldvalue, opts=args, verify=verify, multiple=multiple, completer=completer, returnseq=False, **kw)
 
 # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_tourney.lbl#L2
 def tourney(args, player, otherplayer):
