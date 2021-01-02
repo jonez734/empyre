@@ -339,29 +339,30 @@ class Player(object):
     # @since 20200901
     # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_maint.lbl#L22
     def edit(self):
-        attrname = inputattributename(self.args, "attribute: ", multiple=False, noneok=True, attrs=self.attributes)
-        ttyio.echo("attrname=%r" % (attrname), level="debug")
-        return
-        for a in self.attributes:
-            n = a["name"]
-            d = a["default"]
-            v = getattr(self, n)
-            t = a["type"] if "type" in a else "int"
+        done = False
+        while not done:
+            attrname = inputattributename(self.args, "attribute: ", multiple=False, noneok=True, attrs=self.attributes)
+            ttyio.echo("attrname=%r" % (attrname), level="debug")
+            if attrname is None or attrname == "":
+                done = True
+                break
 
-            # ttyio.echo("%s: %s" % (n, v), level="debug")
-
-            #if t != "epoch":
-            #    continue
-
-            if t == "name":
-                x = ttyio.inputstring("%s: " % (n), v)
-            elif t == "epoch":
-                x = bbsengine.inputdate("%s: " % (n), v)
-            else:
-                x = ttyio.inputinteger("%s: " % (n), v)
-            setattr(self, n, x)
+            for a in self.attributes:
+                n = a["name"]
+                if n != attrname:
+                    continue
+                t = a["type"] if "type" in a else "int"
+                v = getattr(self, n)
+                if t == "name":
+                    x = ttyio.inputstring("%s: " % (n), v)
+                elif t == "epoch":
+                    x = bbsengine.inputdate("%s: " % (n), v)
+                else:
+                    x = ttyio.inputinteger("%s: " % (n), v)
+                setattr(self, n, x)
 
         self.save()
+        return
 
     def load(self, playerid):
         if self.args.debug is True:
