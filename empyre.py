@@ -1736,8 +1736,8 @@ def otherrulers(args:object, player=None):
     cur.execute(sql, dat)
     res = cur.fetchall()
     #ttyio.echo("res=%r" % (res), level="debug")
-    ttyio.echo("{green} ####  name %s{/green}" % ("land".rjust(terminalwidth-len("land")-2-8)))
-    ttyio.echo(bbsengine.hr(chars="-=", color="{yellow}"))
+    ttyio.echo("{gray}  #####  name %s{/gray}" % ("land".rjust(terminalwidth-len("land")-2-8-5)))
+    ttyio.echo(bbsengine.hr(chars="-=", color="{green}"))
     player = Player(args)
     sysop = bbsengine.checkflag(args, "ADMIN")
     cycle = 1
@@ -1752,9 +1752,9 @@ def otherrulers(args:object, player=None):
         if sysop is True:
             if player.memberid is None:
                 color = "red"
-        buf = " {reverse}{%s} %s  %s %s{/%s}{/reverse}" % (color, "{:>4n}".format(player.playerid), player.name.ljust(terminalwidth-6-10-1), "{:>6n}".format(player.land), color)
+        buf = "  {reverse}{%s} %s  %s %s{/%s} {/reverse}" % (color, "{:>4n}".format(player.playerid), player.name.ljust(terminalwidth-6-10-1-3-2), "{:>6n}".format(player.land), color)
         ttyio.echo(buf)
-    ttyio.echo(bbsengine.hr(chars="-=", color="yellow"))
+    ttyio.echo(bbsengine.hr(chars="-=", color="{yellow}"))
     return
 
 def play(args, player):
