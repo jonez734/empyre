@@ -30,7 +30,7 @@ setup(
     "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
     "Topic :: Communications :: BBS"
   ],
-  long_description = """socrates -- forum and blog system for bbsengine4.""",
+  long_description = """empyre -- turn-based strategy game built upon bbsengine4""",
   command_options = {
     "build_sphinx": {
       "project": projectname,
