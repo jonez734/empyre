@@ -15,39 +15,24 @@ class completePlayerName(object):
         self.matches = []
         self.debug = args.debug
 
-    def getmatches(self, text):
-        if text == "":
-            sql = "select name from empire.player"
-            dat = ()
-        else:
-            sql = "select name from empire.player where name ~ %s"
-            dat = (text,)
-
+    def completer(self:object, text:str, state:int):
+        vocab = []
+        sql = "select name from empyre.player"
+        dat = ()
         cur = self.dbh.cursor()
         cur.execute(sql, dat)
-        if cur.rowcount == 0:
-            cur.close()
-            return []
-
         res = cur.fetchall()
         cur.close()
-        foo = []
         for rec in res:
-            foo.append(rec["name"])
-        ttyio.echo("completePlayerName.getmatches.100: foo=%r" % (foo), level="debug")
-        return foo
-
-    @classmethod 
-    def completer(self, text, state):
-        if state == 0:
-            self.matches = self.getmatches(text)
-        return self.matches[state]
+            vocab.append(rec["name"])
+        results = [x for x in vocab if x.startswith(text)] + [None]
+        return results[state]
 
 def inputplayername(args:object, prompt:str="player name: ", oldvalue:str="", multiple:bool=False, verify=None, **kw):
     name = ttyio.inputstring(prompt, oldvalue, opts=args, verify=verify, multiple=multiple, completer=completePlayerName(args), returnseq=False, **kw)
 
     dbh = bbsengine.databaseconnect(args)
-    sql = "select id from empire.player where name=%s"
+    sql = "select id from empyre.player where name=%s"
     dat = (name,)
     cur = dbh.cursor()
     cur.execute(sql, dat)
@@ -86,7 +71,7 @@ def inputattributename(args:object, prompt:str="attribute name: ", oldvalue:str=
     return ttyio.inputstring(prompt, oldvalue, opts=args, verify=verify, multiple=multiple, completer=completer, returnseq=False, **kw)
 
 # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_tourney.lbl#L2
-def tourney(args, player, otherplayer):
+def tourney(args, player, otherplayer=None):
     #otherplayer = Player(args)
     #otherplayer.generatenpc()
     # otherplayerid = None
@@ -99,6 +84,7 @@ def tourney(args, player, otherplayer):
     if otherplayerid is None:
         ttyio.echo("No Opponent Selected")
         return
+    otherplayer = Player(args, otherplayerid)
 
     ttyio.echo("tourney.100: otherplayer=%r" % (otherplayer), level="debug")
 
@@ -213,7 +199,7 @@ def newsentry(args:object, player:object, message:str, otherplayer:object=None):
 
 def shownews(args:object, player:object):
     dbh = bbsengine.databaseconnect(args)
-    sql = "select * from empire.newsentry where (extract(epoch from (coalesce(dateupdated, datecreated)))) > %s"
+    sql = "select * from empyre.newsentry where (extract(epoch from (coalesce(dateupdated, datecreated)))) > %s"
     dat = (player.datelastplayedepoch,)
     cur = dbh.cursor()
     cur.execute(sql, dat)
@@ -280,6 +266,16 @@ def generatename(args):
     namelist = ("Richye", "Gerey", "Andrew", "Ryany", "Mathye Burne", "Enryn", "Andes", "Piersym Jordye", "Vyncis", "Gery Aryn", "Hone Sharcey", "Kater", "Erix", "Abell", "Wene Noke", "Jane Folcey", "Abel", "Bilia", "Cilia", "Joycie")
     return namelist[random.randint(0, len(namelist)-1)]
 
+def verifyPlayerNameNotFound(args, name):
+    dbh = bbsengine.databaseconnect(args)
+    cur = dbh.cursor()
+    sql = "select 1 from empyre.player where name=%s"
+    dat = (name,)
+    cur.execute(sql, dat)
+    if cur.rowcount == 0:
+        return True
+    return False
+
 class Player(object):
     def __init__(self, args, playerid:int=None, rank=0, npc=False):
         self.playerid = playerid
@@ -291,6 +287,7 @@ class Player(object):
         self.turncount = 0
         self.soldierpromotioncount = 0
         self.weatherconditions = 0
+        self.npc = npc
 
         self.dbh = bbsengine.databaseconnect(self.args)
 
@@ -319,7 +316,7 @@ class Player(object):
             {"name": "turncount", "default":0},
             {"name": "rank", "default":rank},
             {"name": "previousrank", "default":0},
-            {"name": "memberid", "default":None},
+            {"name": "memberid", "default": bbsengine.getcurrentmemberid()},
             {"name": "weatherconditions", "default":0},
             {"name": "land", "default":5000, "singular":"acre", "plural":"acres"}, # la x(2)
             {"name": "coins", "default":1000, "singular":"coin", "plural":"coins"}, # pn x(3)
@@ -427,7 +424,7 @@ class Player(object):
         if self.args.debug is True:
             ttyio.echo("player.load.100: playerid=%r" % (playerid), level="debug")
         # dbh = bbsengine.databaseconnect(self.args)
-        sql = "select * from empire.player where id=%s"
+        sql = "select * from empyre.player where id=%s"
         dat = (playerid,)
         cur = self.dbh.cursor()
         cur.execute(sql, dat)
@@ -531,15 +528,6 @@ class Player(object):
         ttyio.echo("player record saved", level="success")
         return None
 
-    def verifyPlayerNameNotFound(self, args, name):
-        dbh = bbsengine.databaseconnect(args)
-        cur = dbh.cursor()
-        sql = "select 1 from empire.player where attributes->>'name'=%s"
-        dat = (name,)
-        cur.execute(sql, dat)
-        if cur.rowcount == 0:
-            return True
-        return False
 
     def insert(self):
         attributes = {}
@@ -565,13 +553,13 @@ class Player(object):
             setattr(self, name, default)
 
         currentmemberid = bbsengine.getcurrentmemberid()
-        if self.args.debug is True:
-            ttyio.echo("new.100: currentmemberid=%r" % (currentmemberid), level="debug")
-        attributes["memberid"] = currentmemberid
-        self.memberid = currentmemberid
+        # if self.args.debug is True:
+        #     ttyio.echo("new.100: currentmemberid=%r" % (currentmemberid), level="debug")
+        # attributes["memberid"] = currentmemberid
+        # self.memberid = currentmemberid
 
         currentmembername = bbsengine.getcurrentmembername(self.args, currentmemberid)
-        self.name = ttyio.inputstring("player name: ", currentmembername, verify=self.verifyNameNotFound, multiple=False, args=self.args, returnseq=False)
+        self.name = ttyio.inputstring("player name: ", currentmembername, verify=verifyPlayerNameNotFound, multiple=False, opts=self.args, returnseq=False)
 
         self.insert()
         if self.playerid is None:
@@ -1188,20 +1176,20 @@ def combat(args, player):
         ttyio.echo("{bggray}{white}[4]{/bgcolor} {green}Cease Fighting")
         ttyio.echo("{bggray}{white}[5]{/bgcolor} {green}Send Diplomat")
         ttyio.echo("{bggray}{white}[6]{/bgcolor} {green}Joust")
-        ttyio.echo("{bggray}{white}[7]{/bgcolor} {green}Donate to {yellow}%s %s{/all}" % (getranktitle(args, otherplayer.rank).title(), otherplayer.name))
+        # ttyio.echo("{bggray}{white}[7]{/bgcolor} {green}Donate to {yellow}%s %s{/all}" % (getranktitle(args, otherplayer.rank).title(), otherplayer.name))
         ttyio.echo()
         ttyio.echo("{bggray}{white}[Q]{/bgcolor} {green}Quit{/all}")
         return
 
-    def senddiplomat(args, player, otherplayer):
+    def senddiplomat(args, player, otherplayer=None):
         if player.diplomats < 1:
             ttyio.echo("{F6:2}{yellow}You have no diplomats!{F6:2}{/all}")
             return
         ttyio.echo("{F6}{purple}Your diplomat rides to the enemy camp...")
         if otherplayer.soldiers < player.soldiers*2:
             land = otherplayer.land // 15
-            otherplayer -= land
-            player += land
+            otherplayer.land -= land
+            player.land += land
             ttyio.echo("{F6}{green}Your noble returns with good news! To avoid attack, you have been given %s of land!" % (pluralize(land, "acre", "acres")))
         else:
             player.nobles -= 1
@@ -1210,12 +1198,12 @@ def combat(args, player):
         otherplayer.save()
     
     # @todo: len(otherplayers) > 0: roll 1d<len+1>; generate NPC if x = len+1
-    otherplayerrank = random.randint(0, min(3, player.rank + 1))
-    otherplayer = Player(args, npc=True)
-    otherplayer.generate(otherplayerrank)
-    otherplayer.playerid = otherplayer.insert()
-    otherplayer.status()
-    otherplayer.dbh.commit()
+    #otherplayerrank = random.randint(0, min(3, player.rank + 1))
+    #otherplayer = Player(args, npc=True)
+    #otherplayer.generate(otherplayerrank)
+    #otherplayer.playerid = otherplayer.insert()
+    #otherplayer.status()
+    #otherplayer.dbh.commit()
 
     menu()
 
@@ -1227,9 +1215,9 @@ def combat(args, player):
             done = True
             continue
         elif ch == "5":
-            senddiplomat(args, player, otherplayer)
+            senddiplomat(args, player)
         elif ch == "6":
-            tourney(args, player, otherplayer)
+            tourney(args, player)
             continue
         elif ch == "?":
             menu()
@@ -1245,7 +1233,7 @@ def newplayer(args):
     return player
     
 def getplayer(args, memberid):
-    sql = "select id from empire.player where memberid=%s"
+    sql = "select id from empyre.player where memberid=%s"
     dat = (memberid,)
     dbh = bbsengine.databaseconnect(args)
     cur = dbh.cursor()
@@ -1290,7 +1278,6 @@ def mainmenu(args, player):
         ("T", "Town Activities", town),
         ("Y", "Your Stats", yourstatus),
         ("G", "Generate NPC", generatenpc),
-        ("Q", "Quit Game", None)
     )
     done = False
     while not done:
@@ -1655,11 +1642,19 @@ def otherplayers(args, player):
 def resetempire(args, player):
     if ttyio.inputchar("reset empire? ", "YN", "N") == "Y":
         ttyio.echo("Yes")
-        sql = "delete from empire.player"
+        sql = "select id from empyre.player"
         dat = ()
         dbh = bbsengine.databaseconnect(args)
         cur = dbh.cursor()
-        cur.execute(sql, dat)
+        cur.execute(sql)
+        res = cur.fetchall()
+        playerids = []
+        for rec in res:
+            playerids.append(str(rec["id"]))
+        ttyio.echo("playerids=%r" % (playerids))
+        sql = "delete from engine.__node where id in (%s)" % (", ".join(playerids))
+        # ttyio.echo(sql)
+        cur.execute(sql)
         dbh.commit()
     else:
         ttyio.echo("No")
@@ -1780,8 +1775,6 @@ def displayinvestmentoptions(investopts): # opts, player):
         name = a["name"] if "name" in a else ""
         if len(name) > maxlen:
             maxlen = len(name)
-
-    ttyio.echo("{/all}")
     
     # investopts = buildinvestopts(opts, player)
     for ch, a in investopts.items():
@@ -1789,6 +1782,9 @@ def displayinvestmentoptions(investopts): # opts, player):
         price = a["price"]
         buf = "{bggray}{white}[%s]{/all}{green} %s: %s " % (ch, name.ljust(maxlen+2, "-"), " {:>6n}".format(price)) # int(terminalwidth/4)-2)
         ttyio.echo(buf)
+
+    ttyio.echo("{F6}{bggray}{white}[Q]{/all}{green} Quit{F6}{/all}")
+
     return
 
 def investments(args, player):
@@ -1801,7 +1797,6 @@ def investments(args, player):
     options = ""
     for ch, a in investopts.items():
         options += ch
-    ttyio.echo("{bggray}{white}[Q]{/all}{green} Quit")
     options += "Q?"
 
     displayinvestmentoptions(investopts)
@@ -1853,13 +1848,13 @@ def generatenpc(args:object, player=None, rank=0):
 def otherrulers(args:object, player=None):
     terminalwidth = ttyio.getterminalwidth()
     dbh = bbsengine.databaseconnect(args)
-    sql = "select id from empire.player order by name limit 25" # where memberid > 0 limit 25"
+    sql = "select id from empyre.player order by name limit 25" # where memberid > 0 limit 25"
     dat = ()
     cur = dbh.cursor()
     cur.execute(sql, dat)
     res = cur.fetchall()
     #ttyio.echo("res=%r" % (res), level="debug")
-    ttyio.echo("{gray}  #####  name %s{/gray}" % ("land".rjust(terminalwidth-len("land")-2-8-5)))
+    ttyio.echo("{gray}  ######  name %s{/gray}" % ("land".rjust(terminalwidth-len("land")-16)))
     ttyio.echo(bbsengine.hr(chars="-=", color="{yellow}"))
     player = Player(args)
     sysop = bbsengine.checkmemberflag(args, "ADMIN")
@@ -1875,7 +1870,11 @@ def otherrulers(args:object, player=None):
         # if sysop is True:
             # if player.memberid is None:
             #    color = "{gray}"
-        buf = "  {reverse}%s  %s  %s %s {/fgcolor}{/reverse} " % (color, "{:>4n}".format(player.playerid), player.name.ljust(terminalwidth-6-10-1-3-2), "{:>6n}".format(player.land))
+        membername = bbsengine.getmembername(args, player.memberid)
+        leftbuf  = "%s %s (%s)" % (player.playerid, player.name, membername) # "({:>4n}".format(player.memberid))
+        rightbuf = "%s" % ("{:>6n}".format(player.land))
+        buf = "  {reverse}%s  %s%s{/fgcolor}{/reverse} " % (color, leftbuf.ljust(terminalwidth-9-len(rightbuf)), rightbuf)
+        # "{:>4n}".format(player.playerid), player.name.ljust(terminalwidth-6-10-1-3-2), "{:>6n}".format(player.land))
         ttyio.echo(buf)
     ttyio.echo(bbsengine.hr(chars="-=", color="{yellow}"))
     return
