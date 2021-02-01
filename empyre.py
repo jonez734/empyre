@@ -6,7 +6,7 @@ import locale
 import traceback
 
 import ttyio4 as ttyio
-import bbsengine4 as bbsengine
+import bbsengine5 as bbsengine
 from bbsengine4 import pluralize
 
 class completePlayerName(object):
@@ -38,20 +38,20 @@ def verifyPlayerNameFound(args, name):
         return False
     return True
 
-def inputplayername(args:object, prompt:str="player name: ", oldvalue:str="", multiple:bool=False, verify=verifyPlayerNameFound, **kw):
-    name = ttyio.inputstring(prompt, oldvalue, opts=args, verify=verify, multiple=multiple, completer=completePlayerName(args), returnseq=False, **kw)
-
+def verifyPlayerNameNotFound(args, name):
     dbh = bbsengine.databaseconnect(args)
-    sql = "select id from empyre.player where name=%s"
-    dat = (name,)
     cur = dbh.cursor()
+    sql = "select 1 from empyre.player where name=%s"
+    dat = (name,)
     cur.execute(sql, dat)
     if cur.rowcount == 0:
-        return None
+        return True
+    return False
 
-    res = cur.fetchone()
-    cur.close()
-    return res["id"]
+def inputplayername(prompt:str="player name: ", oldvalue:str="", multiple:bool=False, verify=verifyPlayerNameFound, args={}, **kw):
+    name = ttyio.inputstring(prompt, oldvalue, opts=args, verify=verify, multiple=multiple, completer=completePlayerName(args), **kw)
+    ttyio.echo("inputplayername.140: name=%r" % (name))
+    return name
     
 def log_exceptions(fun):
     def wrapped(*a, **kw):
@@ -268,8 +268,7 @@ def getranktitle(args, rank):
         return "king"
     elif rank == 3:
         return "emperor"
-    else:
-        return "rank-error"
+    return "rank-error"
 
 def generatename(args):
     # http://donjon.bin.sh/fantasy/name/#type=me;me=english_male ty ryan
@@ -289,8 +288,8 @@ def verifyPlayerNameNotFound(args, name):
 class Player(object):
     def __init__(self, args, playerid:int=None, rank=0, npc=False):
         self.playerid = playerid
-        self.name = None # na$
-        self.memberid = bbsengine.getcurrentmemberid()
+        # self.name = None # na$
+        self.memberid = bbsengine.getcurrentmemberid(args)
         self.args = args
         self.rank = rank
         self.previousrank = 0
@@ -327,7 +326,7 @@ class Player(object):
             {"name": "turncount", "default":0},
             {"name": "rank", "default":rank},
             {"name": "previousrank", "default":0},
-            {"name": "memberid", "default": bbsengine.getcurrentmemberid()},
+            {"name": "memberid", "default": bbsengine.getcurrentmemberid(self.args)},
             {"name": "weatherconditions", "default":0},
             {"name": "land", "default":5000, "singular":"acre", "plural":"acres"}, # la x(2)
             {"name": "coins", "default":1000, "singular":"coin", "plural":"coins"}, # pn x(3)
@@ -405,7 +404,7 @@ class Player(object):
             t = a["type"] if "type" in a else "int"
             v = a["value"] if "value" in a else None
             if t == "name":
-                x = inputplayername("%s (name): " % (n), v)
+                x = inputplayername("%s (name): " % (n), v, args=self.args)
             elif t == "epoch":
                 x = bbsengine.inputdate("%s (date): " % (n), v)
             elif t == "int":
@@ -535,7 +534,11 @@ class Player(object):
         attributes = {}
         for a in self.attributes:
             name = a["name"]
-            attributes[name] = getattr(self, name)
+            value = getattr(self, name)
+            ttyio.echo("player.insert.100: %r=%r" % (name, value))
+            attributes[name] = value
+
+        ttyio.echo("attributes.name=%r" % (attributes["name"]))
 
         node = {}
         node["attributes"] = attributes
@@ -554,16 +557,21 @@ class Player(object):
             attributes[name] = default
             setattr(self, name, default)
 
-        currentmemberid = bbsengine.getcurrentmemberid()
+        currentmemberid = bbsengine.getcurrentmemberid(self.args)
+        ttyio.echo("player.new.100: currentmemberid=%r" % (currentmemberid))
         # if self.args.debug is True:
         #     ttyio.echo("new.100: currentmemberid=%r" % (currentmemberid), level="debug")
         # attributes["memberid"] = currentmemberid
         # self.memberid = currentmemberid
 
-        currentmembername = bbsengine.getcurrentmembername(self.args, currentmemberid)
-        self.name = inputplayername("player name: ", currentmembername, verify=verifyPlayerNameNotFound, multiple=False, args=self.args, returnseq=False)
+        currentmembername = bbsengine.getcurrentmembername(self.args)
+        playername = inputplayername("new player name: ", currentmembername, verify=verifyPlayerNameNotFound, multiple=False, args=self.args, returnseq=False)
+        ttyio.echo("player.new.120: playername=%r" % (playername))
+        self.name = playername
+        # self.attributes["name"] = playername
 
         self.insert()
+
         if self.playerid is None:
             ttyio.echo("unable to insert player record.", level="error")
             self.dbh.rollback()
@@ -578,7 +586,7 @@ class Player(object):
 
     def status(self):
         if self.args.debug is True:
-            ttyio.echo("bbsengine.getcurrentmemberid()=%r" % (bbsengine.getcurrentmemberid()), level="debug")
+            ttyio.echo("bbsengine.getcurrentmemberid()=%r" % (bbsengine.getcurrentmemberid(self.args)), level="debug")
             ttyio.echo("player.playerid=%r, player.memberid=%r, player.name=%r" % (self.playerid, self.memberid, self.name), level="debug")
 
         bbsengine.title("player status for %s (#%d)" % (self.name, self.playerid), titlecolor="{bggray}{white}", hrcolor="{green}")
@@ -1418,7 +1426,7 @@ def getplayer(args, memberid):
     return player
 
 def startup(args):
-    currentmemberid = bbsengine.getcurrentmemberid()
+    currentmemberid = bbsengine.getcurrentmemberid(args)
     if args.debug is True:
         ttyio.echo("startup.300: currentmemberid=%r" % (currentmemberid), level="debug")
     player = getplayer(args, currentmemberid)
@@ -1446,8 +1454,14 @@ def mainmenu(args, player):
         ("Y", "Your Stats", yourstatus),
         ("G", "Generate NPC", generatenpc),
     )
+
+#    bbsengine.inittopbar()
+    
     done = False
     while not done:
+        terminalwidth = bbsengine.getterminalwidth()
+        ttyio.echo("terminalwith=%r" % (terminalwidth))
+        bbsengine.updatetopbar("{bggray}{white}%s{/bgcolor}" % ("area: main menu".ljust(terminalwidth)))
         bbsengine.title("empyre main menu", hrcolor="{green}", titlecolor="{bggray}{white}")
         ttyio.echo()
         choices = "Q"
@@ -2004,7 +2018,7 @@ def generatenpc(args:object, player=None, rank=0):
     otherplayerrank = random.randint(0, min(3, player.rank + 1))
     otherplayer.generate(otherplayerrank)
     otherplayer.npc = True
-    otherplayer.memberid = bbsengine.getcurrentmemberid()
+    otherplayer.memberid = bbsengine.getcurrentmemberid(args)
     res = otherplayer.insert()
     otherplayer.status()
     ttyio.echo("generatenpc.100: otherplayer.insert=%r" % (res))
@@ -2072,7 +2086,7 @@ def main():
     # parser.add_option("--debug", default=False, action="store_true", help="run %prog in debug mode")
     parser.add_argument("--debug", action="store_true", dest="debug")
 
-    defaults = {"databasename": "zoidweb4", "databasehost":"localhost", "databaseuser": None, "databaseport":5432, "databasepassword":None}
+    defaults = {"databasename": "zoidweb5", "databasehost":"localhost", "databaseuser": None, "databaseport":5432, "databasepassword":None}
     bbsengine.buildargdatabasegroup(parser, defaults)
 
     # databaseargs = parser.add_argument_group("database options")
@@ -2087,6 +2101,12 @@ def main():
 
     locale.setlocale(locale.LC_ALL, "")
 
+    terminalwidth = ttyio.getterminalwidth()
+#    bbsengine.inittopbar()
+#    bbsengine.updatetopbar("{bggray}{white}%s{/all}" % ("area: startup".ljust(terminalwidth)))
+#    res = inputplayername("prompt here: ", verify=None, args=args)
+#    ttyio.echo("main.100: res=%r" % (res))
+#    return
     currentplayer = startup(args)
     mainmenu(args, currentplayer)
     return    
