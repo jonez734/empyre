@@ -7,7 +7,20 @@ import traceback
 
 import ttyio4 as ttyio
 import bbsengine5 as bbsengine
-from bbsengine4 import pluralize
+from bbsengine5 import pluralize
+
+def updatetopbar(player, area):
+    terminalwidth = bbsengine.getterminalwidth()
+    leftbuf = area
+    rightbuf = ""
+    if player is not None:
+        rightbuf += "| %s | %s" % (player.name, pluralize(player.coins, "coin", "coins"))
+    # ttyio.echo("updatetopbar.100: rightbuf=%r (len=%s) leftbuf=%r (len=%s)" % (rightbuf, len(rightbuf), leftbuf, len(leftbuf)))
+    buf = "{bggray}{white} %s%s " % (leftbuf.ljust(terminalwidth-len(rightbuf)-2, "-"), rightbuf) # +leftbuf.ljust(terminalwidth-len(rightbuf))+rightbuf+" {/all}"
+    # ttyio.echo("updatetopbar.140: terminalwidth=%d" % (terminalwidth))
+    bbsengine.updatetopbar(buf)
+    # ttyio.echo("updatetopbar.120: buf=%r (len=%s)" % (buf, len(buf)))
+    return
 
 class completePlayerName(object):
     def __init__(self, args):
@@ -48,22 +61,27 @@ def verifyPlayerNameNotFound(args, name):
         return True
     return False
 
+def getplayerid(args, name):
+    dbh = bbsengine.databaseconnect(args)
+    cur = dbh.cursor()
+    sql = "select id from empyre.player where name=%s"
+    dat = (name,)
+    cur.execute(sql, dat)
+    res = cur.fetchone()
+    if cur.rowcount == 0:
+        return None
+    return res["id"]
+
 def inputplayername(prompt:str="player name: ", oldvalue:str="", multiple:bool=False, verify=verifyPlayerNameFound, args={}, **kw):
     name = ttyio.inputstring(prompt, oldvalue, opts=args, verify=verify, multiple=multiple, completer=completePlayerName(args), **kw)
     ttyio.echo("inputplayername.140: name=%r" % (name))
-    return name
+    playerid = getplayerid(args, name)
+    ttyio.echo("inputplayername.160: playerid=%r" % (playerid))
+    return playerid
     
-def log_exceptions(fun):
-    def wrapped(*a, **kw):
-        try:
-            return fun(*a, **kw)
-        except Exception:
-            print(traceback.format_exc())
-            raise
-
 class completeAttributeName(object):
     def __init__(self, args, attrs):
-        ttyio.echo("completeAttributeName.100: called")
+        # ttyio.echo("completeAttributeName.100: called")
         self.attrs = attrs
 
     # @log_exceptions
@@ -95,6 +113,7 @@ def tourney(args, player, otherplayer=None):
     #    ttyio.echo("No Opponent Selected")
     #    return
     #otherplayer = Player(args, otherplayerid)
+    updatetopbar(player, "joust")
 
     ttyio.echo("tourney.100: otherplayer=%r" % (otherplayer), level="debug")
 
@@ -201,7 +220,7 @@ def newsentry(args:object, player:object, message:str, otherplayer:object=None):
     node["attributes"] = attributes
 
     dbh = bbsengine.databaseconnect(args)
-    nodeid = bbsengine.insertnode(dbh, args, node, mogrify=True)
+    nodeid = bbsengine.insertnode(dbh, args, node, mogrify=False)
     if args.debug is True:
         ttyio.echo("added newsentry for player %r with message %r" % (player.name, message), level="debug")
     dbh.commit()
@@ -390,6 +409,7 @@ class Player(object):
     def edit(self):
         done = False
         while not done:
+            updatetopbar(self, "edit player attributes")
             attrname = inputattributename(self.args, "attribute: ", multiple=False, noneok=True, attrs=self.attributes, verify=self.verifyPlayerAttributeName)
             ttyio.echo("attrname=%r" % (attrname), level="debug")
             if attrname is None or attrname == "":
@@ -468,6 +488,8 @@ class Player(object):
             setattr(self, name, value)
 
         self.playerid = playerid
+        
+        newsentry(self.args, self, "player %r loaded." % (self.name))
 
         return
 
@@ -543,13 +565,14 @@ class Player(object):
         node = {}
         node["attributes"] = attributes
         # self.dbh = bbsengine.databaseconnect(self.args)
-        nodeid = bbsengine.insertnode(self.dbh, self.args, node, mogrify=True)
+        nodeid = bbsengine.insertnode(self.dbh, self.args, node, mogrify=False)
         self.playerid = nodeid
         ttyio.echo("player.insert.100: playerid=%r" % (self.playerid), level="debug")
         return nodeid
 
     def new(self):
-        ttyio.echo("player.new() called!")
+        updatetopbar(self, "new player!")
+        # ttyio.echo("player.new() called!")
         attributes = {}
         for a in self.attributes:
             name = a["name"]
@@ -857,6 +880,8 @@ that you can convince him to help you..{F6:2}""", "callback": zircon}
         ttyio.echo("{bggray}{white}[9]{/bgcolor} {green}Seek Arch-Mage Zircon's Help {yellow}Warning: Zircon's Help is a {blink}GAMBLE{/blink}")
         ttyio.echo("{/all}")
 
+    updatetopbar(player, "quests")
+
     menu()
 
     runnablequests = []
@@ -949,12 +974,17 @@ Your seasoned troops make quick work of the task.  But you have found something 
 def town(args, player):
     # @since 20200816
     # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_town.lbl#L293
-    def bank(args, player):
+    def naturaldisasterbank(args, player):
         bbsengine.title("bank", titlecolor="{bggray}{white}", hrcolor="{green}")
+        updatetopbar(player, "natural disaster bank") # "{bggray}{white}%s{/all}" % ("bank".ljust(terminalwidth)))
         ttyio.echo()
         exchangerate = 3 #:1 -- 3 coins per credit
         credits = bbsengine.getmembercredits(args)
-        ttyio.echo("You have {reverse}%s{/reverse} and {reverse}%s{/reverse}" % (pluralize(player.coins, "coin", "coins"), pluralize(credits, "credit", "credits")))
+        buf = "You have "
+        buf += "{reverse}%s{/reverse}" % (pluralize(player.coins, "coin", "coins"))
+        buf += " and {reverse}%s{/reverse}" % (pluralize(credits, "credit", "credits"))
+        # ttyio.echo("You have {reverse}%s{/reverse} and {reverse}%s{/reverse}" % (pluralize(player.coins, "coin", "coins"), pluralize(credits, "credit", "credits")))
+        ttyio.echo(buf)
         ttyio.echo("The exchange rate is {reverse}%s per credit{/reverse}.{F6}"  % (pluralize(exchangerate, "coin", "coins")))
         amount = ttyio.inputinteger("{cyan}Exchange how many credits?: {lightgreen}")
         ttyio.echo("{/all}")
@@ -1084,14 +1114,9 @@ def town(args, player):
         bbsengine.title(": Soldier Promotions :", titlecolor="{bggray}{white}", hrcolor="{green}")
 #        ttyio.echo("{autogreen}{reverse}%s{/reverse}{/green}" % (": Soldier Promotions :".center(terminalwidth-2)))
         ttyio.echo("{F6}{yellow}Good day, I take it that you are here to see if any of your soldiers are eligible for promotion to the status of noble.{F6}")
-        ttyio.echo("Well, after checking all of them, I have found that ", end="")
-        if promotable == 1:
-            ttyio.echo("{reverse}1 soldier{/reverse} is eligible.{/yellow}")
-        elif promotable == 0:
-            ttyio.echo("{reverse}no soldiers{/reverse} are eligible.")
+        ttyio.echo("Well, after checking all of them, I have found that %s eligible." % (pluralize(promotable, "soldier is", "soldiers are", end="")))
+        if promotable == 0:
             return
-        else:
-            ttyio.echo("{reverse}%s soldiers{/reverse} are eligible." % (promotable))
 
         ch = ttyio.inputboolean("{green}Do you wish them promoted? ")
         ttyio.echo("{/all}")
@@ -1116,6 +1141,7 @@ def town(args, player):
         terminalwidth = ttyio.getterminalwidth()-2
         buf = " : Hood's Real Deals! : "
         bbsengine.title(buf, titlecolor="{bggray}{white}", hrcolor="{green}")
+        updatetopbar(player, buf)
         
         # you have 10 shipyards, BSC
         # you have 10 acres of land
@@ -1140,7 +1166,7 @@ def town(args, player):
             return
 
     options = (
-        ("C", "Cyclone's Natural Disaster Bank", bank),
+        ("C", "Cyclone's Natural Disaster Bank", naturaldisasterbank),
         ("L", "Lucifer's Den", None), # lucifersden),
         ("P", "Soldier Promotion", soldierpromotion),
         ("R", "Realtor's Advice", realtorsadvice),
@@ -1162,8 +1188,10 @@ def town(args, player):
             if callable(func):
                 ttyio.echo("{bggray}{white}[%s]{/bgcolor} {green}%s" % (hotkey, description))
         ttyio.echo("{/all}")
-        ttyio.echo("{cyan}[Q]{/cyan} {lightblue}Return to the Empire{/lightblue}{/all}")
+        ttyio.echo("{cyan}[Q]{/cyan} {lightblue}Return to the Empyre{/lightblue}{/all}")
     
+    terminalwidth = bbsengine.getterminalwidth()
+
     hotkeys = "Q"
     for hotkey, desc, func in options:
         if callable(func):
@@ -1171,11 +1199,12 @@ def town(args, player):
 
     done = False
     while not done:
+        updatetopbar(player, "town menu")
         player.save()
         menu()
         ch = ttyio.inputchar("Town: ", hotkeys, "")
         if ch == "Q":
-            ttyio.echo("Return to the Empire")
+            ttyio.echo("Return to the Empyre")
             done = True
             continue
         else:
@@ -1190,6 +1219,7 @@ def town(args, player):
 
 # barbarians are buying
 def trade(args, player:object, attr:str, name:str, price:int, singular:str="singular", plural:str="plural", determiner:str="a"):
+    updatetopbar(player, "trade")
     if price > player.coins:
         ttyio.echo("You need {reverse}%s{/reverse} to purchase {reverse}%s %s{/reverse}" % (pluralize(price - player.coins, "more coin", "more coins"), determiner, singular))
 
@@ -1208,7 +1238,7 @@ def trade(args, player:object, attr:str, name:str, price:int, singular:str="sing
         currentvalue = attribute["value"] if "value" in attribute else None
         prompt =  "You have {reverse}%s{/reverse} and {reverse}%s{/reverse}{F6}%s: {reverse}[B]{/reverse}uy {reverse}[S]{/reverse}ell {reverse}[C]{/reverse}ontinue" % (pluralize(currentvalue, singular, plural), pluralize(player.coins, "coin", "coins"), name)
         choices = "BSC"
-        if bbsengine.checkmemberflag(args, "ADMIN") is True:
+        if bbsengine.checkflag(args, "SYSOP") is True:
             prompt += " {reverse}[E]{/reverse}dit"
             choices += "E"
         prompt += ": "
@@ -1361,7 +1391,7 @@ def combat(args, player):
     #otherplayer.status()
     #otherplayer.dbh.commit()
 
-    otherplayerid = inputplayername(args, "Attack Whom? >> ", multiple=False, noneok=True) # , verify=verifyOpponent)
+    otherplayerid = inputplayername("Attack Whom? >> ", multiple=False, noneok=True, args=args) # , verify=verifyOpponent)
     if otherplayerid is None:
         ttyio.echo("no attack. aborted.", level="error")
         return
@@ -1375,16 +1405,18 @@ def combat(args, player):
 
     done = False
     while not done:
+        updatetopbar(player, "combat")
+
         # @see https://github.com/Pinacolada64/ImageBBS/blob/e9f033af1f0b341d0d435ee23def7120821c3960/v1.2/games/empire6/mdl.emp.delx3.txt#L91
         ch = ttyio.inputchar("Battle Command [1-7,?,Q]: ", "1234567Q?")
         if ch == "1":
-            ttyio.echo("{lightgreen}Attack Army" % (ch))
+            ttyio.echo("{lightgreen}Attack Army")
             attackarmy(args, player, otherplayer)
         elif ch == "2":
             ttyio.echo("{lightgreen}Attack Palace")
             attackpalace(args, player, otherplayer)
         elif ch == "Q" or ch == "4":
-            ttyio.echo("{lightgreen}Cease Fighting" % (ch))
+            ttyio.echo("{lightgreen}Cease Fighting")
             done = True
         elif ch == "5":
             ttyio.echo("{lightgreen}Send Diplomat")
@@ -1408,11 +1440,28 @@ def newplayer(args):
     return player
     
 def getplayer(args, memberid):
-    sql = "select id from empyre.player where memberid=%s"
+    sql = "select * from empyre.player where memberid=%s"
     dat = (memberid,)
     dbh = bbsengine.databaseconnect(args)
     cur = dbh.cursor()
     cur.execute(sql, dat)
+    if cur.rowcount == 0:
+        ttyio.echo("no player record.")
+        return None
+    
+    res = cur.fetchall()
+    default = ""
+    if cur.rowcount === 1:
+        rec = res[0]
+        playerid = rec["id"]
+        playername = rec["name"]
+    else:
+        playername = inputplayername("use player: ", default, multiple=False, noneok=True)
+
+    player = Player(args)
+    player.load(playerid)
+    return player
+        
     res = cur.fetchone()
     if res is None:
         return None
@@ -1420,12 +1469,11 @@ def getplayer(args, memberid):
     if args.debug is True:
         ttyio.echo("getplayer.120: res=%r" % (res), level="debug")
         ttyio.echo("getplayer.100: playerid=%r" % (playerid), level="debug")
-    player = Player(args)
-    player.load(playerid)
     
     return player
 
 def startup(args):
+    updatetopbar(None, "startup") # bbsengine.updatetopbar("{bggray}{white}%s{/all}" % ("area: startup".ljust(terminalwidth)))
     currentmemberid = bbsengine.getcurrentmemberid(args)
     if args.debug is True:
         ttyio.echo("startup.300: currentmemberid=%r" % (currentmemberid), level="debug")
@@ -1438,7 +1486,6 @@ def startup(args):
     # honour
     # wall
     # newplayer if needed
-    newsentry(args, player, "player %r loaded." % (player.name))
     return player
 
 # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_startturn.lbl#L6
@@ -1449,7 +1496,7 @@ def mainmenu(args, player):
         ("M", "Maintenance", maint),
         ("N", "News", shownews),
         ("O", "Other Rulers", otherrulers),
-        ("P", "Play Empire", play),
+        ("P", "Play Empyre", play),
         ("T", "Town Activities", town),
         ("Y", "Your Stats", yourstatus),
         ("G", "Generate NPC", generatenpc),
@@ -1460,9 +1507,9 @@ def mainmenu(args, player):
     done = False
     while not done:
         terminalwidth = bbsengine.getterminalwidth()
-        ttyio.echo("terminalwith=%r" % (terminalwidth))
-        bbsengine.updatetopbar("{bggray}{white}%s{/bgcolor}" % ("area: main menu".ljust(terminalwidth)))
-        bbsengine.title("empyre main menu", hrcolor="{green}", titlecolor="{bggray}{white}")
+        # ttyio.echo("terminalwith=%r" % (terminalwidth))
+        updatetopbar(player, "main menu") # {bggray}{white}%s{/bgcolor}" % ("area: main menu".ljust(terminalwidth)))
+        bbsengine.title("main menu", hrcolor="{green}", titlecolor="{bggray}{white}")
         ttyio.echo()
         choices = "Q"
         for opt, title, callback in options:
@@ -1497,29 +1544,26 @@ def mainmenu(args, player):
     player.save()
     return True
 
-def startturn(args, player):
-    ttyio.echo()
-    ttyio.echo("{cyan}it is a new year...{/all}")
-    ttyio.echo()
-
-    player.turncount += 1
-
-    admin = bbsengine.checkmemberflag(args, "ADMIN")
-    ttyio.echo("startturn.100: admin=%r" % (admin), level="debug")
-    if admin is True:
+def sysopoptions(args, player):
+    sysop = bbsengine.checkflag(args, "SYSOP")
+    # ttyio.echo("sysopoptions.100: sysop=%r" % (sysop), level="debug")
+    if sysop is True:
+        updatetopbar(player, ": SysOp Options :")
         bbsengine.title(": SysOp Options :", titlecolor="{bggray}{white}", hrcolor="{green}")
         player.turncount = ttyio.inputinteger("{cyan}turncount: {lightgreen}", player.turncount)
         player.coins = ttyio.inputinteger("{cyan}coins: {lightgreen}", player.coins)
         ttyio.echo("{/all}")
         player.save()
 
+def startturn(args, player):
+    ttyio.echo("{f6}{cyan}it is a new year...{/all}{f6}")
+
+    player.turncount += 1
+
     if player.turncount > 4:
         ttyio.echo("{red}The other rulers unite against you for hogging the game!{/red}")
         return False
 
-#    if mainmenu(opts, player) is True:
-#        return True
-#    return False
     return True
 
 def adjust(args, player):
@@ -1555,12 +1599,12 @@ def adjust(args, player):
         ttyio.echo("You donate {reverse}%s{/reverse} to the monks." % (pluralize(a, "acre", "acres")))
 
     if player.foundries > 400:
-        a = player.foundries / 3
+        a = player.foundries // 3
         player.foundries -= a
         ttyio.echo("{green}{reverse} MAJOR EXPLOSION! {/reverse} %s destroyed." % (pluralize(a, "foundry is", "foundries are")))
 
     if player.markets > 500:
-        a = player.markets / 5
+        a = player.markets // 5
         player.markets -= a
         ttyio.echo("{red}Some market owners retire; %s closed." % (pluralize(a, "market is", "markets are")))
  
@@ -1597,7 +1641,7 @@ def endturn(args, player):
     ttyio.echo("end turn...{F6}")
     
     if player.serfs < 100:
-        ttyio.echo("{green}You haven't enough serfs to maintain the empire! It's turned over to King George and you are {yellow}beheaded{/fgcolor}{green}.{/green}")
+        ttyio.echo("{green}You haven't enough serfs to maintain the empyre! It's turned over to King George and you are {yellow}beheaded{/fgcolor}{green}.{/green}")
         player.memberid = None
         player.save(updatecredits=True)
         return
@@ -1608,19 +1652,19 @@ def endturn(args, player):
     # ff = "combat victory" flag
     # p1 = palace percentage (up to 10 pieces)
     # p2=int(((rnd(1)*75)+sf/100)*f%(2))
-    p2 = int(((random.random()*75)+player.serfs/100)*player.markets)
+    p2 = int(((random.random()*75)+player.serfs//100)*player.markets)
     # p3=int(((rnd(1)*100)+gr/1000)*f%(3))
-    p3 = int(((random.random()*100)+player.grain/1000)*player.mills)
+    p3 = int(((random.random()*100)+player.grain//1000)*player.mills)
     # p4=((rnd(1)*175)+wa)*f%(4)/(2-ff)
-    p4 = ((random.random()*175)+player.soldiers)*player.foundries/(2-player.combatvictory)
+    p4 = ((random.random()*175)+player.soldiers)*player.foundries//(2-player.combatvictory)
     # p5=((rnd(1)*200)+la/30)*f%(5)/(2-ff)
-    p5 = ((random.random()*200)+player.land/30)*player.shipyards/(2-player.combatvictory)
+    p5 = ((random.random()*200)+player.land//30)*player.shipyards//(2-player.combatvictory)
     # p4=int(p4-(p4*tr/200)):p5=int(p5-(p5*tr/150))
     p4 = p4-(p4*player.taxrate//200)
     p5 = p5-(p5*player.taxrate//150)
     # py=(wa*(ff+2))+(tr*f%(1)*10)/40:xx=int(tr*(rnd(0)*nb))*100/4
 
-    noblegifts = int(player.taxrate*(random.random()*player.nobles))*100/4 # xx
+    noblegifts = int(player.taxrate*(random.random()*player.nobles))*100//4 # xx
     if noblegifts < 1 and player.nobles > 67:
         a = player.nobles // 5
         player.nobles -= a
@@ -1799,16 +1843,16 @@ def weather(args, player):
     return
 
 def menu():
-    ttyio.echo("empire menu")
+    ttyio.echo("empyre menu")
     ttyio.echo()
     ttyio.echo("{reverse}[Y]{/reverse}our stats")
     ttyio.echo("{reverse}[O]{/reverse}ther rulers")
-    ttyio.echo("{reverse}[P]{/reverse}lay empire")
+    ttyio.echo("{reverse}[P]{/reverse}lay empyre")
     ttyio.echo("{reverse}[N]{/reverse}ews")
     ttyio.echo("{reverse}[T]{/reverse}own activities")
     ttyio.echo("Instructions")
     options = "YOPNT"
-    if bbsengine.checkmemberflag("ADMIN"):
+    if bbsengine.checkflag("SYSOP"):
         ttyio.echo("{reverse}[M]{/reverse}aint")
         options += "M"
     ttyio.echo()
@@ -1821,7 +1865,7 @@ def otherplayers(args, player):
     return
 
 def resetempire(args, player):
-    if ttyio.inputchar("reset empire? ", "YN", "N") == "Y":
+    if ttyio.inputchar("reset empyre? ", "YN", "N") == "Y":
         ttyio.echo("Yes")
         sql = "select id from empyre.player"
         dat = ()
@@ -1846,7 +1890,8 @@ def resetempire(args, player):
 def maint(args, player):
     done = False
     while not done:
-        bbsengine.title("Empire Maintenance", titlecolor="{bggray}{white}", hrcolor="{green}")
+        bbsengine.title("maint", titlecolor="{bggray}{white}", hrcolor="{green}")
+        updatetopbar(player, "maint")
         ttyio.echo()
         ttyio.echo("{purple}Options:{/purple}")
         ttyio.echo("{yellow}[D]{gray} Auto-Reset")
@@ -1854,11 +1899,11 @@ def maint(args, player):
         ttyio.echo("{yellow}[E]{gray} Edit Player's profile")
         ttyio.echo("{yellow}[L]{gray} List Players")
         # ttyio.echo("[P] Play Empire")
-        ttyio.echo("{yellow}[R]{gray} Reset Empire")
+        ttyio.echo("{yellow}[R]{gray} Reset Empyre")
         ttyio.echo("{yellow}[S]{gray} Scratch News")
         ttyio.echo("{F6}{yellow}[Q]{gray} Quit{F6}")
 
-        ch = ttyio.inputchar("{cyan}Maintenance: {lightgreen}", "DXELRSQ", "")
+        ch = ttyio.inputchar("{cyan}maintenance: {lightgreen}", "DXELRSQ", "")
 
         if ch == "Q":
             ttyio.echo("Quit")
@@ -1875,10 +1920,10 @@ def maint(args, player):
             ttyio.echo("List Players{F6}")
             otherrulers(args, player)
         elif ch == "P":
-            ttyio.echo("Play Empire")
+            ttyio.echo("Play Empyre")
             play(args, player)
         elif ch == "R":
-            ttyio.echo("Reset Empire")
+            ttyio.echo("Reset Empyre")
             resetempire(args, player)
             continue
         elif ch == "S":
@@ -1891,6 +1936,7 @@ def maint(args, player):
     return
     
 def harvest(args, player):
+    updatetopbar(player, "harvest")
     x = int((player.land*player.weathercondition+(random.random()*player.serfs)+player.grain*player.weathercondition)/3)
     x = min(x, player.land+player.serfs*4)
     #if x > (player.land+player.serfs)*4:
@@ -1979,11 +2025,11 @@ def investments(args, player):
     for ch, a in investopts.items():
         options += ch
     options += "Q?"
-
     displayinvestmentoptions(investopts)
 
     done = False
     while not done:
+        updatetopbar(player, "investments")
         ttyio.echo()
         ttyio.echo(pluralize(player.coins, "coin", "coins"))
         ch = ttyio.inputchar("{cyan}Investments [%s]: {lightgreen}" % (options), options, "")
@@ -2038,7 +2084,7 @@ def otherrulers(args:object, player=None):
     ttyio.echo("{gray}  ######  name %s{/gray}" % ("land".rjust(terminalwidth-len("land")-16)))
     ttyio.echo(bbsengine.hr(chars="-=", color="{yellow}"))
     player = Player(args)
-    sysop = bbsengine.checkmemberflag(args, "ADMIN")
+    sysop = bbsengine.checkflag(args, "SYSOP")
     cycle = 1
     for rec in res:
         if cycle == 1:
@@ -2062,17 +2108,19 @@ def otherrulers(args:object, player=None):
 
 def play(args, player):
     player.datelastplayedepoch = time.time()
-    startturn(args, player)
-    # weather(args, player)
-    # disaster(args, player)
-    # trading(args, player)
-    # harvest(args, player)
-    # colonytrip(args, player)
-    # town(args, player)
-    # combat(args, player)
+    sysopoptions(args, player)
+    if startturn(args, player) is False:
+        return
+    weather(args, player)
+    disaster(args, player)
+    trading(args, player)
+    harvest(args, player)
+    colonytrip(args, player)
+    town(args, player)
+    combat(args, player)
     quests(args, player)
-    # tourney(opts, player)
-    # investments(args, player)
+    # tourney(args, player) -- part of combat() now.
+    investments(args, player)
     endturn(args, player)
     return
 
@@ -2102,13 +2150,13 @@ def main():
     locale.setlocale(locale.LC_ALL, "")
 
     terminalwidth = ttyio.getterminalwidth()
-#    bbsengine.inittopbar()
-#    bbsengine.updatetopbar("{bggray}{white}%s{/all}" % ("area: startup".ljust(terminalwidth)))
+    bbsengine.inittopbar()
 #    res = inputplayername("prompt here: ", verify=None, args=args)
 #    ttyio.echo("main.100: res=%r" % (res))
 #    return
     currentplayer = startup(args)
     mainmenu(args, currentplayer)
+    ttyio.echo("{reset}")
     return    
 
 if __name__ == "__main__":
