@@ -9,6 +9,12 @@ import ttyio4 as ttyio
 import bbsengine5 as bbsengine
 from bbsengine5 import pluralize
 
+def inputboolean(prompt, options="YNTF", default=""):
+    ch = ttyio.inputchar(prompt, options, default)
+    if ch == "Y" or ch == "T":
+        return True
+    return False
+
 def updatetopbar(player, area):
     terminalwidth = bbsengine.getterminalwidth()
     leftbuf = area
@@ -540,7 +546,7 @@ class Player(object):
         try:
             self.update()
             if updatecredits is True:
-                bbsengine.setmembercredits(self.args, self.memberid, self.credits)
+                bbsengine.setmembercredits(self.dbh, self.memberid, self.credits)
         except:
             # ttyio.echo("player record not saved.", level="error")
             self.dbh.rollback()
@@ -980,10 +986,7 @@ def town(args, player):
         ttyio.echo()
         exchangerate = 3 #:1 -- 3 coins per credit
         credits = bbsengine.getmembercredits(args)
-        buf = "You have "
-        buf += "{reverse}%s{/reverse}" % (pluralize(player.coins, "coin", "coins"))
-        buf += " and {reverse}%s{/reverse}" % (pluralize(credits, "credit", "credits"))
-        # ttyio.echo("You have {reverse}%s{/reverse} and {reverse}%s{/reverse}" % (pluralize(player.coins, "coin", "coins"), pluralize(credits, "credit", "credits")))
+        buf = "You have {reverse}%s{/reverse} and {reverse}%s{/reverse}" % (pluralize(player.coins, "coin", "coins"), pluralize(credits, "credit", "credits"))
         ttyio.echo(buf)
         ttyio.echo("The exchange rate is {reverse}%s per credit{/reverse}.{F6}"  % (pluralize(exchangerate, "coin", "coins")))
         amount = ttyio.inputinteger("{cyan}Exchange how many credits?: {lightgreen}")
@@ -1034,9 +1037,9 @@ def town(args, player):
         # ttyio.echo("{autored}{reverse}%s{/reverse}{/red}" % (buf.center(terminalwidth-2)))
         # ttyio.echo("{autored}%s{/red}" % ("Where gambling is no sin!".center(terminalwidth-2)))
         ttyio.echo("{yellow}I will let you play for the price of a few souls!{/yellow}")
-        ch = ttyio.inputboolean("{cyan}Will you agree to this?{/cyan} ")
+        ch = inputboolean("{cyan}Will you agree to this?{/cyan} ", "YN")
         if ch is False:
-            ttyio.echo("Some other time, then.")
+            ttyio.echo("No{F6}Some other time, then.")
             return
         # always win, but it costs 10 serfs, 50 serfs if you guess correctly
         # og=int(3*rnd(0)+2)
@@ -1118,7 +1121,7 @@ def town(args, player):
         if promotable == 0:
             return
 
-        ch = ttyio.inputboolean("{green}Do you wish them promoted? ")
+        ch = inputboolean("{green}Do you wish them promoted? ", "YN", "N")
         ttyio.echo("{/all}")
         if ch is False:
             return
