@@ -1,1 +1,1 @@
-create schema empire;
+create schema empyre;
