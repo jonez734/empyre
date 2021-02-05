@@ -1,4 +1,4 @@
-create or replace view empire.player as
+create or replace view empyre.player as
     select
         *,
         (attributes->>'memberid')::bigint as memberid,
@@ -9,4 +9,4 @@ create or replace view empire.player as
     where attributes ? 'memberid' and attributes ? 'grain' and attributes ? 'land'-- and attributes ? 'mills'
 ;
 
-grant select on empire.player to apache;
+grant select on empyre.player to apache;
