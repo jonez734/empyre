@@ -158,6 +158,7 @@ def tourney(args, player, otherplayer=None):
     lost = []
     gained = []
     x = bbsengine.diceroll(10)
+    ttyio.echo("x=%r" % (x))
     if x == 1:
         player.land += 100
         gained.append("100 acres")
@@ -169,11 +170,11 @@ def tourney(args, player, otherplayer=None):
             lost.append("100 acres")
     elif x == 3:
         player.coins += 1000
-        gained.append("1000 coins")
+        gained.append(bbsengine.pluralize(1000, "coin", "coins"))
     elif x == 4:
         if player.coins >= 1000:
             player.coins -= 1000
-            lost.append("1000 coins")
+            lost.append(bbsengine.pluralize(1000, "coin", "coins"))
     elif x == 5:
         player.nobles += 1
         gained.append("1 noble")
@@ -187,11 +188,11 @@ def tourney(args, player, otherplayer=None):
                 lost.append("1 noble")
     elif x == 7:
         player.grain += 7000
-        gained.append("7000 bushels")
+        gained.append(bbsengine.pluralize(7000, "bushel", "bushels"))
     elif x == 8:
         if player.grain >= 7000:
             player.grain -= 7000
-            lost.append("7000 bushels")
+            lost.append(bbsengine.pluralize(7000, "bushel", "bushels"))
     elif x == 9:
         player.shipyards += 1
         gained.append("1 shipyard")
@@ -211,7 +212,8 @@ def tourney(args, player, otherplayer=None):
     if len(gained) > 0:
         res.append("gained " + ttyio.readablelist(gained))
     
-    ttyio.echo("You have %s" % (ttyio.readablelist(res)))
+    if len(res) > 0:
+        ttyio.echo("You have %s" % (ttyio.readablelist(res)))
     adjust(args, player)
     otherplayer.save()
     player.save()
@@ -1463,12 +1465,12 @@ def getplayer(args, memberid):
     
     res = cur.fetchall()
     default = ""
-    if cur.rowcount === 1:
+    if cur.rowcount == 1:
         rec = res[0]
         playerid = rec["id"]
         playername = rec["name"]
     else:
-        playername = inputplayername("use player: ", default, multiple=False, noneok=True)
+        playerid = inputplayername("use player: ", default, multiple=False, noneok=True, args=args)
 
     player = Player(args)
     player.load(playerid)
