@@ -11,9 +11,18 @@ from bbsengine5 import pluralize
 
 def inputboolean(prompt, options="YNTF", default=""):
     ch = ttyio.inputchar(prompt, options, default)
-    if ch == "Y" or ch == "T":
+    if ch == "Y":
+        ttyio.echo("Yes")
         return True
-    return False
+    elif ch == "T":
+        ttyio.echo("True")
+        return True
+    elif ch == "F":
+        ttyio.echo("False")
+        return False
+    elif ch == "N":
+        ttyio.echo("No")
+        return False
 
 def updatetopbar(player, area):
     terminalwidth = bbsengine.getterminalwidth()
