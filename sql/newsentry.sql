@@ -1,4 +1,4 @@
-create or replace view empire.newsentry as
+create or replace view empyre.newsentry as
     select *,
         attributes->>'message' as message,
         attributes->>'playerid' as playerid,
@@ -8,4 +8,4 @@ create or replace view empire.newsentry as
     where attributes ? 'message' and attributes ? 'memberid' and attributes ? 'playerid'
 ;
 
-grant select on empire.newsentry to apache;
+grant select on empyre.newsentry to apache;
