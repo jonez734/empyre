@@ -308,7 +308,34 @@ def getranktitle(args, rank):
 
 def generatename(args):
     # http://donjon.bin.sh/fantasy/name/#type=me;me=english_male ty ryan
-    namelist = ("Richye", "Gerey", "Andrew", "Ryany", "Mathye Burne", "Enryn", "Andes", "Piersym Jordye", "Vyncis", "Gery Aryn", "Hone Sharcey", "Kater", "Erix", "Abell", "Wene Noke", "Jane Folcey", "Abel", "Bilia", "Cilia", "Joycie")
+    namelist = (
+        "Richye",
+        "Gerey",
+        "Andrew",
+        "Ryany",
+        "Mathye",
+        "Burne",
+        "Enryn",
+        "Andes",
+        "Piersym",
+        "Jordye",
+        "Vyncis",
+        "Gery",
+        "Aryn",
+        "Hone",
+        "Sharcey",
+        "Kater",
+        "Erix",
+        "Abell",
+        "Wene",
+        "Noke",
+        "Jane",
+        "Folcey",
+        "Abel",
+        "Bilia",
+        "Cilia",
+        "Joycie"
+    )
     return namelist[random.randint(0, len(namelist)-1)]
 
 def verifyPlayerNameNotFound(args, name):
