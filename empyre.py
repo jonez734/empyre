@@ -405,7 +405,7 @@ class Player(object):
             {"name": "diplomats", "default":0, "price":50000}, # f%(6) 0
             {"name": "ships", "default":0, "price":5000}, # 5000 each, yc? x(12)
             {"name": "colonies", "default":0}, # i8
-            {"name": "training", "default":1}, # z9
+            {"name": "training", "default":1}, # z9 - number of units for training
             {"name": "warriors", "default":0}, # wa soldier -> warrior or noble?
             {"name": "combatvictory", "default":0},
             {"name": "spices", "default":0}, # x(25)
@@ -1394,8 +1394,68 @@ def combat(args, player):
             ttyio.echo("{orange}%s {red}BEHEADS{orange} your diplomat and tosses their corpse into the moat!" % (otherplayer.name.title()))
         player.save()
         otherplayer.save()
+
+    # @see https://github.com/Pinacolada64/ImageBBS/blob/e9f033af1f0b341d0d435ee23def7120821c3960/v1.2/games/empire6/plus_emp6_combat.lbl#L74
     def attackarmy(args, player, otherplayer):
-        pass
+        def update():
+            ttyio.echo("%s: %s %s: %s" % (player.name, bbsengine.pluralize(player.soldiers, "soldier", "soldiers"), otherplayer.name, bbsengine.pluralize(otherplayer.soldiers, "soldier", "soldiers")))
+            return
+
+        if player.soldiers < 1:
+            player.soldiers = 0
+            ttyio.echo("You have no soldiers!")
+            return
+
+        ff = 1
+
+        pv = 0 # player victory
+
+        sr = otherplayer.soldiers # originally 'wa'
+        sg = player.soldiers
+
+        a2 = 20
+        b2 = 20
+
+        a = 0
+
+        sr = otherplayer.soldiers
+        sg = player.soldiers
+
+        while not done:
+            if a == 5:
+                a = 0
+                ttyio.echo("%s: %s   %s: %s" % (player.name, bbsengine.pluralize(player.soldiers, "soldier", "soldiers"), otherplayer.name, bbsengine.pluralize(otherplayer.soldiers, "soldier", "soldiers")))
+
+            a += 1
+
+            wz = int(player.soldiers * 0.08) # 8%
+            ed = int(otherplayer.soldiers * 0.08)
+            # z9 == player.training and og == otherplayer.training. ez == otherplayer.land
+            # if (rnd(1)*wz)+(rnd(1)*(300+z9*5)) > (rnd(1)*ed)+(rnd(1)*(300+og*5)) then {:combat_90} # what are "z9" and "og"?
+            if ((random.random()*wz)+(random.random()*(300+player.training*5))) > ((random.random()*ed)+(random.random()*(300+otherplayer.training*5))):
+                otherplayer.soldiers -= 1 # ew -= 1
+                b2 -= 1
+                a2 = 20
+                if otherplayer.soldiers > 0 and b2 > 0:
+                    # another round
+                    continue
+
+                # at this point, either otherplayer.soldiers == 0 or b2 == 0
+                bn = 1 # when > 0, shows player attributes
+                if player.soldiers > random.randint(0, otherplayer.land):
+                    ttyio.echo("You conquered their land!")
+                    player.land += otherplayer.land
+                    otherplayer.land = 0
+                    break
+            else:
+                player.soldiers -= 1
+                a2 -= 1
+                b2 = 20
+                if player.soldiers > 0 and a2 > 0:
+                    continue
+                player.soldiers = 0
+                pv = 1
+
     # @see https://github.com/Pinacolada64/ImageBBS/blob/e9f033af1f0b341d0d435ee23def7120821c3960/v1.2/games/empire6/plus_emp6_combat.lbl#L105
     def attackpalace(args, player, otherplayer=None):
         if otherplayer.palaces < 1:
