@@ -1428,9 +1428,19 @@ def combat(args, player):
 
             a += 1
 
+            if player.soldiers < 1:
+                player.soldiers = 0
+                ttyio.echo("You have no soldiers!")
+                # break
+
+            if otherplayer.soldiers < 1:
+                otherplayer.soldiers = 0
+                ttyio.echo("Your opponent has no soldiers!")
+                # break
+
             wz = int(player.soldiers * 0.08) # 8%
             ed = int(otherplayer.soldiers * 0.08)
-            # z9 == player.training and og == otherplayer.training. ez == otherplayer.land
+            # z9 == player.training, og == otherplayer.training, and ez == otherplayer.land
             # if (rnd(1)*wz)+(rnd(1)*(300+z9*5)) > (rnd(1)*ed)+(rnd(1)*(300+og*5)) then {:combat_90} # what are "z9" and "og"?
             if ((random.random()*wz)+(random.random()*(300+player.training*5))) > ((random.random()*ed)+(random.random()*(300+otherplayer.training*5))):
                 otherplayer.soldiers -= 1 # ew -= 1
