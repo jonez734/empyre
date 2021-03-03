@@ -561,6 +561,8 @@ class Player(object):
             curval = getattr(self, name)
             oldval = getattrval(name)
             if curval != oldval:
+                if "debug" in self.args and self.args.debug is True:
+                    ttyio.echo("player.isdirty.100: name=%r oldval=%r curval=%r" % (name, oldval, curval))
                 return True
         return False
 
@@ -1357,11 +1359,9 @@ def trading(args, player):
     return
 
 def colonytrip(args, player):
-    ttyio.echo("colony trip...")
-    ttyio.echo()
+    ttyio.echo("colony trip...{f6}")
     if player.colonies > 0:
-        ttyio.echo("King George wishes you a safe and prosperous trip to your %s" % (pluralize(player.colonies, "colony", "colonies", quantity=False)))
-        ttyio.echo()
+        ttyio.echo("King George wishes you a safe and prosperous trip to your %s{f6}" % (pluralize(player.colonies, "colony", "colonies", quantity=False)))
     return
 
 # @since 20201207
@@ -1676,6 +1676,7 @@ def startturn(args, player):
     if player.turncount > 4:
         ttyio.echo("{red}The other rulers unite against you for hogging the game!{/red}")
         return False
+    player.save()
 
     return True
 
