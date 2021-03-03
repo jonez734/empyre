@@ -43,7 +43,7 @@ class completePlayerName(object):
         self.matches = []
         self.debug = args.debug
 
-    def completer(self:object, text:str, state:int):
+    def complete(self:object, text:str, state:int):
         vocab = []
         sql = "select name from empyre.player"
         dat = ()
@@ -87,11 +87,11 @@ def getplayerid(args, name):
         return None
     return res["id"]
 
-def inputplayername(prompt:str="player name: ", oldvalue:str="", multiple:bool=False, verify=verifyPlayerNameFound, args={}, **kw):
-    name = ttyio.inputstring(prompt, oldvalue, opts=args, verify=verify, multiple=multiple, completer=completePlayerName(args), **kw)
-    ttyio.echo("inputplayername.140: name=%r" % (name))
+def inputplayername(prompt:str="player name: ", oldvalue:str="", multiple:bool=False, verify=verifyPlayerNameFound, args=argparse.Namespace(), **kw):
+    name = ttyio.inputstring(prompt, oldvalue, args=args, verify=verify, multiple=multiple, completer=completePlayerName(args), **kw)
     playerid = getplayerid(args, name)
-    ttyio.echo("inputplayername.160: playerid=%r" % (playerid))
+    if args is not None and "debug" in args and args.debug is True:
+        ttyio.echo("inputplayername.140: name=%r, playerid=%r" % (name, playerid))
     return playerid
     
 class completeAttributeName(object):
@@ -100,7 +100,7 @@ class completeAttributeName(object):
         self.attrs = attrs
 
     # @log_exceptions
-    def completer(self:object, text:str, state:int):
+    def complete(self:object, text:str, state:int):
         vocab = []
         for a in self.attrs:
             vocab.append("%s" % (a["name"]))
@@ -576,7 +576,8 @@ class Player(object):
             return None
 
         if self.isdirty() is False:
-            ttyio.echo("%s: clean. no save." % (self.name))
+            if "debug" in self.args and self.args.debug is True:
+                ttyio.echo("%s: clean. no save." % (self.name))
             return
         ttyio.echo("%s: dirty. saving." % (self.name))
 
@@ -1585,6 +1586,7 @@ def getplayer(args, memberid):
 
 def startup(args):
     updatetopbar(None, "startup") # bbsengine.updatetopbar("{bggray}{white}%s{/all}" % ("area: startup".ljust(terminalwidth)))
+    ttyio.echo("empyre.startup.100: args=%r" % (args))
     currentmemberid = bbsengine.getcurrentmemberid(args)
     if args.debug is True:
         ttyio.echo("startup.300: currentmemberid=%r" % (currentmemberid), level="debug")
@@ -1758,6 +1760,7 @@ def endturn(args, player):
         return
         
     adjust(args, player)
+    player.save()
     
     # tr = taxrate
     # ff = "combat victory" flag
@@ -1838,11 +1841,12 @@ def endturn(args, player):
     #' nn=bbs credit/money exchange rate
     # if mp=0 and la>ln then gosub {:486} ' part of sub.rank
     adjust(args, player) #  player.adjust() # calculaterank(opts, player)
+    rank = calculaterank(args, player)
     
     if args.debug is True:
         ttyio.echo("player.rank=%d rank=%d" % (player.rank, rank), level="debug")
     # check for > player.rank, < player.rank and write entry to game log
-    player.rank = calculaterank(args, player)
+    player.rank = rank
     
     player.save(updatecredits=True)
     
@@ -2265,6 +2269,8 @@ def main():
 #    res = inputplayername("prompt here: ", verify=None, args=args)
 #    ttyio.echo("main.100: res=%r" % (res))
 #    return
+    if args is not None and "debug" in args and args.debug is True:
+        ttyio.echo("empyre.main.100: args=%r" % (args))
     currentplayer = startup(args)
     mainmenu(args, currentplayer)
     ttyio.echo("{reset}")
