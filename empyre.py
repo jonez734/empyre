@@ -31,7 +31,7 @@ def updatetopbar(player, area):
     if player is not None:
         rightbuf += "| %s | %s" % (player.name, pluralize(player.coins, "coin", "coins"))
     # ttyio.echo("updatetopbar.100: rightbuf=%r (len=%s) leftbuf=%r (len=%s)" % (rightbuf, len(rightbuf), leftbuf, len(leftbuf)))
-    buf = "{bggray}{white} %s%s " % (leftbuf.ljust(terminalwidth-len(rightbuf)-2, "-"), rightbuf) # +leftbuf.ljust(terminalwidth-len(rightbuf))+rightbuf+" {/all}"
+    buf = "{bggray}{white} %s%s " % (leftbuf.ljust(terminalwidth-len(rightbuf)-2, " "), rightbuf) # +leftbuf.ljust(terminalwidth-len(rightbuf))+rightbuf+" {/all}"
     # ttyio.echo("updatetopbar.140: terminalwidth=%d" % (terminalwidth))
     bbsengine.updatetopbar(buf)
     # ttyio.echo("updatetopbar.120: buf=%r (len=%s)" % (buf, len(buf)))
@@ -661,12 +661,32 @@ class Player(object):
 
         bbsengine.title("player status for %s (#%d)" % (self.name, self.playerid), titlecolor="{bggray}{white}", hrcolor="{green}")
 
-        maxlen = 0
+        terminalwidth = ttyio.getterminalwidth()-2
+
+        maxwidth = 0
+        maxlabellen = 0
         for a in self.attributes:
-            name = a["name"]
-            if len(name) > maxlen:
-                maxlen = len(name)
-        
+            n = a["name"]
+            if len(n) > maxlabellen:
+                maxlabellen = len(n)
+            v  = getattr(self, n)
+            if v is not None:
+                t = a["type"] if "type" in a else "int"
+                if t == "int":
+                    v = "{:n}".format(v)
+                elif t == "epoch":
+                    v = bbsengine.datestamp(v)
+            buf = "{yellow}%s : %s{/yellow}" % (n.ljust(maxlabellen), v)
+            buflen = len(ttyio.interpretmci(buf, strip=True, wordwrap=False))
+            if buflen > maxwidth:
+                maxwidth = buflen
+
+        columns = terminalwidth // maxwidth
+        if columns < 1:
+            columns = 1
+        ttyio.echo("columns=%d" % (columns))
+
+        currentcolumn = 0
         for a in self.attributes:
             n = a["name"]
             v  = getattr(self, n)
@@ -675,9 +695,23 @@ class Player(object):
                 if t == "int":
                     v = "{:n}".format(v)
                 elif t == "epoch":
-                    v = "%d %s" % (v, bbsengine.datestamp(v))
-            ttyio.echo("{yellow}%s : %s{/yellow}" % (n.ljust(maxlen), v))
-        ttyio.echo("{/all}")
+                    v = "%s" % (bbsengine.datestamp(v))
+            buf = "{yellow}%s : %s{/yellow}" % (n.ljust(maxlabellen), v)
+            buflen = len(ttyio.interpretmci(buf, strip=True, wordwrap=False))
+            # ttyio.echo("buflen=%s" % (buflen))
+            # ttyio.echo(">> currentcolumn=%s, columns=%s" % (currentcolumn, columns))
+            if currentcolumn == columns-1:
+                #ttyio.echo("current == columns")
+                ttyio.echo("%s{f6}" % (buf), end="")
+            else:
+                ttyio.echo(" %s%s " % (buf, " "*(maxwidth-buflen)), end="")
+
+            currentcolumn += 1
+            currentcolumn = currentcolumn % columns
+
+            # ttyio.echo(buf)
+        # ttyio.echo("{/all}", end="")
+        # ttyio.echo("maxwidth=%d, maxlabellen=%d, columns=%d, terminalwidth=%d" % (maxwidth, maxlabellen, columns, terminalwidth))
         return
         
         #ttyio.echo("acres     : %s" % (currentplayer.acres))
@@ -2266,7 +2300,7 @@ def main():
     locale.setlocale(locale.LC_ALL, "")
 
     terminalwidth = ttyio.getterminalwidth()
-    bbsengine.inittopbar()
+#    bbsengine.inittopbar()
 #    res = inputplayername("prompt here: ", verify=None, args=args)
 #    ttyio.echo("main.100: res=%r" % (res))
 #    return
