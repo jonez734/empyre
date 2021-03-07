@@ -667,9 +667,10 @@ class Player(object):
         maxlabellen = 0
         for a in self.attributes:
             n = a["name"]
+            n = n[:12] + (n[12:] and '..')
             if len(n) > maxlabellen:
                 maxlabellen = len(n)
-            v  = getattr(self, n)
+            v  = getattr(self, a["name"])
             if v is not None:
                 t = a["type"] if "type" in a else "int"
                 if t == "int":
@@ -684,12 +685,15 @@ class Player(object):
         columns = terminalwidth // maxwidth
         if columns < 1:
             columns = 1
-        ttyio.echo("columns=%d" % (columns))
+        # ttyio.echo("columns=%d" % (columns))
 
         currentcolumn = 0
         for a in self.attributes:
             n = a["name"]
-            v  = getattr(self, n)
+            # https://stackoverflow.com/questions/2872512/python-truncate-a-long-string
+            n = n[:12] + (n[12:] and '..')
+
+            v  = getattr(self, a["name"])
             if v is not None:
                 t = a["type"] if "type" in a else "int"
                 if t == "int":
