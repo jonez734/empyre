@@ -383,40 +383,40 @@ class Player(object):
 
         # @see https://github.com/Pinacolada64/ImageBBS/blob/e9f033af1f0b341d0d435ee23def7120821c3960/v1.2/games/empire6/mdl.emp.delx2.txt#L25
         self.attributes = (
-            {"name": "name", "default": "a. nonymous", "type":"name"}, # na$
-            {"name": "serfs", "default": 2000+random.randint(0, 200), "type":"int"}, # sf x(19)
-            {"name": "soldierpromotioncount", "default":0},
-            {"name": "turncount", "default":0},
-            {"name": "rank", "default":rank},
-            {"name": "previousrank", "default":0},
-            {"name": "memberid", "default": bbsengine.getcurrentmemberid(self.args)},
-            {"name": "weatherconditions", "default":0},
-            {"name": "land", "default":5000, "singular":"acre", "plural":"acres"}, # la x(2)
-            {"name": "coins", "default":1000, "singular":"coin", "plural":"coins"}, # pn x(3)
-            {"name": "grain", "default":10000, "singular": "bushel", "plural": "bushels"}, # gr
-            {"name": "taxrate", "default":15}, # tr
-            {"name": "soldiers", "default":20, "price": 20},
-            {"name": "nobles", "default":2, "price":25000, "singular":"noble", "plural":"nobles"}, # x(6)
-            {"name": "palaces", "default":1, "price":20}, # f%(1)
-            {"name": "markets", "default":1, "price":1000}, # f%(2) x(7)
-            {"name": "mills", "default":1, "price":2000}, # f%(3) x(8)
-            {"name": "foundries", "default":0, "price":7000}, # f%(4) x(9)
-            {"name": "shipyards", "default":0, "price":8000, "singular":"shipyard", "plural":"shipyards"}, # yc or f%(5)? x(10)
-            {"name": "diplomats", "default":0, "price":50000}, # f%(6) 0
-            {"name": "ships", "default":0, "price":5000}, # 5000 each, yc? x(12)
-            {"name": "colonies", "default":0}, # i8
-            {"name": "training", "default":1}, # z9 - number of units for training
-            {"name": "warriors", "default":0}, # wa soldier -> warrior or noble?
-            {"name": "combatvictory", "default":0},
-            {"name": "spices", "default":0}, # x(25)
-            {"name": "stables", "default":0, "price": 10000}, # x(11)
-            {"name": "cannons", "default":0}, # x(14)
-            {"name": "forts", "default":0}, # x(13)
-            {"name": "dragons", "default":0},
-            {"name": "horses", "default":1}, # x(23)
-            {"name": "timber", "default":0}, # x(16)
-            {"name": "datelastplayedepoch", "default":0, "type": "epoch"},
-            {"name": "npc", "default":False, "type": "bool"}
+            {"type": "name", "name": "name", "default": "a. nonymous"}, # na$
+            {"type": "int",  "name": "serfs", "default": 2000+random.randint(0, 200)}, # sf x(19)
+            {"type": "int",  "name": "soldierpromotioncount", "default":0},
+            {"type": "int",  "name": "turncount", "default":0},
+            {"type": "int",  "name": "rank", "default":rank},
+            {"type": "int",  "name": "previousrank", "default":0},
+            {"type": "int",  "name": "memberid", "default": bbsengine.getcurrentmemberid(self.args)},
+            {"type": "int",  "name": "weatherconditions", "default":0},
+            {"type": "int",  "name": "land", "default":5000, "singular":"acre", "plural":"acres"}, # la x(2)
+            {"type": "int",  "name": "coins", "default":1000, "singular":"coin", "plural":"coins"}, # pn x(3)
+            {"type": "int",  "name": "grain", "default":10000, "singular": "bushel", "plural": "bushels"}, # gr
+            {"type": "int",  "name": "taxrate", "default":15}, # tr
+            {"type": "int",  "name": "soldiers", "default":20, "price": 20},
+            {"type": "int",  "name": "nobles", "default":2, "price":25000, "singular":"noble", "plural":"nobles"}, # x(6)
+            {"type": "int",  "name": "palaces", "default":1, "price":20}, # f%(1)
+            {"type": "int",  "name": "markets", "default":1, "price":1000}, # f%(2) x(7)
+            {"type": "int",  "name": "mills", "default":1, "price":2000}, # f%(3) x(8)
+            {"type": "int",  "name": "foundries", "default":0, "price":7000}, # f%(4) x(9)
+            {"type": "int",  "name": "shipyards", "default":0, "price":8000, "singular":"shipyard", "plural":"shipyards"}, # yc or f%(5)? x(10)
+            {"type": "int",  "name": "diplomats", "default":0, "price":50000}, # f%(6) 0
+            {"type": "int",  "name": "ships", "default":0, "price":5000}, # 5000 each, yc? x(12)
+            {"type": "int",  "name": "colonies", "default":0}, # i8
+            {"type": "int",  "name": "training", "default":1}, # z9 - number of units for training
+            {"type": "int",  "name": "warriors", "default":0}, # wa soldier -> warrior or noble?
+            {"type": "int",  "name": "combatvictory", "default":0},
+            {"type": "int",  "name": "spices", "default":0}, # x(25)
+            {"type": "int",  "name": "stables", "default":0, "price": 10000}, # x(11)
+            {"type": "int",  "name": "cannons", "default":0}, # x(14)
+            {"type": "int",  "name": "forts", "default":0}, # x(13)
+            {"type": "int",  "name": "dragons", "default":0},
+            {"type": "int",  "name": "horses", "default":1}, # x(23)
+            {"type": "int",  "name": "timber", "default":0}, # x(16)
+            {"type": "epoch","name": "datelastplayedepoch", "default":0},
+            {"type": "int",  "name": "npc", "default":False, "type": "bool"}
             # {"name": "datelastplayed", "default":None, "type":"date"}
         )
 
@@ -929,7 +929,7 @@ after checking for sentries, enter the passage.{F6}""",
         {"name": "islandofspice", "title": "Search for the Island of Spice", "callback": None},
         {"name": "birdcity", "title": "Quest for the Legendary Bird City", "callback": None},
         {"name": "mountainsideship", "title": "Look for the Mountain Side Ship", "callback": None},
-        {"name": "zircon", "title": "Seek Arch-Mage Zircon's Help {yellow}Warning: Zircon's help is a gamble!", "description": """Your rivals are pressing you hard!  In desperation,
+        {"name": "zircon", "title": "Seek Arch-Mage Zircon's Help {yellow}{f6}    Warning: Zircon's help is a gamble!", "description": """Your rivals are pressing you hard!  In desperation,
 you have undertaken a long and dangerous journey.  Now at last you stand
 before Castle Dragonmare, the home of Arch-mage Zircon.  It is your hope
 that you can convince him to help you..{F6:2}""", "callback": zircon}
@@ -1653,8 +1653,6 @@ def mainmenu(args, player):
         ("G", "Generate NPC", generatenpc),
     )
 
-#    bbsengine.inittopbar()
-    
     done = False
     while not done:
         terminalwidth = bbsengine.getterminalwidth()
@@ -2235,8 +2233,9 @@ def otherrulers(args:object, player=None):
     cur.execute(sql, dat)
     res = cur.fetchall()
     #ttyio.echo("res=%r" % (res), level="debug")
-    ttyio.echo("{gray}  ######  name %s{/gray}" % ("land".rjust(terminalwidth-len("land")-16)))
-    ttyio.echo(bbsengine.hr(chars="-=", color="{yellow}"))
+    ttyio.echo("{/all}{acs:ulcorner}{acs:hline:%s}{acs:urcorner}" % (terminalwidth-2))
+    ttyio.echo("{acs:vline}{gray} #####  name %s{/all} {acs:vline}" % ("land".rjust(terminalwidth-len("land")-12)), wordwrap=False)
+    ttyio.echo("{acs:ltee}"+bbsengine.hr(chars="-=", color="{yellow}", width=terminalwidth-1)+"{acs:rtee}")
     player = Player(args)
     sysop = bbsengine.checkflag(args, "SYSOP")
     cycle = 1
@@ -2245,19 +2244,28 @@ def otherrulers(args:object, player=None):
             color = "{white}"
         else:
             color = "{lightgray}"
+
+
         cycle = abs(1 - cycle)
         playerid = rec["id"]
         player.load(playerid)
         # if sysop is True:
             # if player.memberid is None:
             #    color = "{gray}"
+
+        if player.npc is True:
+            color = "{purple}"
+
         membername = bbsengine.getmembername(args, player.memberid)
-        leftbuf  = "%s %s (%s)" % (player.playerid, player.name, membername) # "({:>4n}".format(player.memberid))
+        if player.npc is True:
+            leftbuf  = " % 4s %s (%s)" % (player.playerid, player.name, membername) # "({:>4n}".format(player.memberid))
+        else:
+            leftbuf  = " % 4s %s" % (player.playerid, player.name) # "({:>4n}".format(player.memberid))
         rightbuf = "%s" % ("{:>6n}".format(player.land))
-        buf = "  {reverse}%s  %s%s{/fgcolor}{/reverse} " % (color, leftbuf.ljust(terminalwidth-9-len(rightbuf)), rightbuf)
+        buf = "{acs:vline}{reverse}%s  %s%s {/fgcolor}{/reverse}{acs:vline}" % (color, leftbuf.ljust(terminalwidth-6-len(rightbuf)), rightbuf)
         # "{:>4n}".format(player.playerid), player.name.ljust(terminalwidth-6-10-1-3-2), "{:>6n}".format(player.land))
-        ttyio.echo(buf)
-    ttyio.echo(bbsengine.hr(chars="-=", color="{yellow}"))
+        ttyio.echo(buf, wordwrap=False)
+    ttyio.echo("{acs:llcorner}"+bbsengine.hr(chars="-=", color="{yellow}", width=terminalwidth-1)+"{acs:lrcorner}")
     return
 
 def play(args, player):
@@ -2304,7 +2312,7 @@ def main():
     locale.setlocale(locale.LC_ALL, "")
 
     terminalwidth = ttyio.getterminalwidth()
-#    bbsengine.inittopbar()
+    bbsengine.inittopbar()
 #    res = inputplayername("prompt here: ", verify=None, args=args)
 #    ttyio.echo("main.100: res=%r" % (res))
 #    return
