@@ -334,7 +334,27 @@ def generatename(args):
         "Abel",
         "Bilia",
         "Cilia",
-        "Joycie"
+        "Joycie",
+        "Vyncis Potte",
+        "Berny",
+        "Warder Eyder",
+        "Lesym Nery",
+        "Rarder",
+        "Warder Righte",
+        "Drichye Nyne",
+        "Rancent",
+        "Ralphye",
+        "Gilew Drete",
+        "Elean Flynsor",
+        "Rix",
+        "Sarrey",
+        "Sabil",
+        "Joycie Arron",
+        "Bridget",
+        "Elen",
+        "Jane",
+        "Kathel",
+        "Icell"
     )
     return namelist[random.randint(0, len(namelist)-1)]
 
