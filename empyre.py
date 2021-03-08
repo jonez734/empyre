@@ -88,7 +88,7 @@ def getplayerid(args, name):
     return res["id"]
 
 def inputplayername(prompt:str="player name: ", oldvalue:str="", multiple:bool=False, verify=verifyPlayerNameFound, args=argparse.Namespace(), **kw):
-    name = ttyio.inputstring(prompt, oldvalue, args=args, verify=verify, multiple=multiple, completer=completePlayerName(args), **kw)
+    name = ttyio.inputstring(prompt, oldvalue, args=args, verify=verify, multiple=multiple, completer=completePlayerName(args), completerdelims="", **kw)
     playerid = getplayerid(args, name)
     if args is not None and "debug" in args and args.debug is True:
         ttyio.echo("inputplayername.140: name=%r, playerid=%r" % (name, playerid))
@@ -935,7 +935,6 @@ before Castle Dragonmare, the home of Arch-mage Zircon.  It is your hope
 that you can convince him to help you..{F6:2}""", "callback": zircon}
     )
 
-
     def questcompleted():
         if bbsengine.diceroll(20) > 5: # random.randint(1, 20) > 5:
             ttyio.echo("You failed to complete the quest.")
@@ -1470,12 +1469,12 @@ def combat(args, player):
             if player.soldiers < 1:
                 player.soldiers = 0
                 ttyio.echo("You have no soldiers!")
-                # break
+                break
 
             if otherplayer.soldiers < 1:
                 otherplayer.soldiers = 0
                 ttyio.echo("Your opponent has no soldiers!")
-                # break
+                break
 
             wz = int(player.soldiers * 0.08) # 8%
             ed = int(otherplayer.soldiers * 0.08)
@@ -2227,7 +2226,7 @@ def generatenpc(args:object, player=None, rank=0):
 def otherrulers(args:object, player=None):
     terminalwidth = ttyio.getterminalwidth()
     dbh = bbsengine.databaseconnect(args)
-    sql = "select id from empyre.player order by name limit 25" # where memberid > 0 limit 25"
+    sql = "select id, memberid, name from empyre.player order by memberid, id asc limit 25"
     dat = ()
     cur = dbh.cursor()
     cur.execute(sql, dat)
@@ -2238,33 +2237,31 @@ def otherrulers(args:object, player=None):
     ttyio.echo("{acs:ltee}"+bbsengine.hr(chars="-=", color="{yellow}", width=terminalwidth-1)+"{acs:rtee}")
     player = Player(args)
     sysop = bbsengine.checkflag(args, "SYSOP")
-    cycle = 1
+    cycle = 0
     for rec in res:
-        if cycle == 1:
+        if cycle == 0:
             color = "{white}"
         else:
             color = "{lightgray}"
-
-
-        cycle = abs(1 - cycle)
         playerid = rec["id"]
         player.load(playerid)
-        # if sysop is True:
-            # if player.memberid is None:
-            #    color = "{gray}"
 
         if player.npc is True:
-            color = "{purple}"
+            color = "{purple} "
 
         membername = bbsengine.getmembername(args, player.memberid)
         if player.npc is True:
-            leftbuf  = " % 4s %s (%s)" % (player.playerid, player.name, membername) # "({:>4n}".format(player.memberid))
+            leftbuf  = "% 5s %s (%s)" % (player.playerid, player.name, membername) # "({:>4n}".format(player.memberid))
         else:
-            leftbuf  = " % 4s %s" % (player.playerid, player.name) # "({:>4n}".format(player.memberid))
+            leftbuf  = "% 5s %s" % (player.playerid, player.name) # "({:>4n}".format(player.memberid))
         rightbuf = "%s" % ("{:>6n}".format(player.land))
-        buf = "{acs:vline}{reverse}%s  %s%s {/fgcolor}{/reverse}{acs:vline}" % (color, leftbuf.ljust(terminalwidth-6-len(rightbuf)), rightbuf)
+        buf = "{acs:vline}{reverse}%s  %s%s {/fgcolor} {/reverse}{acs:vline}" % (color, leftbuf.ljust(terminalwidth-6-len(rightbuf)), rightbuf)
         # "{:>4n}".format(player.playerid), player.name.ljust(terminalwidth-6-10-1-3-2), "{:>6n}".format(player.land))
         ttyio.echo(buf, wordwrap=False)
+
+        cycle += 1
+        cycle = cycle % 2
+
     ttyio.echo("{acs:llcorner}"+bbsengine.hr(chars="-=", color="{yellow}", width=terminalwidth-1)+"{acs:lrcorner}")
     return
 
