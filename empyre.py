@@ -697,7 +697,7 @@ class Player(object):
                     v = "{:n}".format(v)
                 elif t == "epoch":
                     v = bbsengine.datestamp(v)
-            buf = "{yellow}%s : %s{/yellow}" % (n.ljust(maxlabellen), v)
+            buf = "{yellow}%s: %s{/yellow}" % (n.ljust(maxlabellen), v)
             buflen = len(ttyio.interpretmci(buf, strip=True, wordwrap=False))
             if buflen > maxwidth:
                 maxwidth = buflen
