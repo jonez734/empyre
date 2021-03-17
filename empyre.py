@@ -415,7 +415,7 @@ class Player(object):
             {"type": "int",  "name": "coins", "default":1000, "singular":"coin", "plural":"coins"}, # pn x(3)
             {"type": "int",  "name": "grain", "default":10000, "singular": "bushel", "plural": "bushels"}, # gr
             {"type": "int",  "name": "taxrate", "default":15}, # tr
-            {"type": "int",  "name": "soldiers", "default":20, "price": 20},
+            {"type": "int",  "name": "soldiers", "default":20, "price": 20, "singular":"soldier", "plural":"soldiers"},
             {"type": "int",  "name": "nobles", "default":2, "price":25000, "singular":"noble", "plural":"nobles"}, # x(6)
             {"type": "int",  "name": "palaces", "default":1, "price":20}, # f%(1)
             {"type": "int",  "name": "markets", "default":1, "price":1000}, # f%(2) x(7)
@@ -1135,7 +1135,7 @@ def town(args, player):
         # ttyio.echo("{autored}{reverse}%s{/reverse}{/red}" % (buf.center(terminalwidth-2)))
         # ttyio.echo("{autored}%s{/red}" % ("Where gambling is no sin!".center(terminalwidth-2)))
         ttyio.echo("{yellow}I will let you play for the price of a few souls!{/yellow}")
-        ch = inputboolean("{cyan}Will you agree to this?{/cyan} ", "YN")
+        ch = ttyio.inputboolean("{cyan}Will you agree to this?{/cyan} ", "YN")
         if ch is False:
             ttyio.echo("No{F6}Some other time, then.")
             return
@@ -1219,7 +1219,7 @@ def town(args, player):
         if promotable == 0:
             return
 
-        ch = inputboolean("{green}Do you wish them promoted? ", "YN", "N")
+        ch = ttyio.inputboolean("{green}Do you wish them promoted? ", "YN", "N")
         ttyio.echo("{/all}")
         if ch is False:
             return
@@ -1411,7 +1411,13 @@ def trading(args, player):
     ttyio.echo()
 
     prompt = "You have {reverse}%s of grain{/reverse} and {reverse}%s{/reverse}" % (pluralize(player.grain, "bushel", "bushels"), pluralize(player.coins, "coin", "coins"))
-    price = price//(player.land//875)+1
+
+    if player.land < 1:
+        player.land = 1
+        ttyio.echo("set player.land to 1")
+    ttyio.echo("player.land=%r, player.land/875=%r" % (player.land, player.land/875))
+    price = (price//(player.land/875))+1
+
     trade(args, player, "grain", "grain", price, "bushel", "bushels")
     return
 
@@ -1747,6 +1753,14 @@ def adjust(args, player):
     if a > 0: 
         ttyio.echo("{yellow}%s{/yellow} your army" % (pluralize(a, "soldier deserts", "soldiers desert")))
 
+    if a < 1:
+        player.soliders = 1
+        ttyio.echo("You have no soldiers!")
+
+    if player.land < 1:
+        player.land = 1
+        ttyio.echo("You have no land!")
+
     if player.shipyards > 10: # > 400
         a = int(player.shipyards / 1.1)
         ttyio.echo("{cyan}Your kingdom cannot support %s shipyards! %s are closed.{/cyan}" % (player.shipyards, a))
@@ -1783,8 +1797,8 @@ def adjust(args, player):
         ttyio.echo("{green}The mills are overworked! %s mills have broken millstones and are closed.{/green}" % (a))
 
     if player.coins < 0:
-        ttyio.echo("{red}You are overdrawn by %s!{/red}" % (pluralize(abs(player.coins), "coin", "coins")))
-        player.coins = 0
+        ttyio.echo("{lightred}You are overdrawn by %s!{/all}" % (pluralize(abs(player.coins), "coin", "coins")))
+        player.coins = 1
 
     lost = []
     for a in player.attributes:
@@ -2142,8 +2156,8 @@ def harvest(args, player):
     done = False
     ttyio.echo("{cyan}Your army requires {reverse}%s{/reverse} this year." % (pluralize(armyrequires, "bushel", "bushels")))
     ttyio.echo("{/all}")
-    price = int(6/player.weathercondition)
-    price = int(price/int(player.land/875)+1)
+    price = 6//player.weathercondition
+    price = int(price/(player.land/875)+1)
     if price > player.coins:
         trade(args, player, "grain", "bushel", price, "bushel", "bushels")
     if armyrequires > player.grain:
@@ -2244,17 +2258,17 @@ def generatenpc(args:object, player=None, rank=0):
 
 # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/Empire6.lbl#L69
 def otherrulers(args:object, player=None):
+    acscolor = "{white}"
     terminalwidth = ttyio.getterminalwidth()
     dbh = bbsengine.databaseconnect(args)
-    sql = "select id, memberid, name from empyre.player order by memberid, id asc limit 25"
+    sql = "select id, memberid, name from empyre.player order by (attributes->>'land')::integer desc limit 25"
     dat = ()
     cur = dbh.cursor()
     cur.execute(sql, dat)
     res = cur.fetchall()
-    #ttyio.echo("res=%r" % (res), level="debug")
-    ttyio.echo("{/all}{acs:ulcorner}{acs:hline:%s}{acs:urcorner}" % (terminalwidth-2))
-    ttyio.echo("{acs:vline}{gray} #####  name %s{/all} {acs:vline}" % ("land".rjust(terminalwidth-len("land")-12)), wordwrap=False)
-    ttyio.echo("{acs:ltee}"+bbsengine.hr(chars="-=", color="{yellow}", width=terminalwidth-1)+"{acs:rtee}")
+    ttyio.echo("{/all}%s{acs:ulcorner}{acs:hline:%s}{acs:urcorner}" % (acscolor, terminalwidth-2), wordwrap=False)
+    ttyio.echo("%s{acs:vline}{gray} name %s{/all} %s{acs:vline}" % (acscolor, "land".rjust(terminalwidth-len("land")-5), acscolor), wordwrap=False)
+    ttyio.echo("%s{acs:ltee}%s%s{acs:rtee}" % (acscolor, bbsengine.hr(chars="-=", color=acscolor, width=terminalwidth-1), acscolor), wordwrap=False)
     player = Player(args)
     sysop = bbsengine.checkflag(args, "SYSOP")
     cycle = 0
@@ -2266,23 +2280,22 @@ def otherrulers(args:object, player=None):
         playerid = rec["id"]
         player.load(playerid)
 
-        if player.npc is True:
-            color = "{purple} "
-
         membername = bbsengine.getmembername(args, player.memberid)
-        if player.npc is True:
-            leftbuf  = "% 5s %s (%s)" % (player.playerid, player.name, membername) # "({:>4n}".format(player.memberid))
+        if sysop is True and player.npc is True:
+            leftbuf  = "%s (%s)" % (player.name, membername) # "({:>4n}".format(player.memberid))
         else:
-            leftbuf  = "% 5s %s" % (player.playerid, player.name) # "({:>4n}".format(player.memberid))
+            leftbuf  = "%s" % (player.name) # "({:>4n}".format(player.memberid))
+        leftbuflen = len(ttyio.interpretmci(leftbuf, strip=True))
+
         rightbuf = "%s" % ("{:>6n}".format(player.land))
-        buf = "{acs:vline}{reverse}%s  %s%s {/fgcolor} {/reverse}{acs:vline}" % (color, leftbuf.ljust(terminalwidth-6-len(rightbuf)), rightbuf)
-        # "{:>4n}".format(player.playerid), player.name.ljust(terminalwidth-6-10-1-3-2), "{:>6n}".format(player.land))
+        rightbuflen = len(rightbuf)
+        buf = "%s{acs:vline}%s{reverse} %s%s {/all}%s{acs:vline}" % (acscolor, color, leftbuf.ljust(terminalwidth-rightbuflen-4), rightbuf, acscolor)
         ttyio.echo(buf, wordwrap=False)
 
         cycle += 1
         cycle = cycle % 2
 
-    ttyio.echo("{acs:llcorner}"+bbsengine.hr(chars="-=", color="{yellow}", width=terminalwidth-1)+"{acs:lrcorner}")
+    ttyio.echo("%s{acs:llcorner}%s{acs:lrcorner}" % (acscolor, bbsengine.hr(chars="-=", color=acscolor, width=terminalwidth-1)))
     return
 
 def play(args, player):
@@ -2290,6 +2303,7 @@ def play(args, player):
     sysopoptions(args, player)
     if startturn(args, player) is False:
         return
+    adjust(args, player)
     weather(args, player)
     disaster(args, player)
     trading(args, player)
