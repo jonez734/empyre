@@ -732,10 +732,7 @@ class Player(object):
 
             currentcolumn += 1
             currentcolumn = currentcolumn % columns
-
-            # ttyio.echo(buf)
-        # ttyio.echo("{/all}", end="")
-        # ttyio.echo("maxwidth=%d, maxlabellen=%d, columns=%d, terminalwidth=%d" % (maxwidth, maxlabellen, columns, terminalwidth))
+        ttyio.echo("{f6}", end="")
         return
         
         #ttyio.echo("acres     : %s" % (currentplayer.acres))
@@ -1282,7 +1279,6 @@ def town(args, player):
     # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_town.lbl#L130
     # @since 20200830
     def menu():
-        ttyio.echo("town...{F6}")
         bbsengine.title("Town Menu", hrcolor="{green}", titlecolor="{bggray}{white}")
 
         for hotkey, description, func in options:
@@ -1320,7 +1316,7 @@ def town(args, player):
 
 # barbarians are buying
 def trade(args, player:object, attr:str, name:str, price:int, singular:str="singular", plural:str="plural", determiner:str="a"):
-    updatetopbar(player, "trade")
+    updatetopbar(player, "trade: %s" % (name))
     if price > player.coins:
         ttyio.echo("You need {reverse}%s{/reverse} to purchase {reverse}%s %s{/reverse}" % (pluralize(price - player.coins, "more coin", "more coins"), determiner, singular))
 
@@ -1393,7 +1389,6 @@ def trade(args, player:object, attr:str, name:str, price:int, singular:str="sing
 
             break
     
-    ttyio.echo()
     player.save()
     return
 
@@ -1474,7 +1469,7 @@ def combat(args, player):
 
         pv = 0 # player victory
 
-        sr = otherplayer.soldiers # originally 'wa'
+        sr = otherplayer.soldiers # aka 'wa'
         sg = player.soldiers
 
         a2 = 20
@@ -1565,6 +1560,8 @@ def combat(args, player):
     #otherplayer.playerid = otherplayer.insert()
     #otherplayer.status()
     #otherplayer.dbh.commit()
+
+    updatetopbar("combat - attack whom?")
 
     otherplayerid = inputplayername("Attack Whom? >> ", multiple=False, noneok=True, args=args) # , verify=verifyOpponent)
     if otherplayerid is None:
@@ -1745,10 +1742,13 @@ def adjust(args, player):
     soldierpay = (player.soldiers*(player.combatvictory+2))+(player.taxrate*player.palaces*10)/40 # py
     a = 0
     if soldierpay < 1 and player.soldiers >= 500:
+        if args.debug is True:
+            ttyio.echo("soldierpay < 1, player.soldiers >= 500")
         a += player.soldiers/5
         player.soldiers -= a
     if player.soldiers > (player.nobles*20)+1:
-        a += player.soldiers - (player.nobles*20)
+        a -= player.nobles*20
+        ttyio.echo("Not enough nobles!")
         player.soldiers -= a
     if a > 0: 
         ttyio.echo("{yellow}%s{/yellow} your army" % (pluralize(a, "soldier deserts", "soldiers desert")))
@@ -2195,7 +2195,7 @@ def displayinvestmentoptions(investopts): # opts, player):
         buf = "{bggray}{white}[%s]{/all}{green} %s: %s " % (ch, name.ljust(maxlen+2, "-"), " {:>6n}".format(price)) # int(terminalwidth/4)-2)
         ttyio.echo(buf)
 
-    ttyio.echo("{F6}{bggray}{white}[Q]{/all}{green} Quit{F6}{/all}")
+    ttyio.echo("{F6}{bggray}{white}[Q]{/all}{green} Quit{/all}")
 
     return
 
@@ -2209,15 +2209,15 @@ def investments(args, player):
     options = ""
     for ch, a in investopts.items():
         options += ch
-    options += "Q?"
+    options += "YQ?"
     displayinvestmentoptions(investopts)
 
     done = False
     while not done:
         updatetopbar(player, "investments")
-        ttyio.echo()
-        ttyio.echo(pluralize(player.coins, "coin", "coins"))
-        ch = ttyio.inputchar("{cyan}Investments [%s]: {lightgreen}" % (options), options, "")
+        buf = "{cyan}%s{f6}" % (pluralize(player.coins, "coin", "coins"))
+        buf += "Investments [%s]: {lightgreen}" % (options)
+        ch = ttyio.inputchar(buf, options, "Q")
         if ch == "Q":
             ttyio.echo("{lightgreen}Q{cyan} -- Quit")
             done = True
@@ -2226,6 +2226,9 @@ def investments(args, player):
             ttyio.echo("{lightgreen}? -- {cyan}Help")
             displayinvestmentoptions(investopts) # opts, player)
             continue
+        elif ch == "Y":
+            ttyio.echo("{lightgreen}Y -- {cyan}Your Stats")
+            player.status()
         else:
             for opt, a in investopts.items():
                 if ch == opt:
@@ -2234,13 +2237,12 @@ def investments(args, player):
                     attr = a["name"]
                     singular = a["singular"] if "singular" in a else "singular"
                     plural = a["plural"] if "plural" in a else "plural"
-                    ttyio.echo("{lightgreen}%s{green} -- {cyan}%s{/all} %s" % (ch, name.title(), pluralize(price, "coin", "coins")))
+                    ttyio.echo("{lightgreen}%s{green} -- {cyan}%s{/all} %s" % (ch, name.title(), pluralize(price, "coin", "coins")), end="")
                     trade(args, player, attr, name, price, singular, plural)
                     break
             else:
-                ttyio.echo("{lightgreen}%s -- {cyan}not implemented yet")
+                ttyio.echo("{lightgreen}%r -- {cyan}not implemented yet" % (ch))
                 continue
-    ttyio.echo("{/all}leaving investments...")
     return
 
 def generatenpc(args:object, player=None, rank=0):
@@ -2304,6 +2306,9 @@ def play(args, player):
     if startturn(args, player) is False:
         return
     adjust(args, player)
+    investments(args, player)
+    return
+
     weather(args, player)
     disaster(args, player)
     trading(args, player)
