@@ -2200,7 +2200,7 @@ def displayinvestmentoptions(investopts): # opts, player):
     return
 
 def investments(args, player):
-    bbsengine.title("Investments", hrcolor="{green}", titlecolor="{bggray}{white}")
+   bbsengine.title("Investments", hrcolor="{green}", titlecolor="{bggray}{white}")
 
     terminalwidth = ttyio.getterminalwidth()
 
