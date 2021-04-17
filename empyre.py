@@ -2103,7 +2103,8 @@ def maint(args, player):
             playerid = inputplayername("edit player: ", args=args)
             if playerid is None:
                 continue
-            p = Player()
+            p = Player(args)
+            p.load(playerid)
             p.edit()
             continue
         elif ch == "L":
@@ -2344,18 +2345,18 @@ def main():
 
     locale.setlocale(locale.LC_ALL, "")
 
-#    ttyio.echo("{clear}{home}")
-    bbsengine.title("empyre", hrcolor="{green}", titlecolor="{bggray}{white}")
-    bbsengine.initscreen(topmargin=0, bottommargin=1)
-#    res = inputplayername("prompt here: ", verify=None, args=args)
-#    ttyio.echo("main.100: res=%r" % (res))
-#    return
     if args is not None and "debug" in args and args.debug is True:
         ttyio.echo("empyre.main.100: args=%r" % (args))
-    ttyio.echo("{home}{clear}")
+
+    ttyio.echo("{f6:5}{curpos:%d,0}" % (ttyio.getterminalheight()-5))
     bbsengine.initscreen(bottommargin=1)
+
+    bbsengine.title("empyre", hrcolor="{green}", titlecolor="{bggray}{white}")
+
     currentplayer = startup(args)
+
     mainmenu(args, currentplayer)
+
     return    
 
 if __name__ == "__main__":
