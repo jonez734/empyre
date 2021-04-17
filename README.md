@@ -8,6 +8,8 @@
 - [ ] palaces -- some places treat player.palaces as 10%, other times (like when buying one), it's 100%.
 - [x] change place where main() calls title() so it is after the clear screen / initscreen calls.
 - [ ] inputplayername has *case sensitive* tab complete
+- [ ] when I double-tab at the maint -> edit player profile -> attribute prompt, the items are not shortened like they are in the player.status().
+- [ ] timber
 
 ## contributors
 - thanks to ryan for 'empire6'
