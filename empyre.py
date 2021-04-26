@@ -112,19 +112,16 @@ def inputattributename(args:object, prompt:str="attribute name: ", oldvalue:str=
 
 # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_tourney.lbl#L2
 def tourney(args, player, otherplayer=None):
-    #otherplayer = Player(args)
-    #otherplayer.generatenpc()
-    # otherplayerid = None
-    #otherplayerid = inputplayername(args, "Attack Whom? >> ", multiple=False, noneok=True) # , verify=verifyOpponent)
-    #if player.playerid == otherplayerid:
-    #    ttyio.echo("You cannot joust against yourself! Big mistake!")
-    #    player.land -= bbsengine.diceroll(player.land//2)
-    #    return
-
-    #if otherplayerid is None:
-    #    ttyio.echo("No Opponent Selected")
-    #    return
-    #otherplayer = Player(args, otherplayerid)
+    if otherplayer is None:
+        otherplayerid = inputplayername(args, "Attack Whom? >> ", multiple=False, noneok=True) # , verify=verifyOpponent)
+        if otherplayerid is None:
+            ttyio.echo("No Opponent Selected")
+            return
+        if player.playerid == otherplayerid:
+            ttyio.echo("You cannot joust against yourself! Big mistake!")
+            player.land -= bbsengine.diceroll(player.land//2)
+            return
+    otherplayer = Player(args, otherplayerid)
     area(player, "joust")
 
     ttyio.echo("tourney.100: otherplayer=%r" % (otherplayer), level="debug")
@@ -137,7 +134,7 @@ def tourney(args, player, otherplayer=None):
         ttyio.echo("Not enough serfs attend. The joust is cancelled.")
         return
 
-    if otherplayer.nobles < 2:
+    if otherplayer is None or otherplayer.nobles < 2:
         ttyio.echo("Your opponent does not have enough nobles.")
         return
 
@@ -332,17 +329,17 @@ def generatename(args):
         "Bilia",
         "Cilia",
         "Joycie",
-        "Vyncis Potte",
+        "Vyncis_Potte",
         "Berny",
-        "Warder Eyder",
-        "Lesym Nery",
+        "Warder_Eyder",
+        "Lesym_Nery",
         "Rarder",
-        "Warder Righte",
-        "Drichye Nyne",
+        "Warder_Righte",
+        "Drichye_Nyne",
         "Rancent",
         "Ralphye",
-        "Gilew Drete",
-        "Elean Flynsor",
+        "Gilew_Drete",
+        "Elean_Flynsor",
         "Rix",
         "Sarrey",
         "Sabil",
@@ -1560,7 +1557,7 @@ def combat(args, player):
     #otherplayer.status()
     #otherplayer.dbh.commit()
 
-    area("combat - attack whom?")
+    area(player, "combat - attack whom?")
 
     otherplayerid = inputplayername("Attack Whom? >> ", multiple=False, noneok=True, args=args) # , verify=verifyOpponent)
     if otherplayerid is None:
@@ -1748,15 +1745,17 @@ def adjust(args, player):
             ttyio.echo("soldierpay < 1, player.soldiers >= 500")
         a += player.soldiers/5
         player.soldiers -= a
+
     if player.soldiers > (player.nobles*20)+1:
         a -= player.nobles*20
         ttyio.echo("Not enough nobles!")
         player.soldiers -= a
+
     if a > 0: 
         ttyio.echo("{yellow}%s{/yellow} your army" % (pluralize(a, "soldier deserts", "soldiers desert")))
 
     if a < 1:
-        player.soliders = 1
+        player.soliders = 0
         ttyio.echo("You have no soldiers!")
 
     if player.land < 1:
@@ -2073,6 +2072,24 @@ def resetempire(args, player):
         ttyio.echo("No")
     return
 
+def scratchnews(args, player):
+    dbh = bbsengine.databaseconnect(args)
+    cur = dbh.cursor()
+    sql = "select count(id) from empyre.newsentry"
+    cur.execute(sql)
+    res = cur.fetchone()
+    newsentries = res["count"]
+    ttyio.echo("scratchnews.100: res=%r, newsentries=%r" % (res, newsentries))
+    if ttyio.inputboolean("scratch %s? [yN]: " % (bbsengine.pluralize(newsentries, "news entry", "news entries")), "N", "YN") is False:
+        ttyio.echo("aborted.")
+        return
+
+    sql = "delete from engine.__node where attributes ? 'message' and attributes ? 'memberid' and attributes ? 'playerid'"
+    cur.execute(sql)
+    dbh.commit()
+    ttyio.echo("%s scratched." % (bbsengine.pluralize(cur.rowcount, "news entry", "news entries")))
+    return
+
 # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_maint.lbl#L6
 # @since 20200831
 def maint(args, player):
@@ -2081,7 +2098,7 @@ def maint(args, player):
         bbsengine.title("maint", titlecolor="{bggray}{white}", hrcolor="{green}")
         area(player, "empyre: maint")
         buf = """{f6}{purple}Options:{/purple}{f6}
-{yellow}[D]{gray} Auto-Reset{f6}{yellow}[X]{gray} bbs credit / empyre coin exchange rate{f6}
+{yellow}[D]{gray} Auto-Reset{f6} {yellow}[X]{gray} bbs credit / empyre coin exchange rate{f6}
 {yellow}[E]{gray} Edit Player's profile{f6}
 {yellow}[L]{gray} List Players{f6}
 {yellow}[R]{gray} Reset Empyre{f6}
@@ -2119,6 +2136,7 @@ def maint(args, player):
             continue
         elif ch == "S":
             ttyio.echo("Scratch News")
+            scratchnews(args, player)
             continue
         elif ch == "X":
             ttyio.echo("bbs credit -> empyre coin exchange rate")
@@ -2367,5 +2385,4 @@ if __name__ == "__main__":
     except EOFError:
         ttyio.echo("EOF")
     finally:
-        terminalheight = ttyio.getterminalheight()
-        ttyio.echo("{decsc}{curpos:%d,0}{el}{decrc}{reset}{/all}" % (terminalheight))
+        ttyio.echo("{decsc}{curpos:%d,0}{el}{decrc}{reset}{/all}" % (ttyio.getterminalheight()))
