@@ -21,15 +21,22 @@
 - [ ] update adjust() to check for not enough nobles w a call to pluralize()
 - [ ] adjust() needs serious work re: nobles, soldiers
 - [ ] zircon quest repeats blurbs twice
-- [ ] fix "You need 26 more coins to purchase a acre"
-- [ ] You need 1.0 more coin to purchase a bushel
-- [ ] even with more than enough nobles, adjust() constantly defects a bunch of soldiers. when checking, player.nobles has been set to 2.
+- [ ] fix "You need 26 more coins to purchase a acre" (grammar)
+- [ ] You need 1.0 more coin to purchase a bushel (call int())
+- [ ] even with more than enough nobles, adjust() constantly defects a bunch of soldiers. when checking, player.nobles has been set to 2, even tho shortly before that, I set the number of nobles to be more than enough for the number of soldiers.
 - [ ] in player.status(), show 'soldiers' in red if it exceeds nobles*20
-- [ ] You need 29 more coins to purchase a acre
+- [x] You need 29 more coins to purchase a acre
 - [ ] adjust(): reduce the number of soldiers until it is under the player.nobles*20 threshhold.
-- [ ] replace {reverse} with {bggray}{white} and replace {/reverse} with {/all}
+- [x] replace {reverse} with {bggray}{white} and replace {/reverse} with {/all}
 - [ ] You have no soldiers! when plague wipes out 993, player.soldiers=1392
 - [ ] harvest(): give serfs all the grain player has
+- [x] adjust(): says 'no soldiers' but soldierpay > 0.
+  * soldierpay is calculated based on player.soldiers, player.taxrate, player.combatvictory, and player.palaces.
+- [ ] The barbarians will sell their grain to you for 1.0 coin each (floating point price)
+- [ ] Your army requires 13,921 bushels this year. Give them how many? 0 (wrong default)
+- [ ] add 'your stats' ("Y") to investments()
+- [ ] "Your army requires 10,271 bushels this year." defaults to 0 (wrong).
+- [ ] reconsider use of the 'node table' for games. does empyre even need subnodes for anything?
 
 ## contributors
 - thanks to ryan for 'empire6' and lots of ideas.
@@ -71,4 +78,20 @@ Traceback (most recent call last):
   File "/home/jam/projects/empyre/empyre.py", line 140, in tourney
     if otherplayer.nobles < 2:
 AttributeError: 'NoneType' object has no attribute 'nobles'
+```
+
+```
+Your army requires 10,271 bushels this year.
+Give them how many? 10271
+```
+defaults to 0
+
+```
+This year's harvest is 26,389 bushels
+
+Your people require 20,281 bushels of grain this year
+
+You have 26,389 bushels and 221,216 coins
+grain: [B]uy [S]ell [C]ontinue [E]dit: Continue
+Give them how many? 20281
 ```
