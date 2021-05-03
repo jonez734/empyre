@@ -1340,7 +1340,7 @@ def trade(args, player:object, attr:str, name:str, price:int, singular:str="sing
             if newvalue < 0:
                 newvalue = 0
             setattr(player, attr, newvalue)
-            ttyio.echo("player.%s=%s{/all}" % (attr, newvalue), level="success")
+            ttyio.echo("player.%s=%s{/all}" % (attr, newvalue), level="debug")
         elif ch == "C":
             ttyio.echo("Continue")
             done = True
@@ -1379,7 +1379,7 @@ def trade(args, player:object, attr:str, name:str, price:int, singular:str="sing
             ttyio.echo("Sold!", level="success")
 
             break
-    
+
     player.save()
     return
 
@@ -1392,7 +1392,7 @@ def trading(args, player):
     
     prompt = "You have {bggray}{white}%s of land{/all} and {bggray}{white}%s{/all}" % (pluralize(player.land, "acre", "acres"), pluralize(player.coins, "coin", "coins"))
     price = player.weathercondition*3+12
-    trade(args, player, "land", "land", price, "acre", "acres")
+    trade(args, player, "land", "land", price, "acre", "acres", "an")
 
     ttyio.echo()
 
@@ -1400,8 +1400,8 @@ def trading(args, player):
 
     if player.land < 1:
         player.land = 1
-        ttyio.echo("set player.land to 1")
-    ttyio.echo("player.land=%r, player.land/875=%r" % (player.land, player.land/875))
+        ttyio.echo("set player.land to 1", level="debug")
+    ttyio.echo("player.land=%r, player.land/875=%r" % (player.land, player.land/875), level="debug")
     price = (price//(player.land/875))+1
 
     trade(args, player, "grain", "grain", price, "bushel", "bushels")
@@ -1737,7 +1737,7 @@ def startturn(args, player):
 
 def adjust(args, player):
     soldierpay = (player.soldiers*(player.combatvictory+2))+(player.taxrate*player.palaces*10)/40 # py
-    ttyio.echo("adjust.140: soldierpay=%d" % (soldierpay))
+    ttyio.echo("adjust.140: soldierpay=%d" % (soldierpay), level="debug")
 
     a = 0
     if soldierpay < 1 and player.soldiers >= 500:
@@ -1751,7 +1751,7 @@ def adjust(args, player):
         ttyio.echo("you have no nobles!")
         player.nobles = 0
 
-    ttyio.echo("adjust.160: a=%d" % (a))
+    ttyio.echo("adjust.160: a=%d" % (a), level="debug")
     if player.soldiers > (player.nobles*20)+1:
         a += abs(player.nobles*20)
         ttyio.echo("Not enough nobles for your %s!" % (pluralize(player.soldiers, "soldier", "soldiers")))
@@ -1761,7 +1761,7 @@ def adjust(args, player):
     if a > 0: 
         ttyio.echo("{yellow}%s{/yellow} your army" % (pluralize(a, "soldier deserts", "soldiers desert")))
 
-    if a < 1:
+    if a < 0:
         player.soliders = 0
         ttyio.echo("You have no soldiers!")
 
@@ -2180,20 +2180,22 @@ def harvest(args, player):
     if serfsgiven < player.grain:
         serfsgiven = player.grain
     player.grain -= serfsgiven
+    ttyio.echo("player.grain=%r" % (player.grain), level="debug")
     if player.grain < 1:
         player.grain = 0
         
     armyrequires = player.soldiers*10+1
     done = False
-    ttyio.echo("{cyan}Your army requires {reverse}%s{/reverse} this year." % (pluralize(armyrequires, "bushel", "bushels")))
-    ttyio.echo("{/all}")
+    ttyio.echo("{cyan}Your army requires {reverse}%s{/reverse} this year.{/all}" % (pluralize(armyrequires, "bushel", "bushels")))
     price = 6//player.weathercondition
     price = int(price/(player.land/875)+1)
     if price > player.coins:
         trade(args, player, "grain", "bushel", price, "bushel", "bushels")
+
+    ttyio.echo("armyrequires=%r player.grain=%r" % (armyrequires, player.grain), level="debug")
+
     if armyrequires > player.grain:
         armyrequires = player.grain
-
     armygiven = ttyio.inputinteger("{cyan}Give them how many? {/cyan}{lightgreen}", armyrequires)
     ttyio.echo("{/all}")
     if armygiven < 1:
@@ -2226,7 +2228,7 @@ def displayinvestmentoptions(investopts): # opts, player):
         buf = "{bggray}{white}[%s]{/all}{green} %s: %s " % (ch, name.ljust(maxlen+2, "-"), " {:>6n}".format(price)) # int(terminalwidth/4)-2)
         ttyio.echo(buf)
 
-    ttyio.echo("{F6}{bggray}{white}[Q]{/all}{green} Quit{/all}")
+    ttyio.echo("{f6}{bggray}{white}[Y]{/all}{green} Your stats{f6}{bggray}{white}[Q]{/all}{green} Quit{/all}")
 
     return
 
@@ -2334,7 +2336,7 @@ def otherrulers(args:object, player=None):
 def play(args, player):
     player.datelastplayedepoch = time.time()
 #    adjust(args, player)
-    for x in ("sysopoptions", "startturn", "weather", "disaster", "trading", "harvest", "colonytrip", "town", "combat", "quests", "tourney", "investments", "endturn"):
+    for x in ("sysopoptions", "startturn", "weather", "disaster", "trading", "harvest", "colonytrip", "town", "combat", "quests", "investments", "endturn"):
 #        try:
         f = eval(x)
 #        except NameError:
