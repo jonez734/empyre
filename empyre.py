@@ -82,10 +82,11 @@ def getplayerid(args, name):
 
 def inputplayername(prompt:str="player name: ", oldvalue:str="", multiple:bool=False, verify=verifyPlayerNameFound, args=argparse.Namespace(), **kw):
     name = ttyio.inputstring(prompt, oldvalue, args=args, verify=verify, multiple=multiple, completer=completePlayerName(args), completerdelims="", **kw)
-    playerid = getplayerid(args, name)
-    if args is not None and "debug" in args and args.debug is True:
-        ttyio.echo("inputplayername.140: name=%r, playerid=%r" % (name, playerid), level="debug")
-    return playerid
+    ttyio.echo("inputplayername.160: name=%r" % (name), level="debug")
+    return name
+#    playerid = getplayerid(args, name)
+#    ttyio.echo("inputplayername.140: name=%r, playerid=%r" % (name, playerid), level="debug")
+#    return playerid
     
 class completeAttributeName(object):
     def __init__(self, args, attrs):
@@ -109,13 +110,16 @@ def inputattributename(args:object, prompt:str="attribute name: ", oldvalue:str=
 # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_tourney.lbl#L2
 def tourney(args, player, otherplayer=None):
     if otherplayer is None:
-        otherplayerid = inputplayername("Attack Whom? >> ", multiple=False, noneok=True, args=args) # , verify=verifyOpponent)
+        otherplayername = inputplayername("Attack Whom? >> ", multiple=False, noneok=True, args=args) # , verify=verifyOpponent)
+        otherplayerid = getplayerid(otherplayername)
         if otherplayerid is None:
             ttyio.echo("No Opponent Selected")
             return
         if player.playerid == otherplayerid:
             ttyio.echo("You cannot joust against yourself! Big mistake!")
-            player.land -= bbsengine.diceroll(player.land//2)
+            loss = bbsengine.diceroll(player.land//2)
+            player.land -= loss
+            ttyio.echo("You lost %s." % (bbsengine.pluralize(loss, "acre", "acres")))
             return
     otherplayer = Player(args, otherplayerid)
     setarea(player, "joust")
@@ -285,7 +289,8 @@ def calculaterank(args:object, player:object) -> int:
 
     return rank
 
-def getranktitle(args, rank):
+def getranktitle(args, rank:int):
+    ttyio.echo("getranktitle.100: rank=%r" % (rank), level="debug")
     if rank == 0:
         return "lord"
     elif rank == 1:
@@ -392,8 +397,8 @@ class Player(object):
         #self.training = 1 # z9
 
         # @see https://github.com/Pinacolada64/ImageBBS/blob/e9f033af1f0b341d0d435ee23def7120821c3960/v1.2/games/empire6/mdl.emp.delx2.txt#L25
-        self.attributes = (
-            {"type": "name", "name": "name", "default": "a. nonymous"}, # na$
+        self.attributes = [
+            {"type": "playername", "name": "name", "default": "a. nonymous"}, # na$
             {"type": "int",  "name": "serfs", "default": 2000+random.randint(0, 200)}, # sf x(19)
             {"type": "int",  "name": "soldierpromotioncount", "default":0},
             {"type": "int",  "name": "turncount", "default":0},
@@ -427,8 +432,7 @@ class Player(object):
             {"type": "int",  "name": "timber", "default":0}, # x(16)
             {"type": "epoch","name": "datelastplayedepoch", "default":0},
             {"type": "int",  "name": "npc", "default":False, "type": "bool"}
-            # {"name": "datelastplayed", "default":None, "type":"date"}
-        )
+        ]
 
         for a in self.attributes:
             setattr(self, a["name"], a["default"])
@@ -444,6 +448,12 @@ class Player(object):
                 a["value"] = getattr(self, name)
                 return a
         return None
+
+    def setattribute(self, name, value):
+        for a in self.attributes:
+            if a["name"] == name:
+                a["value"] = value
+                break
 
     def remove(self):
         self.memberid = None
@@ -477,26 +487,22 @@ class Player(object):
             n = a["name"]
             t = a["type"] if "type" in a else "int"
             v = a["value"] if "value" in a else None
-            if t == "name":
-                x = inputplayername("%s (name): " % (n), v, args=self.args)
+            if t == "playername":
+                playername = inputplayername("%s (playername): " % (n), v, args=self.args)
+                if x is not None:
+                    x = getplayerid(args, playername)
             elif t == "epoch":
                 x = bbsengine.inputdate("%s (date): " % (n), v)
             elif t == "int":
                 x = ttyio.inputinteger("%s (int): " % (n), v)
             elif t == "bool":
-                x = ttyio.inputchar("%s (bool): " % (n), "TF", "")
-                if x == "T":
-                    ttyio.echo("True")
-                    x = True
-                else:
-                    ttyio.echo("False")
-                    x = False
+                x = ttyio.inputboolean("%s (bool): " % (n), "")
             else:
                 ttyio.echo("invalid attribute type for n=%r t=%r" % (n, t), level="error")
                 return
             setattr(self, n, x)
 
-        if ttyio.inputchar("save? ", "YN", "N") == "Y":
+        if ttyio.inputboolean("save? ", "N", "YN") is True:
             ttyio.echo("Yes")
             self.save()
         else:
@@ -630,6 +636,20 @@ class Player(object):
     def new(self):
         setarea(self, "new player!")
         # ttyio.echo("player.new() called!")
+
+        currentmemberid = bbsengine.getcurrentmemberid(self.args)
+        currentmembername = bbsengine.getcurrentmembername(self.args)
+        ttyio.echo("player.new.100: currentmemberid=%r, currentmembername=%r" % (currentmemberid, currentmembername))
+        # if self.args.debug is True:
+        #     ttyio.echo("new.100: currentmemberid=%r" % (currentmemberid), level="debug")
+        # attributes["memberid"] = currentmemberid
+        # self.memberid = currentmemberid
+
+        playername = inputplayername("new player name: ", currentmembername, verify=verifyPlayerNameNotFound, multiple=False, args=self.args, returnseq=False)
+        if playername is None:
+            ttyio.echo("aborted.")
+            return None
+
         attributes = {}
         for a in self.attributes:
             name = a["name"]
@@ -637,18 +657,9 @@ class Player(object):
             attributes[name] = default
             setattr(self, name, default)
 
-        currentmemberid = bbsengine.getcurrentmemberid(self.args)
-        ttyio.echo("player.new.100: currentmemberid=%r" % (currentmemberid))
-        # if self.args.debug is True:
-        #     ttyio.echo("new.100: currentmemberid=%r" % (currentmemberid), level="debug")
-        # attributes["memberid"] = currentmemberid
-        # self.memberid = currentmemberid
-
-        currentmembername = bbsengine.getcurrentmembername(self.args)
-        playername = inputplayername("new player name: ", currentmembername, verify=verifyPlayerNameNotFound, multiple=False, args=self.args, returnseq=False)
         ttyio.echo("player.new.120: playername=%r" % (playername))
-        self.name = playername
-        # self.attributes["name"] = playername
+        self.setattribute("playername", playername)
+        setattr(self, "playername", playername)
 
         self.insert()
 
@@ -1602,6 +1613,7 @@ def combat(args, player):
 def newplayer(args):
     player = Player(args)
     player.new()
+    ttyio.echo("newplayer.100: player.name=%r" % (player.name), level="debug")
     return player
     
 def getplayer(args, memberid):
@@ -1681,6 +1693,7 @@ def mainmenu(args, player):
             choices += opt
         ttyio.echo("{F6}{bggray}{white}[Q]{/bgcolor}{green} Quit{/all}")
 
+        ttyio.echo("mainmenu.100: player.name=%r" % (player.name), level="debug")
         try:
             ch = ttyio.inputchar("{green}Your command, %s %s? {lightgreen}" % (getranktitle(args, player.rank).title(), player.name.title()), choices, "")
 
@@ -2059,7 +2072,7 @@ def otherplayers(args, player):
     return
 
 def resetempire(args, player):
-    if ttyio.inputchar("reset empyre? ", "YN", "N") == "Y":
+    if ttyio.inputboolean("reset empyre? ", "N", "YN") is True:
         ttyio.echo("Yes")
         sql = "select id from empyre.player"
         dat = ()
@@ -2334,7 +2347,7 @@ def otherrulers(args:object, player=None):
     return
 
 def play(args, player):
-    player.datelastplayedepoch = time.time()
+    player.datelastplayedepoch = time.gmtime()
 #    adjust(args, player)
     for x in ("sysopoptions", "startturn", "weather", "disaster", "trading", "harvest", "colonytrip", "town", "combat", "quests", "investments", "endturn"):
 #        try:
