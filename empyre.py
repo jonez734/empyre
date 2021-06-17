@@ -9,6 +9,8 @@ import ttyio4 as ttyio
 import bbsengine5 as bbsengine
 from bbsengine5 import pluralize
 
+PRG = "empyre"
+
 def updatetopbar(player, area):
     terminalwidth = bbsengine.getterminalwidth()
     leftbuf = area
@@ -229,6 +231,7 @@ def newsentry(args:object, player:object, message:str, otherplayer:object=None):
 
     node = {}
     node["attributes"] = attributes
+    node["prg"] = PRG
 
     dbh = bbsengine.databaseconnect(args)
     nodeid = bbsengine.insertnode(dbh, args, node, mogrify=False)
@@ -431,7 +434,8 @@ class Player(object):
             {"type": "int",  "name": "horses", "default":1}, # x(23)
             {"type": "int",  "name": "timber", "default":0}, # x(16)
             {"type": "epoch","name": "datelastplayedepoch", "default":0},
-            {"type": "int",  "name": "npc", "default":False, "type": "bool"}
+            {"type": "int",  "name": "npc", "default":False, "type": "bool"},
+            {"type": "int",  "name": "memberid", "default":None}
         ]
 
         for a in self.attributes:
@@ -626,6 +630,7 @@ class Player(object):
         ttyio.echo("attributes.name=%r" % (attributes["name"]))
 
         node = {}
+        node["prg"] = PRG
         node["attributes"] = attributes
         # self.dbh = bbsengine.databaseconnect(self.args)
         nodeid = bbsengine.insertnode(self.dbh, self.args, node, mogrify=False)
