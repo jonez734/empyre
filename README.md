@@ -35,11 +35,36 @@
 - [ ] The barbarians will sell their grain to you for 1.0 coin each (floating point price)
 - [ ] Your army requires 13,921 bushels this year. Give them how many? 0 (wrong default)
 - [ ] add 'your stats' ("Y") to investments()
-- [ ] "Your army requires 10,271 bushels this year." defaults to 0 (wrong).
+- [ ] "Your army requires 10,271 bushels this year." input defaults to 0 (wrong).
 - [ ] reconsider use of the 'node table' for games. does empyre even need subnodes for anything?
+- [ ] when a new player is created calculate rank (currently defaults to None)
+
+- [ ] make sure player.name is set correctly on new player (set to None) (uclug 2021-06-08)
+  * player.setattribute() added
+  * fixed database empyre.player view to use engine.node instead of a separate table. problem solved.
+  * updated player.new()
+    - set attributes to defaults
+    - set player.name and player.attributes["name"] based on inputplayername() result
+- [ ] in player.edit(), if t == bool, call ttyio.inputboolean() not ttyio.inputchar() (uclug 2021-06-08)
+- [ ] getplayerid(args, playername) returns None or playerid
+- [x] in tourney(), echo the number of acres lost when attacking yourself.
+- [ ] check to be sure handling of boolean attributes in player.edit() is correct.
+- [ ] use ttyio.inputboolean() instead of ttyio.inputchar() in some places.
+- [x] change inputplayername() to return playername instead of playerid
+- [ ] dbh.commit() a new player record.
+- [ ] playerid shows up in engine.node, but not empyre.player
+- [ ] psycopg2.errors.UndefinedColumn: column "memberid" does not exist
+- [ ] sysop tool to maintain players
+- [ ] add index/etc so that duplicate player names (case insensitive) are not allowed across all modules
+  * could write code instead of doing it in the db
+  * (https://dba.stackexchange.com/questions/161313/creating-a-unique-constraint-from-a-json-object/161345)[Creating a UNIQUE constraint from a JSON object]
+- [ ] log entries should not show up in a 'select * from empyre.player' query.
+- [ ] add 'prg' column to engine.__node to make views easier.
+- [ ] add 'memberid' to self.attributes, and attributes->>'memberid' to view.
 
 ## contributors
-- thanks to ryan for 'empire6' and lots of ideas.
+- thanks to ryan for 'empire6' (including c64list's labels) and lots of ideas.
+- thanks to uclug's may 2021 meeting for help w troubleshooting of the new player problem.
 
 ## notes
 ```
@@ -95,3 +120,9 @@ You have 26,389 bushels and 221,216 coins
 grain: [B]uy [S]ell [C]ontinue [E]dit: Continue
 Give them how many? 20281
 ```
+
+- tried changing empyre.newsentry and empyre.player to not use the node table
+  * thought 'newsentry' would work out ok until I needed an fk to empyre.player which would require a 'materialized view', which means a delay of however often I run a cron to update data.
+  * 'player' might be able to stand on it's own, except my code makes use of updatenodeattributes(), and handling the exceptions (lastplayed, name, etc) will confuse the code and make it more difficult to teach.
+  * [postgresql materialized views](https://www.postgresqltutorial.com/postgresql-materialized-views/)
+  * in the end, decided that the complexity of the node table is not enough to justify not using it.
