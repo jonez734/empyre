@@ -1,1 +1,1 @@
-create schema empyre;
+create schema if not exists empyre;
