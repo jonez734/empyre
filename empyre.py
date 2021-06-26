@@ -11,6 +11,9 @@ from bbsengine5 import pluralize
 
 PRG = "empyre"
 
+def title(t, titlecolor="{bggray}{white}", hrcolor="{green}"):
+    bbsengine.title(t, titlecolor=titlecolor, hrcolor=hrcolor)
+
 def updatetopbar(player, area):
     terminalwidth = bbsengine.getterminalwidth()
     leftbuf = area
@@ -62,6 +65,7 @@ def verifyPlayerNameFound(args, name):
     return True
 
 def verifyPlayerNameNotFound(args, name):
+    ttyio.echo("verifyPlayerNameNotFound.100: name=%r" % (name))
     dbh = bbsengine.databaseconnect(args)
     cur = dbh.cursor()
     sql = "select 1 from empyre.player where name=%s"
@@ -82,8 +86,8 @@ def getplayerid(args, name):
         return None
     return res["id"]
 
-def inputplayername(prompt:str="player name: ", oldvalue:str="", multiple:bool=False, verify=verifyPlayerNameFound, args=argparse.Namespace(), **kw):
-    name = ttyio.inputstring(prompt, oldvalue, args=args, verify=verify, multiple=multiple, completer=completePlayerName(args), completerdelims="", **kw)
+def inputplayername(prompt:str="player name: ", oldvalue:str="", multiple:bool=False, verify=verifyPlayerNameFound, args=argparse.Namespace(), noneok:bool=True, **kw):
+    name = ttyio.inputstring(prompt, oldvalue, args=args, verify=verify, multiple=multiple, completer=completePlayerName(args), completerdelims="", noneok=noneok, **kw)
     ttyio.echo("inputplayername.160: name=%r" % (name), level="debug")
     return name
 #    playerid = getplayerid(args, name)
@@ -113,7 +117,7 @@ def inputattributename(args:object, prompt:str="attribute name: ", oldvalue:str=
 def tourney(args, player, otherplayer=None):
     if otherplayer is None:
         otherplayername = inputplayername("Attack Whom? >> ", multiple=False, noneok=True, args=args) # , verify=verifyOpponent)
-        otherplayerid = getplayerid(otherplayername)
+        otherplayerid = getplayerid(args, otherplayername)
         if otherplayerid is None:
             ttyio.echo("No Opponent Selected")
             return
@@ -231,7 +235,7 @@ def newsentry(args:object, player:object, message:str, otherplayer:object=None):
 
     node = {}
     node["attributes"] = attributes
-    node["prg"] = PRG
+    node["prg"] = "empyre.newsentry"
 
     dbh = bbsengine.databaseconnect(args)
     nodeid = bbsengine.insertnode(dbh, args, node, mogrify=False)
@@ -355,16 +359,6 @@ def generatename(args):
         "Icell"
     )
     return namelist[random.randint(0, len(namelist)-1)]
-
-def verifyPlayerNameNotFound(args, name):
-    dbh = bbsengine.databaseconnect(args)
-    cur = dbh.cursor()
-    sql = "select 1 from empyre.player where name=%s"
-    dat = (name,)
-    cur.execute(sql, dat)
-    if cur.rowcount == 0:
-        return True
-    return False
 
 class Player(object):
     def __init__(self, args, playerid:int=None, rank=0, npc=False):
@@ -492,9 +486,10 @@ class Player(object):
             t = a["type"] if "type" in a else "int"
             v = a["value"] if "value" in a else None
             if t == "playername":
-                playername = inputplayername("%s (playername): " % (n), v, args=self.args)
-                if x is not None:
-                    x = getplayerid(args, playername)
+                x = inputplayername("%s (playername): " % (n), v, args=self.args, verify=verifyPlayerNameNotFound)
+                ttyio.echo("player.edit.100: playername=%r" % (x), level="debug")
+#                if x is not None:
+#                    x = getplayerid(args, playername)
             elif t == "epoch":
                 x = bbsengine.inputdate("%s (date): " % (n), v)
             elif t == "int":
@@ -506,12 +501,8 @@ class Player(object):
                 return
             setattr(self, n, x)
 
-        if ttyio.inputboolean("save? ", "N", "YN") is True:
-            ttyio.echo("Yes")
+        if ttyio.inputboolean("save? ", "N") is True:
             self.save()
-        else:
-            ttyio.echo("No")
-
         return
 
     def load(self, playerid):
@@ -525,7 +516,7 @@ class Player(object):
         res = cur.fetchone()
 
         if self.args.debug is True:
-            ttyio.echo("player.load.res=%r" % (res), level="debug")
+            ttyio.echo("player.load.res=%r" % (res), strip=True, interpret=False)
 
         if res is None:
             return None
@@ -607,16 +598,17 @@ class Player(object):
         try:
             self.update()
             if updatecredits is True:
+                # corruption if credits are updated after player.load()
                 bbsengine.setmembercredits(self.dbh, self.memberid, self.credits)
         except:
-            # ttyio.echo("player record not saved.", level="error")
-            self.dbh.rollback()
+            ttyio.echo("exception saving player record")
         else:
+            ttyio.echo("player.save.100: running commit()")
             self.dbh.commit()
             for a in self.attributes:
                 name = a["name"]
                 a["value"] = getattr(self, name)
-            # ttyio.echo("player record saved.", level="success")
+            ttyio.echo("player record saved.", level="success")
         return
 
     def insert(self):
@@ -630,7 +622,7 @@ class Player(object):
         ttyio.echo("attributes.name=%r" % (attributes["name"]))
 
         node = {}
-        node["prg"] = PRG
+        node["prg"] = "empyre.player"
         node["attributes"] = attributes
         # self.dbh = bbsengine.databaseconnect(self.args)
         nodeid = bbsengine.insertnode(self.dbh, self.args, node, mogrify=False)
@@ -648,7 +640,6 @@ class Player(object):
         # if self.args.debug is True:
         #     ttyio.echo("new.100: currentmemberid=%r" % (currentmemberid), level="debug")
         # attributes["memberid"] = currentmemberid
-        # self.memberid = currentmemberid
 
         playername = inputplayername("new player name: ", currentmembername, verify=verifyPlayerNameNotFound, multiple=False, args=self.args, returnseq=False)
         if playername is None:
@@ -662,9 +653,11 @@ class Player(object):
             attributes[name] = default
             setattr(self, name, default)
 
+        self.memberid = currentmemberid
+
         ttyio.echo("player.new.120: playername=%r" % (playername))
-        self.setattribute("playername", playername)
-        setattr(self, "playername", playername)
+        self.setattribute("name", playername)
+        setattr(self, "name", playername)
 
         self.insert()
 
@@ -677,7 +670,7 @@ class Player(object):
 
         if self.args.debug is True:
             ttyio.echo("Player.new.100: playerid=%r" % (self.playerid), level="debug")
-        ttyio.echo("{F6}new player!{F6}", level="success")
+        ttyio.echo("new player!", level="success")
         return
 
     def status(self):
@@ -685,7 +678,7 @@ class Player(object):
             ttyio.echo("bbsengine.getcurrentmemberid()=%r" % (bbsengine.getcurrentmemberid(self.args)), level="debug")
             ttyio.echo("player.playerid=%r, player.memberid=%r, player.name=%r" % (self.playerid, self.memberid, self.name), level="debug")
 
-        bbsengine.title("player status for %s (#%d)" % (self.name, self.playerid), titlecolor="{bggray}{white}", hrcolor="{green}")
+        title("player status for %r" % (self.name))
 
         terminalwidth = ttyio.getterminalwidth()-2
 
@@ -702,11 +695,17 @@ class Player(object):
                 if t == "int":
                     v = "{:n}".format(v)
                 elif t == "epoch":
-                    v = bbsengine.datestamp(v)
+                    # ttyio.echo("player.status.100: v=%r" % (v), interpret=False)
+                    if v < 1:
+                        v = "None"
+                    else:
+                        v = bbsengine.datestamp(v)
             buf = "{yellow}%s: %s{/all}" % (n.ljust(maxlabellen), v)
+            # ttyio.echo("player.status.180: buf=%r" % (buf), level="debug", interpret=False)
             buflen = len(ttyio.interpretmci(buf, strip=True, wordwrap=False))
             if buflen > maxwidth:
                 maxwidth = buflen
+                # ttyio.echo("player.status.160: maxwidth=%s buflen=%s" % (maxwidth, buflen), level="debug")
 
         columns = terminalwidth // maxwidth
         if columns < 1:
@@ -725,20 +724,23 @@ class Player(object):
                 if t == "int":
                     v = "{:n}".format(v)
                 elif t == "epoch":
-                    v = "%s" % (bbsengine.datestamp(v))
-            buf = "{yellow}%s : %s{/all}" % (n.ljust(maxlabellen), v)
+                    if v < 1:
+                        v = "None"
+                    else:
+                        v = "%s" % (bbsengine.datestamp(v))
+            buf = "{yellow}%s : %s{/all}" % (n.ljust(maxlabellen, " "), v)
             buflen = len(ttyio.interpretmci(buf, strip=True, wordwrap=False))
             # ttyio.echo("buflen=%s" % (buflen))
             # ttyio.echo(">> currentcolumn=%s, columns=%s" % (currentcolumn, columns))
             if currentcolumn == columns-1:
                 #ttyio.echo("current == columns")
-                ttyio.echo("%s{f6}" % (buf), end="")
+                ttyio.echo("%s" % (buf))
             else:
                 ttyio.echo(" %s%s " % (buf, " "*(maxwidth-buflen)), end="")
 
             currentcolumn += 1
             currentcolumn = currentcolumn % columns
-        ttyio.echo("{f6}", end="")
+        ttyio.echo()
         return
         
         #ttyio.echo("acres     : %s" % (currentplayer.acres))
@@ -965,13 +967,15 @@ that you can convince him to help you..{F6:2}""", "callback": zircon}
         return True
 
     def menu():
+        title("Quests")
+
         index = 0
         for q in quests:
             ch = chr(ord("1")+index)
-            title = q["title"]
+            t = q["title"]
             callback = q["callback"] if "callback" in q else None
             if callable(callback) is True:
-                ttyio.echo("[%s] %s" % (ch, title))
+                ttyio.echo("[%s] %s" % (ch, t))
                 index += 1
         ttyio.echo("{/all}")
         return
@@ -1082,7 +1086,7 @@ def town(args, player):
     # @since 20200816
     # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_town.lbl#L293
     def naturaldisasterbank(args, player):
-        bbsengine.title("bank", titlecolor="{bggray}{white}", hrcolor="{green}")
+        title("Bank", titlecolor="{bggray}{white}", hrcolor="{green}")
         setarea(player, "natural disaster bank") # "{bggray}{white}%s{/all}" % ("bank".ljust(terminalwidth)))
         ttyio.echo()
         exchangerate = 3 #:1 -- 3 coins per credit
@@ -1134,13 +1138,13 @@ def town(args, player):
         buf = "LUCIFER'S DEN - Where Gamblin's no Sin!"
         terminalwidth = ttyio.getterminalwidth()
 
-        bbsengine.title(buf, hrcolor="{red}", titlecolor="{yellow}")
+        title(buf, hrcolor="{red}", titlecolor="{yellow}")
         # ttyio.echo("{autored}{reverse}%s{/reverse}{/red}" % (buf.center(terminalwidth-2)))
         # ttyio.echo("{autored}%s{/red}" % ("Where gambling is no sin!".center(terminalwidth-2)))
         ttyio.echo("{yellow}I will let you play for the price of a few souls!")
-        ch = ttyio.inputboolean("{cyan}Will you agree to this?{/all} ", "YN")
+        ch = ttyio.inputboolean("{cyan}Will you agree to this?{/all} ", "N")
         if ch is False:
-            ttyio.echo("No{F6}Some other time, then.")
+            ttyio.echo("Some other time, then.")
             return
         # always win, but it costs 10 serfs, 50 serfs if you guess correctly
         # og=int(3*rnd(0)+2)
@@ -1215,14 +1219,14 @@ def town(args, player):
             
         promotable = random.randint(0, 4)
         
-        bbsengine.title(": Soldier Promotions :", titlecolor="{bggray}{white}", hrcolor="{green}")
+        title(": Soldier Promotions :")
 #        ttyio.echo("{autogreen}{reverse}%s{/reverse}{/green}" % (": Soldier Promotions :".center(terminalwidth-2)))
         ttyio.echo("{F6}{yellow}Good day, I take it that you are here to see if any of your soldiers are eligible for promotion to the status of noble.{F6}")
         ttyio.echo("Well, after checking all of them, I have found that %s eligible." % (pluralize(promotable, "soldier is", "soldiers are", end="")))
         if promotable == 0:
             return
 
-        ch = ttyio.inputboolean("{green}Do you wish them promoted? ", "YN", "N")
+        ch = ttyio.inputboolean("{green}Do you wish them promoted? ", "N")
         ttyio.echo("{/all}")
         if ch is False:
             return
@@ -1245,7 +1249,7 @@ def town(args, player):
     def realtorsadvice(args, player):
         terminalwidth = ttyio.getterminalwidth()-2
         buf = " : Hood's Real Deals! : "
-        bbsengine.title(buf, titlecolor="{bggray}{white}", hrcolor="{green}")
+        title(buf)
         setarea(player, buf)
         
         # you have 10 shipyards, BSC
@@ -1263,7 +1267,7 @@ def town(args, player):
     # @since 20200830
     # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_town.lbl#L244
     def trainwarriors(args, player):
-        bbsengine.title(": Warrior Training :", hrcolor="{green}", titlecolor="{bggray}{white}")
+        title(": Warrior Training :")
         ttyio.echo()
         eligible = int(player.nobles*20-player.soldiers)
         if player.serfs < 1500 or eligible > (player.serfs // 2):
@@ -1286,7 +1290,7 @@ def town(args, player):
     # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_town.lbl#L130
     # @since 20200830
     def menu():
-        bbsengine.title("Town Menu", hrcolor="{green}", titlecolor="{bggray}{white}")
+        title("Town Menu")
 
         for hotkey, description, func in options:
             if callable(func):
@@ -1433,7 +1437,7 @@ def colonytrip(args, player):
 # @see https://github.com/Pinacolada64/ImageBBS/blob/e9f033af1f0b341d0d435ee23def7120821c3960/v1.2/games/empire6/plus_emp6_combat.lbl#L178
 def combat(args, player):
     def menu():
-        bbsengine.title("Fight Menu", hrcolor="{green}", titlecolor="{bggray}{white}")
+        title("Fight Menu")
         buf = """
 {bggray}{white}[1]{/bgcolor} {green}Attack Army
 {bggray}{white}[2]{/bgcolor} {green}Attack Palace
@@ -1685,16 +1689,17 @@ def mainmenu(args, player):
         ("G", "Generate NPC", generatenpc),
     )
 
+#    ttyio.echo("title=%r" % (title))
     done = False
     while not done:
         terminalwidth = bbsengine.getterminalwidth()
         # ttyio.echo("terminalwith=%r" % (terminalwidth))
         setarea(player, "main menu") # {bggray}{white}%s{/bgcolor}" % ("area: main menu".ljust(terminalwidth)))
-        bbsengine.title("main menu", hrcolor="{green}", titlecolor="{bggray}{white}")
+        title("Main Menu")
         ttyio.echo()
         choices = "Q"
-        for opt, title, callback in options:
-            ttyio.echo("{bggray}{white}[%s]{/bgcolor}{green} %s" % (opt, title))
+        for opt, t, callback in options:
+            ttyio.echo("{bggray}{white}[%s]{/bgcolor}{green} %s" % (opt, t))
             choices += opt
         ttyio.echo("{F6}{bggray}{white}[Q]{/bgcolor}{green} Quit{/all}")
 
@@ -1706,9 +1711,9 @@ def mainmenu(args, player):
                 ttyio.echo("{lightgreen}Q{cyan} -- quit game{/all}")
                 return False
             else:
-                for opt, title, callback in options:
+                for opt, t, callback in options:
                     if opt == ch:
-                        ttyio.echo("{lightgreen}%s{cyan} -- %s{/all}" % (opt, title), end="")
+                        ttyio.echo("{lightgreen}%s{cyan} -- %s{/all}" % (opt, t), end="")
                         if callable(callback) is True:
                             ttyio.echo()
                             callback(args, player)
@@ -1732,7 +1737,7 @@ def sysopoptions(args, player):
     # ttyio.echo("sysopoptions.100: sysop=%r" % (sysop), level="debug")
     if sysop is True:
         setarea(player, ": SysOp Options :")
-        bbsengine.title(": SysOp Options :", titlecolor="{bggray}{white}", hrcolor="{green}")
+        title(": SysOp Options :")
         player.turncount = ttyio.inputinteger("{cyan}turncount: {lightgreen}", player.turncount)
         player.coins = ttyio.inputinteger("{cyan}coins: {lightgreen}", player.coins)
         ttyio.echo("{/all}")
@@ -1896,7 +1901,7 @@ def endturn(args, player):
     
     adjust(args, player)
 
-    bbsengine.title("Yearly Report", titlecolor="{bggray}{white}", hrcolor="{green}")
+    title("Yearly Report")
         # pn=pn-(py+xx-pt)
 
         # &"{f6:2}{lt. green}PAYABLES{white}"
@@ -2073,11 +2078,11 @@ Instructions
 
 # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/Empire6.lbl#L69
 def otherplayers(args, player):
-    bbsengine.title("Other Players", titlecolor="{bggray}{white}", hrcolor="{green}")
+    title("Other Players")
     return
 
 def resetempire(args, player):
-    if ttyio.inputboolean("reset empyre? ", "N", "YN") is True:
+    if ttyio.inputboolean("reset empyre? ", "N") is True:
         ttyio.echo("Yes")
         sql = "select id from empyre.player"
         dat = ()
@@ -2105,7 +2110,7 @@ def scratchnews(args, player):
     res = cur.fetchone()
     newsentries = res["count"]
     ttyio.echo("scratchnews.100: res=%r, newsentries=%r" % (res, newsentries))
-    if ttyio.inputboolean("scratch %s? [yN]: " % (bbsengine.pluralize(newsentries, "news entry", "news entries")), "N", "YN") is False:
+    if ttyio.inputboolean("scratch %s? [yN]: " % (bbsengine.pluralize(newsentries, "news entry", "news entries")), "N") is False:
         ttyio.echo("aborted.")
         return
 
@@ -2120,7 +2125,7 @@ def scratchnews(args, player):
 def maint(args, player):
     done = False
     while not done:
-        bbsengine.title("maint", titlecolor="{bggray}{white}", hrcolor="{green}")
+        title("maint")
         setarea(player, "empyre: maint")
         buf = """{f6}{purple}Options:{/purple}{f6}
 {yellow}[D]{gray} Auto-Reset{f6} {yellow}[X]{gray} bbs credit / empyre coin exchange rate{f6}
@@ -2142,15 +2147,15 @@ def maint(args, player):
             continue
         elif ch == "E":
             ttyio.echo("Edit Player's Profile")
-            playerid = inputplayername("edit player: ", args=args)
+            playername = inputplayername("edit player: ", args=args)
+            playerid = getplayerid(args, playername)
             if playerid is None:
                 continue
             p = Player(args)
             p.load(playerid)
             p.edit()
-            continue
         elif ch == "L":
-            ttyio.echo("List Players{F6}")
+            ttyio.echo("List Players")
             otherrulers(args, player)
         elif ch == "P":
             ttyio.echo("Play Empyre")
@@ -2158,14 +2163,11 @@ def maint(args, player):
         elif ch == "R":
             ttyio.echo("Reset Empyre")
             resetempire(args, player)
-            continue
         elif ch == "S":
             ttyio.echo("Scratch News")
             scratchnews(args, player)
-            continue
         elif ch == "X":
             ttyio.echo("bbs credit -> empyre coin exchange rate")
-            continue
     ttyio.echo()
     return
     
@@ -2204,7 +2206,7 @@ def harvest(args, player):
         
     armyrequires = player.soldiers*10+1
     done = False
-    ttyio.echo("{cyan}Your army requires {reverse}%s{/reverse} this year.{/all}" % (pluralize(armyrequires, "bushel", "bushels")))
+    ttyio.echo("{cyan}Your army requires {reverse}%s{/reverse} this year and you have %s.{/all}" % (pluralize(armyrequires, "bushel", "bushels"), pluralize(player.grain, "bushel", "bushels")))
     price = 6//player.weathercondition
     price = int(price/(player.land/875)+1)
     if price > player.coins:
@@ -2215,6 +2217,9 @@ def harvest(args, player):
     if armyrequires > player.grain:
         armyrequires = player.grain
     armygiven = ttyio.inputinteger("{cyan}Give them how many? {/cyan}{lightgreen}", armyrequires)
+    if armygiven > player.grain:
+        ttyio.echo("You do not have enough grain!")
+        armygiven = player.grain
     ttyio.echo("{/all}")
     if armygiven < 1:
         armygiven = 0
@@ -2251,7 +2256,7 @@ def displayinvestmentoptions(investopts): # opts, player):
     return
 
 def investments(args, player):
-    bbsengine.title("Investments", hrcolor="{green}", titlecolor="{bggray}{white}")
+    title("Investments")
 
     terminalwidth = ttyio.getterminalwidth()
 
@@ -2352,7 +2357,7 @@ def otherrulers(args:object, player=None):
     return
 
 def play(args, player):
-    player.datelastplayedepoch = time.gmtime()
+    player.datelastplayedepoch = time.mktime(time.localtime())
 #    adjust(args, player)
     for x in ("sysopoptions", "startturn", "weather", "disaster", "trading", "harvest", "colonytrip", "town", "combat", "quests", "investments", "endturn"):
 #        try:
@@ -2396,7 +2401,8 @@ def main():
     ttyio.echo("{f6:5}{curpos:%d,0}" % (ttyio.getterminalheight()-5))
     bbsengine.initscreen(bottommargin=1)
 
-    bbsengine.title("empyre", hrcolor="{green}", titlecolor="{bggray}{white}")
+    title("Empyre")
+    ttyio.echo("database: %s host: %s:%s" % (args.databasename, args.databasehost, args.databaseport), level="debug")
 
     currentplayer = startup(args)
 
