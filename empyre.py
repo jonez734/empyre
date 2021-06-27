@@ -500,6 +500,8 @@ class Player(object):
                 ttyio.echo("invalid attribute type for n=%r t=%r" % (n, t), level="error")
                 return
             setattr(self, n, x)
+            ttyio.echo("player.edit.120: n=%r" % (n), level="debug")
+            self.setattribute(n, x)
 
         if ttyio.inputboolean("save? ", "N") is True:
             self.save()
@@ -605,10 +607,7 @@ class Player(object):
         else:
             ttyio.echo("player.save.100: running commit()")
             self.dbh.commit()
-            for a in self.attributes:
-                name = a["name"]
-                a["value"] = getattr(self, name)
-            ttyio.echo("player record saved.", level="success")
+            ttyio.echo("player record saved", level="success")
         return
 
     def insert(self):
@@ -1081,7 +1080,6 @@ Your seasoned troops make quick work of the task.  But you have found something 
 
         player.save()
 
-
 def town(args, player):
     # @since 20200816
     # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_town.lbl#L293
@@ -1310,7 +1308,7 @@ def town(args, player):
         setarea(player, "town menu")
         player.save()
         menu()
-        ch = ttyio.inputchar("Town: ", hotkeys, "")
+        ch = ttyio.inputchar("Town: ", hotkeys, "Q")
         if ch == "Q":
             ttyio.echo("Return to the Empyre")
             done = True
@@ -2197,7 +2195,7 @@ def harvest(args, player):
     if serfsgiven < 1:
         ttyio.echo("(Giving {bggray}{white}%s{/all} of grain)" % (pluralize(howmany, "bushel", "bushels")))
         serfsgiven = 0
-    if serfsgiven < player.grain:
+    if serfsgiven > player.grain:
         serfsgiven = player.grain
     player.grain -= serfsgiven
     ttyio.echo("player.grain=%r" % (player.grain), level="debug")
