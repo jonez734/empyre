@@ -10,9 +10,10 @@ create or replace view empyre.player as
         n.*,
         extract(epoch from (n.attributes->>'datelastplayed')::timestamptz) as datelastplayedepoch,
         (attributes->>'memberid')::bigint as memberid,
-        (attributes->>'playername') as playername
+        (attributes->>'playerid')::bigint as playerid,
+        (attributes->>'name') as name
     from engine.__node as n
-    where attributes ? 'playername' and attributes ? 'datelastplayedepoch' and attributes ? 'memberid' and attributes->>'prg'='empyre'
+    where prg='empyre.player'
 ;
 
 grant select on empyre.player to apache;
