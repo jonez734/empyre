@@ -85,6 +85,7 @@
 - [x] player.datelastplayed not properly updated (call localtime() instead of gmtime())
 - [x] make default for town() input a "Q"
 - [x] problem with grain calculation -- calculation error swapped "<" with ">" and it's fixed.
+- [ ] show player-needs-save status in bottom bar
 ```
 This year's harvest is 9,731 bushels
 
@@ -117,6 +118,22 @@ Give them how many? 20281
 - [ ] when terminal less than full screen, bottom bar is not updated correctly.
 - [ ] horses should require a certain amount of grain per year. penalty if they are not maintained.
 - [ ] figure some way to handle multi-player at a time
+- [ ] fishing from boats (stigg)
+- [ ] sawmills produce lumber.. where to get trees? (stigg)
+- [ ] if horses are given less than the required amount or grain, remove a random amount of them (empire6)
+- [ ] island loading docks
+  * grain
+  * serfs
+  * soldiers
+  * horses
+  * exports
+- [ ] mainland loading docks
+  * grain
+  * serfs
+  * nobles
+  * navigators
+  * spices
+  * soldiers
 
 ## contributors
 - ryan for 'empire6' (including c64list's labels), valuable variable tracing, and lots of ideas.
