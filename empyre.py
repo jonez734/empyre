@@ -2214,7 +2214,7 @@ def harvest(args, player):
 
     if armyrequires > player.grain:
         armyrequires = player.grain
-    armygiven = ttyio.inputinteger("{cyan}Give them how many? {/cyan}{lightgreen}", armyrequires)
+    armygiven = ttyio.inputinteger("{cyan}Give them how many? {/all}{lightgreen}", armyrequires)
     if armygiven > player.grain:
         ttyio.echo("You do not have enough grain!")
         armygiven = player.grain
@@ -2222,8 +2222,17 @@ def harvest(args, player):
     if armygiven < 1:
         armygiven = 0
     player.grain -= armygiven
-    if player.grain < 0:
-        player.grain = 0
+    player.adjust()
+
+    if player.horses > 0:
+        horsesrequire = 10*player.horses
+        ttyio.echo("Your %s" % (pluralize(player.horses, "horse requires", "horses require"))
+        horsesgiven = ttyio.inputinteger("{cyan}Give them how many? {/all}{lightgreen}", horsesrequire)
+        if horsesgiven > player.grain:
+            horsesgiven = player.grain
+        player.grain -= horsesgiven
+
+    player.adjust()
     return
 
 def buildinvestopts(args, player):
