@@ -11,10 +11,10 @@ import bbsengine5 as bbsengine
 
 PRG = "empyre"
 
-def title(t, titlecolor="{bggray}{white}", hrcolor="{green}"):
+def title(t:str, titlecolor:str="{bggray}{white}", hrcolor:str="{green}"):
     bbsengine.title(t, titlecolor=titlecolor, hrcolor=hrcolor)
 
-def updatetopbar(player, area):
+def updatetopbar(player:object, area:str) -> None:
     terminalwidth = bbsengine.getterminalwidth()
     leftbuf = area
     rightbuf = ""
@@ -27,7 +27,7 @@ def updatetopbar(player, area):
     buf = "{bggray}{white} %s%s " % (leftbuf.ljust(terminalwidth-len(rightbuf)-2, " "), rightbuf) # +leftbuf.ljust(terminalwidth-len(rightbuf))+rightbuf+" {/all}"
     return
 
-def setarea(player, buf):
+def setarea(player, buf) -> None:
     terminalwidth = ttyio.getterminalwidth()
     leftbuf = buf
     rightbuf = ""
@@ -68,7 +68,7 @@ def verifyPlayerNameFound(args, name):
         return False
     return True
 
-def verifyPlayerNameNotFound(args, name):
+def verifyPlayerNameNotFound(args:object, name:str) -> bool:
     ttyio.echo("verifyPlayerNameNotFound.100: name=%r" % (name))
     dbh = bbsengine.databaseconnect(args)
     cur = dbh.cursor()
@@ -79,7 +79,7 @@ def verifyPlayerNameNotFound(args, name):
         return True
     return False
 
-def getplayerid(args, name):
+def getplayerid(args:object, name:str) -> int:
     dbh = bbsengine.databaseconnect(args)
     cur = dbh.cursor()
     sql = "select id from empyre.player where name=%s"
@@ -212,12 +212,12 @@ def tourney(args, player, otherplayer=None):
     
     res = []
     if len(lost) > 0:
-        res.append("lost " + ttyio.readablelist(lost))
+        res.append("lost " + bbsengine.oxfordcomma(lost))
     if len(gained) > 0:
-        res.append("gained " + ttyio.readablelist(gained))
+        res.append("gained " + bbsengine.oxfordcomma(gained))
     
     if len(res) > 0:
-        ttyio.echo("You have %s" % (ttyio.readablelist(res)))
+        ttyio.echo("You have %s" % (bbsengine.oxfordcomma(res)))
 
     player.adjust() # adjust(args, player)
     player.save()
@@ -435,7 +435,8 @@ class Player(object):
             {"type": "int",  "name": "horses", "default":1}, # x(23)
             {"type": "int",  "name": "timber", "default":0}, # x(16)
             {"type": "epoch","name": "datelastplayedepoch", "default":0},
-            {"type": "int",  "name": "npc", "default":False, "type": "bool"},
+            {"type": "bool", "name": "npc", "default":False},
+            {"type": "int",  "name": "rebels", "default":0},
         ]
 
         for a in self.attributes:
@@ -463,14 +464,15 @@ class Player(object):
                 if a["type"] == "int":
                     value = int(value)
                 a["value"] = value
-                ttyio.echo("player.setattribute.100: name=%r value=%r" % (a["name"], a["value"]))
+                ttyio.echo("player.setattribute.100: name=%r value=%r" % (a["name"], value))
                 break
+        return
 
     def remove(self):
         self.memberid = None
         return
  
-    def verifyPlayerAttributeName(self, args, name):
+    def verifyPlayerAttributeName(self, args, name:str):
         found = False
         for a in self.attributes:
             n = a["name"]
@@ -493,8 +495,9 @@ class Player(object):
 
             a = self.getattribute(attrname)
             if a is None:
-                ttyio.echo("unknown attribute %r.", level="error")
-                return
+                ttyio.echo("unknown attribute %r." % (attrname), level="error")
+                continue
+
             n = a["name"]
             t = a["type"] if "type" in a else "int"
             v = a["value"] if "value" in a else None
@@ -508,20 +511,24 @@ class Player(object):
             elif t == "int":
                 x = ttyio.inputinteger("%s (int): " % (n), v)
             elif t == "bool":
-                x = ttyio.inputboolean("%s (bool): " % (n), "")
+                if v is True:
+                    default = "Y"
+                    prompt = "%s (bool)? [Yn]: "
+                elif v is False:
+                    default = "N"
+                    prompt = "%s (bool)? [yN]: "
+                x = ttyio.inputboolean(prompt % (n), default)
             else:
                 ttyio.echo("invalid attribute type for n=%r t=%r" % (n, t), level="error")
                 return
             setattr(self, n, x)
-            ttyio.echo("player.edit.120: n=%r" % (n), level="debug")
+            ttyio.echo("player.edit.120: n=%r x=%r" % (n, x), level="debug")
             self.setattribute(n, x)
             ttyio.echo("player.edit.140: %s=%r" % (n, self.getattribute(n)["value"]), level="debug")
 
-        if ttyio.inputboolean("save? ", "N") is True:
-            self.save()
         return
 
-    def load(self, playerid):
+    def load(self, playerid:int):
         if self.args.debug is True:
             ttyio.echo("player.load.100: playerid=%r" % (playerid), level="debug")
         # dbh = bbsengine.databaseconnect(self.args)
@@ -535,7 +542,7 @@ class Player(object):
             ttyio.echo("player.load.res=%r" % (res), strip=True, interpret=False)
 
         if res is None:
-            return None
+            return False
 
         attributes = res["attributes"] if "attributes" in res else {}
         if self.args.debug is True:
@@ -562,19 +569,22 @@ class Player(object):
         
         newsentry(self.args, self, "player %r loaded." % (self.name))
 
-        return
+        return True
 
     def update(self):
-        attributes = {}
-        for a in self.attributes:
-            name = a["name"]
-            attributes[name] = getattr(self, name)
-
         if self.playerid < 1:
             ttyio.echo("invalid playerid passed to Player.update.", level="error")
             return
 
-        # dbh = bbsengine.databaseconnect(self.args)
+        attributes = {}
+        for a in self.attributes:
+            name = a["name"]
+            attr = self.getattribute(name)
+            if attr is None:
+                ttyio.echo("invalid attribute %r" % (name))
+                continue
+            attributes[name] = attr["value"] # self.getattribute(name) # getattr(self, name)
+
         return bbsengine.updatenodeattributes(self.dbh, self.args, self.playerid, attributes)
 
     def isdirty(self):
@@ -628,7 +638,8 @@ class Player(object):
         attributes = {}
         for a in self.attributes:
             name = a["name"]
-            value = getattr(self, name)
+            attr = self.getattribute(name)
+            value = attr["value"]
             ttyio.echo("player.insert.100: %r=%r" % (name, value))
             attributes[name] = value
 
@@ -702,13 +713,15 @@ class Player(object):
             n = n[:12] + (n[12:] and '..')
             if len(n) > maxlabellen:
                 maxlabellen = len(n)
-            v  = getattr(self, a["name"])
+            attr = self.getattribute(a["name"])
+            v = attr["value"]
+            # v = getattr(self, name)
             if v is not None:
                 t = a["type"] if "type" in a else "int"
                 # ttyio.echo("player.status.140: t=%r" % (t), level="debug")
                 if t == "int":
                     # ttyio.echo("player.status.100: n=%r t=int v=%r" % (n, v), level="debug")
-                    v = "{:>8n}".format(int(v))
+                    v = "{:>6n}".format(int(v))
                     # ttyio.echo("player.status.120: new v=%r" % (v), level="debug")
                 elif t == "epoch":
                     # ttyio.echo("player.status.100: v=%r" % (v), interpret=False)
@@ -716,17 +729,16 @@ class Player(object):
                         v = "None"
                     else:
                         v = bbsengine.datestamp(v)
-            buf = "{yellow}%s: %s{/all}" % (n.ljust(maxlabellen), v)
-            # ttyio.echo("player.status.180: buf=%r" % (buf), level="debug", interpret=False)
+            buf = "%s: %s" % (n.ljust(maxlabellen), v)
             buflen = len(ttyio.interpretmci(buf, strip=True, wordwrap=False))
             if buflen > maxwidth:
                 maxwidth = buflen
-                # ttyio.echo("player.status.160: maxwidth=%s buflen=%s" % (maxwidth, buflen), level="debug")
-
+                ttyio.echo("player.status.160: maxwidth=%s buflen=%s" % (maxwidth, buflen), level="debug")
+        ttyio.echo("terminalwidth=%r maxwidth=%r" % (terminalwidth, maxwidth), level="debug")
         columns = terminalwidth // maxwidth
         if columns < 1:
             columns = 1
-        # ttyio.echo("columns=%d" % (columns))
+        ttyio.echo("columns=%d" % (columns), level="debug")
 
         currentcolumn = 0
         for a in self.attributes:
@@ -734,7 +746,8 @@ class Player(object):
             # https://stackoverflow.com/questions/2872512/python-truncate-a-long-string
             n = n[:12] + (n[12:] and '..')
 
-            v  = getattr(self, a["name"])
+            attr  = self.getattribute(a["name"]) # getattr(self, a["name"])
+            v = attr["value"]
             if v is not None:
                 t = a["type"] if "type" in a else "int"
                 if t == "int":
@@ -746,12 +759,15 @@ class Player(object):
                         v = "None"
                     else:
                         v = "%s" % (bbsengine.datestamp(v))
-            buf = "{yellow}%s : %s{/all}" % (n.ljust(maxlabellen, " "), v)
+            if a["name"] == "soldiers" and self.nobles*20 < self.soldiers:
+                buf = "{orange}%s: %s{/all}" % (n.ljust(maxlabellen), v)
+            elif a["name"] == "horses" and self.stables*50 < self.horses:
+                buf = "{orange}%s: %s{/all}" % (n.ljust(maxlabellen), v)
+            else:
+                buf = "{yellow}%s: %s{/all}" % (n.ljust(maxlabellen), v)
+
             buflen = len(ttyio.interpretmci(buf, strip=True, wordwrap=False))
-            # ttyio.echo("buflen=%s" % (buflen))
-            # ttyio.echo(">> currentcolumn=%s, columns=%s" % (currentcolumn, columns))
             if currentcolumn == columns-1:
-                #ttyio.echo("current == columns")
                 ttyio.echo("%s" % (buf))
             else:
                 ttyio.echo(" %s%s " % (buf, " "*(maxwidth-buflen)), end="")
@@ -816,9 +832,7 @@ class Player(object):
         if soldierpay < 1 and self.soldiers >= 500:
             ttyio.echo("soldierpay < 1, self.soldiers >= 500", level="debug")
             a += self.soldiers//5
-            ttyio.echo("adjust.100: a=%d" % (a), level="debug")
-    #        player.soldiers -= a
-            ttyio.echo("adjust.120: self.soldiers=%d" % (self.soldiers), level="debug")
+            ttyio.echo("adjust.100: a=%d self.soldiers=%d" % (a, self.soldiers), level="debug")
         ttyio.echo("adjust.160: a=%d" % (a), level="debug")
 
         if self.nobles < 1:
@@ -838,7 +852,6 @@ class Player(object):
         if a > 0:
             ttyio.echo("{yellow}%s{/yellow} your army" % (bbsengine.pluralize(a, "soldier deserts", "soldiers desert")))
 
-
         if self.land < 1:
             self.land = 1
             ttyio.echo("You have no land!")
@@ -854,12 +867,12 @@ class Player(object):
 
         # if pn>1e6 then a%=pn/1.5:pn=pn-a%:&"{f6}{lt. blue}You pay {lt. green}${pound}%f {lt. blue}to the monks for this{f6}year's provisions for your subjects' survival.{f6}"
         if self.coins > 1000000:
-            a = self.coins / 1.5
+            a = int(self.coins / 1.5)
             self.coins -= a
             ttyio.echo("You donate {reverse}%s{/reverse} to the monks." % (bbsengine.pluralize(a, "coin", "coins")))
 
         if self.land > 2500000:
-            a = self.land / 2.5
+            a = int(self.land / 2.5)
             self.land -= a
             ttyio.echo("You donate {reverse}%s{/reverse} to the monks." % (bbsengine.pluralize(a, "acre", "acres")))
 
@@ -882,6 +895,11 @@ class Player(object):
             ttyio.echo("{lightred}You are overdrawn by %s!{/all}" % (bbsengine.pluralize(abs(self.coins), "coin", "coins")))
             self.coins = 1
 
+        if self.horses > self.stables*50:
+            a = self.horses - self.stables*50
+            ttyio.echo("{green}You have %s for %s, %s set free." % (bbsengine.pluralize(self.stables, "stable", "stables"), bbsengine.pluralize(self.horses, "horse is", "horses are"), bbsengine.pluralize(a, "horse is", "horses are")))
+            # self.horses -= a
+
         lost = []
         for a in self.attributes:
             type = a["type"] if "type" in a else "int"
@@ -897,13 +915,12 @@ class Player(object):
                 lost.append(bbsengine.pluralize(abs(val), singular, plural))
                 player.setattribute(name, 0) # setattr(player, name, 0)
         if len(lost) > 0:
-            ttyio.echo("You have lost %s" % (ttyio.readablelist(lost)))
+            ttyio.echo("You have lost %s" % (bbsengine.oxfordcomma(lost)))
 
         self.rank = calculaterank(self.args, self)
         # player.save()
 
         return
-
 
 def yourstatus(args, player):
     return player.status()
@@ -1006,7 +1023,7 @@ that you can convince him to help you..{F6}""")
         remuneration += zircon4()
         remuneration += zircon5()
         if len(remuneration) > 0:
-            ttyio.echo("You are gifted %s by Arch-Mage Zircon." % (ttyio.readablelist(remuneration)))
+            ttyio.echo("You are gifted %s by Arch-Mage Zircon." % (bbsengine.oxfordcomma(remuneration)))
             # newsentry()?
             return True
         return False
@@ -1034,7 +1051,7 @@ that you can convince him to help you..{F6}""")
         {
             "name": "raidpiratecamp", 
             "title": "Raid the Pirate's Camp", 
-            "description":"""You have heard that a band of pirates has been
+            "description":"""You have heard that a band of pirates have been
 raiding the area recently, causing much strife to the poor serfs
 in your dominion.  Thus it is with a stout heart and a sharp
 sword that you determine to rid your kingdom of these pests once
@@ -1053,7 +1070,7 @@ after checking for sentries, enter the passage.{F6}""",
             "description": """
  With the need for good horses, and also having heard of wild horses in the mountains, you set out with some of your nobles to try to find them.{F6}
  Questioning the people you meet you discover that the horses have been seen near a haunted cave.  Not believing in ghosts, you head for the location.{F6}
- Finally, you find the cave, seeing one of the horses entering it.  Quietly you and your men approach the cave.  You are within a hundred yards when you hear some spooky sounds coming from it.{F6}
+ Finally you find the cave, seeing one of the horses entering it.  Quietly you and your men approach the cave.  You are within a hundred yards when you hear some spooky sounds coming from it.{F6}
  Determined to discover the secret of the sounds, you advance toward the cave.  Upon reaching the cave's entrance, you see daylight quite far back. Boldly entering, you discover a tunnel through a mountain.  The tunnel distorted the sounds you heard, producing the "ghostly" manifestations!{F6}
  There is a hidden valley on the other end of the tunnel.  In the valley you find a herd of horses.{F6}""", 
              "callback": hauntedcave
@@ -1162,7 +1179,7 @@ There is a hidden valley on the other end of the tunnel.  In the valley you find
 You gain 30 horses!{F6:2}
 """)
             if questcompleted() is True:
-                ttyio.echo("You win quest #2")
+                ttyio.echo("You win quest #2: 30 horses")
                 player.horses += 30 # x(23)
         elif ch == "3":
             ttyio.echo("""
@@ -1176,21 +1193,21 @@ Considering that these brigands may some day become a threat to your land, you a
 Your seasoned troops make quick work of the task.  But you have found something more.  The brigands' camp is in a small valley with good timber! You gain 15 tons of timber!""")
                 player.timber += 15 # x(16)
             else:
-                ttyio.echo("""Your soldiers were not properly prepared, and they retreat before completing the quest.""")
+                ttyio.echo("Your soldiers were not properly prepared, and they retreat before completing the quest.")
         elif ch == "4":
-            ttyio.echo("You win quest #4")
+            ttyio.echo("You win quest #4: 30,000 grain")
             player.grain += 30000
         elif ch == "5":
-            ttyio.echo("You win quest #5")
+            ttyio.echo("You win quest #5: 4,000 acres")
             player.acres += 4000
         elif ch == "6":
-            ttyio.echo("You win quest #6")
+            ttyio.echo("You win quest #6: 20 tons of spices")
             player.spices += 20 # x(25)
         elif ch == "7":
-            ttyio.echo("You win quest #7")
+            ttyio.echo("You win quest #7: 4 nobles")
             player.nobles += 4 # x(6)
         elif ch == "8":
-            ttyio.echo("You win quest #8")
+            ttyio.echo("You win quest #8: 6 cannons")
             player.cannons += 6 # x(14)
 
         player.save()
@@ -1206,9 +1223,12 @@ def town(args, player):
         credits = bbsengine.getmembercredits(args)
         buf = "You have {bggray}{white}%s{/all} and {bggray}{white}%s{/all}" % (bbsengine.pluralize(player.coins, "coin", "coins"), bbsengine.pluralize(credits, "credit", "credits"))
         ttyio.echo(buf)
-        ttyio.echo("The exchange rate is {bggray}{white}%s per credit{/all}.{F6}"  % (bbsengine.pluralize(exchangerate, "coin", "coins")))
-        amount = ttyio.inputinteger("{cyan}Exchange how many credits?: {lightgreen}")
-        ttyio.echo("{/all}")
+        if credits > 0:
+            ttyio.echo("The exchange rate is {bggray}{white}%s per credit{/all}.{F6}"  % (bbsengine.pluralize(exchangerate, "coin", "coins")))
+            amount = ttyio.inputinteger("{cyan}Exchange how many credits?: {lightgreen}")
+            ttyio.echo("{/all}")
+        else:
+            return
         if amount is None or amount < 1:
             return
 
@@ -1489,7 +1509,7 @@ def trade(args, player:object, attr:str, name:str, price:int, singular:str="sing
                 ttyio.echo("You have %s and you need %s to complete this transaction." % (bbsengine.pluralize(player.coins, "coin", "coins"), bbsengine.pluralize(abs(player.coins - quantity*price), "more coin", "more coins")))
                 continue
 
-            value = getattr(player, attr)
+            value = player.getattributes(attr) # getattr(player, attr)
             value += quantity
             if args.debug is True:
                 ttyio.echo("value=%r" % (value), level="debug")
@@ -1505,7 +1525,8 @@ def trade(args, player:object, attr:str, name:str, price:int, singular:str="sing
             if quantity is None or quantity < 1:
                 break
 
-            value = getattr(player, attr)
+            attr = player.getattribute(attr) # getattr(player, attr)
+            value = attr["value"]
             value -= quantity
             setattr(player, attr, value)
             player.coins += quantity*price
@@ -1557,7 +1578,7 @@ def combat(args, player):
         if bbsengine.diceroll(40) < 21:
             foo.append("your dragon was killed!")
             player.dragons -= 1
-        ttyio.echo(ttyio.readablelist(foo))
+        ttyio.echo(bbsengine.oxfordcomma(foo))
         player.adjust() # adjust(args, player)
         otherplayer.adjust() # adjust(args, otherplayer)
 
@@ -1752,11 +1773,13 @@ def newplayer(args):
     ttyio.echo("newplayer.100: player.name=%r" % (player.name), level="debug")
     return player
     
-def getplayer(args, memberid):
+def getplayer(args, memberid:int):
+    ttyio.echo("getplayer.100: memberid=%r" % (memberid), interpret=False, level="debug")
     sql = "select * from empyre.player where memberid=%s"
     dat = (memberid,)
     dbh = bbsengine.databaseconnect(args)
     cur = dbh.cursor()
+    ttyio.echo("getplayer.110: sql=%r dat=%r" % (sql, dat), level="debug", interpret=False)
     cur.execute(sql, dat)
     if cur.rowcount == 0:
         ttyio.echo("no player record.")
@@ -1772,7 +1795,9 @@ def getplayer(args, memberid):
         playerid = inputplayername("use player: ", default, multiple=False, noneok=True, args=args)
 
     player = Player(args)
-    player.load(playerid)
+    if player.load(playerid) is False:
+        ttyio.echo("could not load player record for #%r" % (playerid), level="error")
+        return None
     return player
         
     res = cur.fetchone()
@@ -1789,8 +1814,7 @@ def startup(args):
     setarea(None, "startup") # bbsengine.updatetopbar("{bggray}{white}%s{/all}" % ("area: startup".ljust(terminalwidth)))
     # ttyio.echo("empyre.startup.100: args=%r" % (args))
     currentmemberid = bbsengine.getcurrentmemberid(args)
-    if args.debug is True:
-        ttyio.echo("startup.300: currentmemberid=%r" % (currentmemberid), level="debug")
+    ttyio.echo("startup.300: currentmemberid=%r" % (currentmemberid), level="debug")
     player = getplayer(args, currentmemberid)
     if player is None:
         ttyio.echo("startup.200: new player", level="debug")
@@ -2019,7 +2043,7 @@ def disaster(args:object, player:object, disaster:int=None):
             res.append("{bggray}{white}%s{/all}" % (bbsengine.pluralize(x, "noble", "nobles")))
         
         if len(res) > 0:
-            ttyio.echo("P L A G U E ! %s died" % (ttyio.readablelist(res)))
+            ttyio.echo("P L A G U E ! %s died" % (bbsengine.oxfordcomma(res)))
     elif disaster == 3:
         x = random.randint(1, player.grain//3) # int(random.random()*player.grain/3)
         player.grain -= x
@@ -2058,7 +2082,7 @@ def disaster(args:object, player:object, disaster:int=None):
             res.append(bbsengine.pluralize(x, "foundry", "foundries"))
 
         if len(res) > 0:
-            ttyio.echo("Mount Apocolypse has erupted!{F6}Lava wipes out %s" % (ttyio.readablelist(res)))
+            ttyio.echo("Mount Apocolypse has erupted!{F6}Lava wipes out %s" % (bbsengine.oxfordcomma(res)))
     elif disaster == 6:
         if player.shipyards > 0:
             x = random.randint(0, player.shipyards//2) # int(random.random()*player.shipyards/2)
@@ -2068,7 +2092,7 @@ def disaster(args:object, player:object, disaster:int=None):
     return
 
 def weather(args, player):
-    # if you are a KING, you only get average weather
+    # if you are a KING, you only get average weather and below
     if player.rank == 2:
         weathercondition = bbsengine.diceroll(4) # random.randint(1, 4)
     else:
@@ -2094,7 +2118,7 @@ def weather(args, player):
     return
 
 def menu():
-    ttyio.echo("empyre menu")
+    bbsengine.title("empyre menu")
     buf = """
 {f6}
 {reverse}[Y]{/reverse}our stats{f6}
@@ -2117,7 +2141,7 @@ def otherplayers(args, player):
     return
 
 def resetempire(args, player):
-    if ttyio.inputboolean("reset empyre? ", "N") is True:
+    if ttyio.inputboolean("reset empyre? [yN]: ", "N") is True:
         ttyio.echo("Yes")
         sql = "select id from empyre.player"
         dat = ()
@@ -2149,7 +2173,7 @@ def scratchnews(args, player):
         ttyio.echo("aborted.")
         return
 
-    sql = "delete from engine.__node where attributes ? 'message' and attributes ? 'memberid' and attributes ? 'playerid'"
+    sql = "delete from engine.__node where prg='empyre.newsentry'"
     cur.execute(sql)
     dbh.commit()
     ttyio.echo("%s scratched." % (bbsengine.pluralize(cur.rowcount, "news entry", "news entries")))
@@ -2167,28 +2191,41 @@ def maint(args, player):
 {yellow}[E]{gray} Edit Player's profile{f6}
 {yellow}[L]{gray} List Players{f6}
 {yellow}[R]{gray} Reset Empyre{f6}
-{yellow}[S]{gray} Scratch News{f6:2}
+{yellow}[S]{gray} Scratch News{f6}
+{yellow}[Y]{gray} Your Stats{f6:2}
 {yellow}[Q]{gray} Quit{F6}
 """
         ttyio.echo(buf)
-        ch = ttyio.inputchar("{cyan}maintenance: {lightgreen}", "DXELRSQ", "")
+        ch = ttyio.inputchar("{cyan}maintenance: {lightgreen}", "DXELRSYQ", "")
 
         if ch == "Q":
             ttyio.echo("Quit")
             done = True
             continue
         elif ch == "D":
-            ttyio.echo("Auto-Reset")
+            ttyio.echo("Auto-Reset (not implemented)")
             continue
         elif ch == "E":
             ttyio.echo("Edit Player's Profile")
-            playername = inputplayername("edit player: ", args=args)
+            playername = inputplayername("edit player: ", player.name, args=args)
             playerid = getplayerid(args, playername)
             if playerid is None:
                 continue
             p = Player(args)
             p.load(playerid)
             p.edit()
+            if p.isdirty() is True:
+                if ttyio.inputboolean("save? [Yn]: ", "Y") is True:
+                    p.save()
+                    if player.memberid == p.memberid:
+                        ttyio.echo("player.memberid is p.memberid")
+                        player = p
+            else:
+                if ttyio.inputboolean("save? [yN]: ", "N") is True:
+                    p.save()
+                    if player.memberid == p.memberid:
+                        ttyio.echo("player.memberid is p.memberid")
+                        player = p
         elif ch == "L":
             ttyio.echo("List Players")
             otherrulers(args, player)
@@ -2202,7 +2239,18 @@ def maint(args, player):
             ttyio.echo("Scratch News")
             scratchnews(args, player)
         elif ch == "X":
-            ttyio.echo("bbs credit -> empyre coin exchange rate")
+            ttyio.echo("bbs credit -> empyre coin exchange rate, not implemented")
+        elif ch == "Y":
+            ttyio.echo("Player Stats")
+            playername = inputplayername("player: ", "", verify=verifyPlayerNameFound, args=args)
+            playerid = getplayerid(args, playername)
+            if playerid is None:
+                ttyio.echo("%s not found." % (playername))
+                continue
+            p = Player(args)
+            p.load(playerid)
+            p.status()
+
     ttyio.echo()
     return
     
@@ -2241,8 +2289,8 @@ def harvest(args, player):
         
     armyrequires = player.soldiers*10+1
     done = False
-    ttyio.echo("{cyan}Your army requires {reverse}%s{/reverse} this year and you have %s.{/all}" % (bbsengine.pluralize(armyrequires, "bushel", "bushels"), bbsengine.pluralize(int(player.grain), "bushel", "bushels")))
-    price = 6//player.weathercondition
+    ttyio.echo("{cyan}Your army requires {reverse}%s{/reverse} this year and you have {reverse}%s{/reverse}.{/all}" % (bbsengine.pluralize(armyrequires, "bushel", "bushels"), bbsengine.pluralize(int(player.grain), "bushel", "bushels")))
+    price = int(6//player.weathercondition)
     price = int(price/(player.land/875)+1)
     if price > player.coins:
         trade(args, player, "grain", "bushel", price, "bushel", "bushels")
@@ -2263,8 +2311,8 @@ def harvest(args, player):
     player.adjust() # adjust(args, player)
 
     if player.horses > 0:
-        horsesrequire = 10*player.horses
-        ttyio.echo("Your %s %s" % (bbsengine.pluralize(player.horses, "horse requires", "horses require"), bbsengine.pluralize(horsesrequire, "bushel", "bushels")))
+        horsesrequire = random.randint(2, 7)*player.horses
+        ttyio.echo("Your %s %s" % (bbsengine.pluralize(player.horses, "horse requires", "horses require", quantity=False), bbsengine.pluralize(horsesrequire, "bushel", "bushels")))
         horsesgiven = ttyio.inputinteger("{cyan}Give them how many? {/all}{lightgreen}", horsesrequire)
         if horsesgiven < 0:
             horsesgiven = 0
@@ -2416,7 +2464,7 @@ def play(args, player):
             ttyio.echo("play.100: calling %r" % (x), level="debug")
             res = f(args, player)
         else:
-            ttyio.echo("play.120: %r not callable" % (x), level="debug")
+            ttyio.echo("play.120: %r not callable" % (x), level="error")
             res = None
         if res is False:
             break
@@ -2448,6 +2496,7 @@ def main():
     ttyio.echo("{f6:5}{curpos:%d,0}" % (ttyio.getterminalheight()-5))
     bbsengine.initscreen(bottommargin=1)
 
+    # print("\x1b#3Empyre\n\x1b#4Empyre")
     title("Empyre")
     ttyio.echo("database: %s host: %s:%s" % (args.databasename, args.databasehost, args.databaseport), level="debug")
 
