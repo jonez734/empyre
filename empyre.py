@@ -858,11 +858,11 @@ class Player(object):
 
         if self.shipyards > 10: # > 400
             a = int(self.shipyards / 1.1)
-            ttyio.echo("{cyan}Your kingdom cannot support %s! %s closed.{/cyan}" % (bbsengine.pluralize(self.shipyards, "shipyard", "shipyards"), bbsengine.pluralize(self.shipyards, "shipyard is", "shipyards are")))
+            ttyio.echo("{cyan}Your kingdom cannot support %s! %s closed.{/all}" % (bbsengine.pluralize(self.shipyards, "shipyard", "shipyards"), bbsengine.pluralize(self.shipyards, "shipyard is", "shipyards are")))
             self.shipyards -= a
         if self.ships > self.shipyards*10:
             a = self.ships - self.shipyards*10
-            ttyio.echo("{cyan}Your {reverse}%s{/reverse} cannot support {reverse}%s{/reverse}! %s scrapped{/cyan}" % (bbsengine.pluralize(self.shipyards, "shipyard", "shipyards"), bbsengine.pluralize(self.ships, "ship", "ships"), bbsengine.pluralize(a, "ship is", "ships are")))
+            ttyio.echo("{cyan}Your {reverse}%s{/reverse} cannot support {reverse}%s{/reverse}! %s scrapped{/all}" % (bbsengine.pluralize(self.shipyards, "shipyard", "shipyards"), bbsengine.pluralize(self.ships, "ship", "ships"), bbsengine.pluralize(a, "ship is", "ships are")))
             self.ships -= a
 
         # if pn>1e6 then a%=pn/1.5:pn=pn-a%:&"{f6}{lt. blue}You pay {lt. green}${pound}%f {lt. blue}to the monks for this{f6}year's provisions for your subjects' survival.{f6}"
@@ -889,7 +889,7 @@ class Player(object):
         if self.mills > 500:
             a = self.mills // 4
             self.mills -= a
-            ttyio.echo("{green}The mills are overworked! %s mills have broken millstones and are closed.{/green}" % (a))
+            ttyio.echo("{green}The mills are overworked! %s mills have broken millstones and are closed.{/all}" % (bbsengine.pluralize(a, "mill has a broken millstone", "mills have broken millstones")))
 
         if self.coins < 0:
             ttyio.echo("{lightred}You are overdrawn by %s!{/all}" % (bbsengine.pluralize(abs(self.coins), "coin", "coins")))
@@ -1902,7 +1902,7 @@ def startturn(args, player):
     player.turncount += 1
 
     if player.turncount > 4:
-        ttyio.echo("{red}The other rulers unite against you for hogging the game!{/red}")
+        ttyio.echo("{red}The other rulers unite against you for hogging the game!{/all}")
         return False
     
     player.save()
@@ -1914,7 +1914,7 @@ def endturn(args, player):
     ttyio.echo("end turn...{F6}")
     
     if player.serfs < 100:
-        ttyio.echo("{green}You haven't enough serfs to maintain the empyre! It's turned over to King George and you are {yellow}beheaded{/fgcolor}{green}.{/green}")
+        ttyio.echo("{green}You haven't enough serfs to maintain the empyre! It's turned over to King George and you are {yellow}beheaded{/fgcolor}{green}.{/all}")
         player.memberid = None
         player.save(updatecredits=True)
         return
@@ -1970,14 +1970,14 @@ def endturn(args, player):
 #    ttyio.echo("Receivables: %s" % "{:>6n}".format(receivables)) # (pluralize(receivables, "credit", "credits")))
 #    ttyio.echo("Payables:    %s" % "{:>6n}".format(payables)) # (pluralize(payables, "credit", "credits")))
 
-    ttyio.echo("{cyan}EXPENSES - %s{/cyan}" % ("{:>6n}".format(payables)))
+    ttyio.echo("{cyan}EXPENSES - %s{/all}" % ("{:>6n}".format(payables)))
     ttyio.echo()
     ttyio.echo(" Soldier's Pay:  %s" % ("{:>6n}".format(soldierpay)))
     ttyio.echo(" Palace Rent:    %s" % ("{:>6n}".format(palacerent)))
     ttyio.echo(" Noble's Gifts:  %s" % ("{:>6n}".format(noblegifts)))
     ttyio.echo()
 
-    ttyio.echo("{cyan}INCOME --- %s{/cyan}" % ("{:>6n}".format(receivables)))
+    ttyio.echo("{cyan}INCOME --- %s{/all}" % ("{:>6n}".format(receivables)))
     ttyio.echo()
     ttyio.echo(" Markets:        %s" % ("{:>6n}".format(p2))) # p2 markets
     ttyio.echo(" Mills:          %s" % ("{:>6n}".format(p3))) # p3 mills
@@ -1986,10 +1986,12 @@ def endturn(args, player):
     ttyio.echo(" Taxes:          %s" % ("{:>6n}".format(taxes))) # tg/taxes
     ttyio.echo()
 
-    if receivables > payables:
-        ttyio.echo("{lightgreen}Profit:               %s{/green}" % ("{:>6n}".format(receivables-payables))) # (pluralize(receivables-payables, "credit", "credits")))
+    if receivables == payables:
+        ttyio.echo("{lightgreen}Break Even:           %s{/all}" % ("{:>6n}".format(payables)))
+    elif receivables > payables:
+        ttyio.echo("{lightgreen}Profit:               %s{/all}" % ("{:>6n}".format(receivables-payables))) # (pluralize(receivables-payables, "credit", "credits")))
     elif receivables < payables:
-        ttyio.echo("{lightred}Loss:                -%s{/red}" % ("{:>6n}".format(payables-receivables))) # pluralize(payables-receivables, "credit", "credits")))
+        ttyio.echo("{lightred}Loss:                -%s{/all}" % ("{:>6n}".format(payables-receivables))) # pluralize(payables-receivables, "credit", "credits")))
     ttyio.echo("{/all}")
 
     player.coins += receivables
@@ -2186,7 +2188,7 @@ def maint(args, player):
     while not done:
         title("maint")
         setarea(player, "empyre: maint")
-        buf = """{f6}{purple}Options:{/purple}{f6}
+        buf = """{f6}{purple}Options:{/all}{f6}
 {yellow}[D]{gray} Auto-Reset{f6} {yellow}[X]{gray} bbs credit / empyre coin exchange rate{f6}
 {yellow}[E]{gray} Edit Player's profile{f6}
 {yellow}[L]{gray} List Players{f6}
