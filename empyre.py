@@ -127,123 +127,6 @@ def inputattributename(args:object, prompt:str="attribute name: ", oldvalue:str=
     completer = completeAttributeName(args, attrs)
     return ttyio.inputstring(prompt, oldvalue, opts=args, verify=verify, multiple=multiple, completer=completer, returnseq=False, **kw)
 
-# @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_tourney.lbl#L2
-def tourney(args, player, otherplayer=None):
-    if otherplayer is None:
-        otherplayername = inputplayername("Attack Whom? >> ", multiple=False, noneok=True, args=args) # , verify=verifyOpponent)
-        otherplayerid = getplayerid(args, otherplayername)
-        if otherplayerid is None:
-            ttyio.echo("No Opponent Selected")
-            return
-        if player.playerid == otherplayerid:
-            ttyio.echo("You cannot joust against yourself! Big mistake!")
-            loss = bbsengine.diceroll(player.land//2)
-            player.land -= loss
-            ttyio.echo("You lost %s." % (bbsengine.pluralize(loss, "acre", "acres")))
-            return
-    otherplayer = Player(args, otherplayerid)
-    setarea(player, "joust")
-
-    ttyio.echo("tourney.100: otherplayer=%r" % (otherplayer), level="debug")
-
-    if player.horses == 0:
-        ttyio.echo("You do not have a horse for your noble to use!")
-        return
-
-    if player.serfs < 900:
-        ttyio.echo("Not enough serfs attend. The joust is cancelled.")
-        return
-
-    if otherplayer is None or otherplayer.nobles < 2:
-        ttyio.echo("Your opponent does not have enough nobles.")
-        return
-
-    ttyio.echo("{f6:2}Your Noble mounts his mighty steed and aims his lance... ", end="")
-    # @see https://github.com/Pinacolada64/ImageBBS/blob/e9f033af1f0b341d0d435ee23def7120821c3960/v1.2/games/empire6/plus_emp6_tourney.lbl#L12
-    if player.nobles > otherplayer.nobles*2:
-        # player.joustwin = True # nj=1
-        player.nobles += 1
-        otherplayer.nobles -= 1
-        ttyio.echo("Your noble's lance knocks their opponent to the ground. They get up and swear loyalty to you!")
-        # if nj=1 then tt$="{gray1}"+d2$+"{lt. blue}"+na$+"{white} wins joust - {lt. blue}"+en$+"{white} is shamed."
-        newsentry(args, player, "{lightblue}%s{white} wins joust - {lightblue}%s{white} is shamed" % (player.name, otherplayer.name))
-        return
-
-    lost = []
-    gained = []
-    x = bbsengine.diceroll(10)
-    ttyio.echo("x=%r" % (x))
-    if x == 1:
-        player.land += 100
-        gained.append("100 acres")
-    elif x == 2:
-        player.land -= 100
-        if player.land < 1:
-            lost.append("last acre")
-        else:
-            lost.append("100 acres")
-    elif x == 3:
-        player.coins += 1000
-        gained.append(bbsengine.pluralize(1000, "coin", "coins"))
-    elif x == 4:
-        if player.coins >= 1000:
-            player.coins -= 1000
-            lost.append(bbsengine.pluralize(1000, "coin", "coins"))
-    elif x == 5:
-        player.nobles += 1
-        gained.append("1 noble")
-    elif x == 6:
-        if player.nobles > 0:
-            player.nobles -= 1
-            if player.nobles < 1:
-                lost.append("your last noble")
-                player.nobles = 0
-            else:
-                lost.append("1 noble")
-    elif x == 7:
-        player.grain += 7000
-        gained.append(bbsengine.pluralize(7000, "bushel", "bushels"))
-    elif x == 8:
-        if player.grain >= 7000:
-            player.grain -= 7000
-            lost.append(bbsengine.pluralize(7000, "bushel", "bushels"))
-    elif x == 9:
-        player.shipyards += 1
-        gained.append("1 shipyard")
-        player.land += 100
-        gained.append("100 acres")
-    elif x == 10:
-        if player.shipyards > 0:
-            player.shipyards -= 1
-            lost.append("1 shipyard")
-        if player.land >= 100:
-            player.land -= 100
-            lost.append("100 acres")
-    
-    res = []
-    if len(lost) > 0:
-        res.append("lost " + bbsengine.oxfordcomma(lost))
-    if len(gained) > 0:
-        res.append("gained " + bbsengine.oxfordcomma(gained))
-    
-    if len(res) > 0:
-        ttyio.echo("You have %s" % (bbsengine.oxfordcomma(res)))
-
-    player.adjust() # adjust(args, player)
-    player.save()
-
-    otherplayer.adjust() # adjust(args, otherplayer)
-    otherplayer.save()
-    
-    return
-
-    if player.land < 0:
-        ttyio.echo("You lost your last %s." % (bbsengine.pluralize(abs(player.land), "acre", "acres")))
-        player.land = 0
-    if player.coins < 0:
-        ttyio.echo("You lost your last %s." % (bbsengine.pluralize(abs(player.coins), "coin", "coins")))
-        player.coins = 0
-
 def newsentry(args:object, player:object, message:str, otherplayer:object=None):
     attributes = {}
     attributes["message"] = message
@@ -876,7 +759,10 @@ class Player(object):
         if a > 0:
             ttyio.echo("{yellow}%s{/all} your army" % (bbsengine.pluralize(a, "soldier deserts", "soldiers desert")))
 
-        if self.land < 1:
+        if player.land < 0:
+            ttyio.echo("You lost your last %s." % (bbsengine.pluralize(abs(player.land), "acre", "acres")))
+            player.land = 0
+        if self.land == 0:
             self.land = 1
             ttyio.echo("You have no land!")
 
@@ -884,6 +770,7 @@ class Player(object):
             a = int(self.shipyards / 1.1)
             ttyio.echo("{cyan}Your kingdom cannot support %s! %s closed.{/all}" % (bbsengine.pluralize(self.shipyards, "shipyard", "shipyards"), bbsengine.pluralize(self.shipyards, "shipyard is", "shipyards are")))
             self.shipyards -= a
+
         if self.ships > self.shipyards*10:
             a = self.ships - self.shipyards*10
             ttyio.echo("{cyan}Your {var:empyre.highlightcolor}%s{/all} cannot support {var:empyre.highlightcolor}%s{/all}! %s scrapped{/all}" % (bbsengine.pluralize(self.shipyards, "shipyard", "shipyards"), bbsengine.pluralize(self.ships, "ship", "ships"), bbsengine.pluralize(a, "ship is", "ships are")))
@@ -894,6 +781,10 @@ class Player(object):
             a = int(self.coins / 1.5)
             self.coins -= a
             ttyio.echo("{cyan}You donate {var:empyre.highlightcolor}%s{/all} to the monks." % (bbsengine.pluralize(a, "coin", "coins")))
+
+        if player.coins < 0:
+            ttyio.echo("You lost your last %s." % (bbsengine.pluralize(abs(player.coins), "coin", "coins")))
+            player.coins = 0
 
         if self.land > 2500000:
             a = int(self.land / 2.5)
@@ -1376,7 +1267,7 @@ def town(args, player):
         bbsengine.title(": Soldier Promotions :")
 #        ttyio.echo("{autogreen}{reverse}%s{/reverse}{/green}" % (": Soldier Promotions :".center(terminalwidth-2)))
         ttyio.echo("{F6}{yellow}Good day, I take it that you are here to see if any of your soldiers are eligible for promotion to the status of noble.{F6}")
-        ttyio.echo("Well, after checking all of them, I have found that %s eligible.{f6}" % (bbsengine.pluralize(promotable, "soldier is", "soldiers are")), end="")
+        ttyio.echo("Well, after checking all of them, I have found that %s eligible.{f6}" % (bbsengine.pluralize(promotable, "soldier is", "soldiers are")))
         if promotable == 0:
             return
 
@@ -1434,8 +1325,8 @@ def town(args, player):
         #&" as warriors.{f6:2}Training cost is one acre per serf.{f6}"
         #&"{f6}{lt. green}Do you want them trained (Y/N) >> ":gosub 1902
         #if a then sf=sf-wb:la=la-wb:wa=wa+wb:&"{f6:2}{pound}w2{yellow}Ok, all serfs have been trained.{f6}{pound}q1"
-        ttyio.echo("{f6}{white}You have %s requirements to be trained as soldiers. Training cost is 1 acre per serf." % (bbsengine.pluralize(eligible, "serf that meets", "serfs that meet")))
-        if ttyio.inputboolean("Do you wish them promoted? [yN]: ", "N") is True:
+        ttyio.echo("{f6}{white}You have %s requirements to be trained %s. Training cost is 1 acre per serf." % (bbsengine.pluralize(eligible, "serf that meets", "serfs that meet"), bbsengine.pluralize(eligible, "as a soldier", "as soldiers", quantity=False))
+        if ttyio.inputboolean("Do you wish them trained? [yN]: ", "N") is True:
             player.serfs -= eligible
             player.land -= eligible
             player.soldiers += eligible
@@ -1587,12 +1478,6 @@ def combat(args, player):
 
     # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_tourney.lbl#L2
     def tourney():
-#        if otherplayer is None:
-#            otherplayername = inputplayername("Attack Whom? >> ", multiple=False, noneok=True, args=args) # , verify=verifyOpponent)
-#            otherplayerid = getplayerid(args, otherplayername)
-#            if otherplayerid is None:
-#                ttyio.echo("No Opponent Selected")
-#                return
         if player.playerid == otherplayerid:
             ttyio.echo("You cannot joust against yourself! Big mistake!")
             loss = bbsengine.diceroll(player.land//2)
@@ -1687,10 +1572,10 @@ def combat(args, player):
         if len(res) > 0:
             ttyio.echo("You have %s" % (bbsengine.oxfordcomma(res)))
 
-        player.adjust() # adjust(args, player)
+
         player.save()
 
-        otherplayer.adjust() # adjust(args, otherplayer)
+        otherplayer.adjust()
         otherplayer.save()
         
         return
