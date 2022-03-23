@@ -119,8 +119,11 @@ Give them how many? 20281
 - [ ] horses should require a certain amount of grain per year. penalty if they are not maintained.
 - [ ] figure some way to handle multi-player at a time
 - [ ] fishing from boats (stigg)
-- [ ] sawmills produce lumber.. where to get trees? (stigg)
-- [ ] if horses are given less than the required amount or grain, remove a random amount of them (empire6)
+- [ ] sawmills produce lumber.. where to get trees?  (stigg)
+
+    Islands could have forests and import lumber to the mainland. Also, timber is [quest 3's prize](https://github.com/Pinacolada64/ImageBBS/blob/5b564adb919f49e7644c303e7c21e8b75fd192f0/v1.2/games/empire6/win3.txt) (pina)
+
+ - [ ] if horses are given less than the required amount or grain, remove a random amount of them (empire6)
 - [ ] island loading docks
   * grain
   * serfs
