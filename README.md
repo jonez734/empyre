@@ -211,6 +211,13 @@ Give them how many? 20281
 - [ ] sawmills produce lumber.. where to get trees? (stigg)
 - [ ] if horses are given less than the required amount or grain, remove a random amount of them (empire6)
 - [ ] island loading dock
+- [ ] fishing from boats (stigg)
+- [ ] sawmills produce lumber.. where to get trees?  (stigg)
+
+    Islands could have forests and import lumber to the mainland. Also, timber is [quest 3's prize](https://github.com/Pinacolada64/ImageBBS/blob/5b564adb919f49e7644c303e7c21e8b75fd192f0/v1.2/games/empire6/win3.txt) (pina)
+
+ - [ ] if horses are given less than the required amount or grain, remove a random amount of them (empire6)
+- [ ] island loading docks
   * grain
   * serfs
   * soldiers
