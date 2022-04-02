@@ -34,6 +34,7 @@ def updatetopbar(player:object, area:str) -> None:
 
 def setarea(player, buf) -> None:
     def rightside():
+        return "rightside"
         if player is not None:
             return "| :person: %s | :moneybag: %s" % (player.name, bbsengine.pluralize(player.coins, "coin", "coins"))
         return ""
