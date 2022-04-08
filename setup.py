@@ -16,9 +16,9 @@ setup(
   author="zoid technologies",
   author_email="%s@projects.zoidtechnologies.com" % (projectname),
   py_modules=["empyre"],
-  requires=["ttyio4", "bbsengine5"],
+  requires=["ttyio5", "bbsengine5"],
   scripts=["empyre"],
-  license="GPLv3+",
+  license="GPLv3",
   provides=[projectname],
   classifiers=[
     "Programming Language :: Python :: 3.7",
