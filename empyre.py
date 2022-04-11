@@ -395,7 +395,7 @@ class Player(object):
     def edit(self):
         done = False
         while not done:
-            setarea(self, ":anchor: edit player attributes")
+            setarea(self, "edit player attributes")
             attrname = inputattributename(self.args, "attribute: ", multiple=False, noneok=True, attrs=self.attributes, verify=self.verifyPlayerAttributeName)
             ttyio.echo("attrname=%r" % (attrname), level="debug")
             if attrname is None or attrname == "":
@@ -725,7 +725,7 @@ class Player(object):
             # &"{f6}Training : ":x=z9:gosub {:sub.comma_value} 0
     def generate(self, rank=0):
         # http://donjon.bin.sh/fantasy/name/#type=me;me=english_male -- ty ryan
-        namelist = ("Richye", "Gerey", "Andrew", "Ryany", "Mathye Burne", "Enryn", "Andes", "Piersym Jordye", "Vyncis", "Gery Aryn", "Hone Sharcey", "Kater", "Erix", "Abell", "Wene Noke", "Jane Folcey", "Abel", "Bilia", "Cilia", "Joycie")
+#        namelist = ("Richye", "Gerey", "Andrew", "Ryany", "Mathye Burne", "Enryn", "Andes", "Piersym Jordye", "Vyncis", "Gery Aryn", "Hone Sharcey", "Kater", "Erix", "Abell", "Wene Noke", "Jane Folcey", "Abel", "Bilia", "Cilia", "Joycie")
         self.name = namelist[random.randint(0, len(namelist)-1)]
         if rank == 1:
             self.markets = random.randint(10, 15)
@@ -1189,7 +1189,7 @@ def town(args, player):
 
         bbsengine.setarea("town: lucifer's den")
         
-        bbsengine.title(":fire: LUCIFER'S DEN - Where Gamblin's no Sin!", hrcolor="{orange}", titlecolor="{bgred}{yellow}")
+        bbsengine.title("LUCIFER'S DEN - Where Gamblin's no Sin!", hrcolor="{orange}", titlecolor="{bgred}{yellow}")
         ttyio.echo("{yellow}I will let you play for the price of a few souls!")
         ch = ttyio.inputboolean("{cyan}Will you agree to this?{/all} ", "N")
         if ch is False:
