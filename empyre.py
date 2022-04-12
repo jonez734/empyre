@@ -32,12 +32,19 @@ def updatetopbar(player:object, area:str) -> None:
     buf = "{bggray}{white} %s%s " % (leftbuf.ljust(terminalwidth-len(rightbuf)-2, " "), rightbuf) # +leftbuf.ljust(terminalwidth-len(rightbuf))+rightbuf+" {/all}"
     return
 
-def setarea(player, buf) -> None:
+def setarea(player, buf, stack=True) -> None:
     def rightside():
-        return "rightside"
         if player is not None:
-            return "| :person: %s | :moneybag: %s" % (player.name, bbsengine.pluralize(player.coins, "coin", "coins"))
-        return ""
+            if player.isdirty() is True:
+                isdirty = "*"
+            else:
+                isdirty = ""
+            return "| %s%s | %s" % (isdirty, player.name, bbsengine.pluralize(player.coins, "coin", "coins"))
+        else:
+            return ""
+#        if player is not None:
+#            return "| :person: %s | :moneybag: %s" % (player.name, bbsengine.pluralize(player.coins, "coin", "coins"))
+#        return ""
 
 #    terminalwidth = ttyio.getterminalwidth()
 #    leftbuf = buf
@@ -47,7 +54,7 @@ def setarea(player, buf) -> None:
 #    buf = "%s%s" % (leftbuf.ljust(terminalwidth-len(rightbuf)-2, " "), rightbuf)
 #    # ttyio.echo("buf=%r" % (buf), interpret=False, level="debug")
 
-    bbsengine.setarea(buf, rightside)
+    bbsengine.setarea(buf, rightside, stack)
     return
 
 class completePlayerName(object):
@@ -726,7 +733,7 @@ class Player(object):
     def generate(self, rank=0):
         # http://donjon.bin.sh/fantasy/name/#type=me;me=english_male -- ty ryan
 #        namelist = ("Richye", "Gerey", "Andrew", "Ryany", "Mathye Burne", "Enryn", "Andes", "Piersym Jordye", "Vyncis", "Gery Aryn", "Hone Sharcey", "Kater", "Erix", "Abell", "Wene Noke", "Jane Folcey", "Abel", "Bilia", "Cilia", "Joycie")
-        self.name = namelist[random.randint(0, len(namelist)-1)]
+        self.name = generatename(self.args) # namelist[random.randint(0, len(namelist)-1)]
         if rank == 1:
             self.markets = random.randint(10, 15)
             self.mills = random.randint(6, 9)
@@ -838,6 +845,9 @@ class Player(object):
         # player.save()
 
         return
+    def revert(self):
+        pass
+
 
 def yourstatus(args, player):
     return player.status()
@@ -1330,13 +1340,16 @@ def town(args, player):
         #&" as warriors.{f6:2}Training cost is one acre per serf.{f6}"
         #&"{f6}{lt. green}Do you want them trained (Y/N) >> ":gosub 1902
         #if a then sf=sf-wb:la=la-wb:wa=wa+wb:&"{f6:2}{pound}w2{yellow}Ok, all serfs have been trained.{f6}{pound}q1"
-        ttyio.echo("{f6}{white}You have %s requirements to be trained %s. Training cost is 1 acre per serf." % (bbsengine.pluralize(eligible, "serf that meets", "serfs that meet"), bbsengine.pluralize(eligible, "as a soldier", "as soldiers", quantity=False)))
-        if ttyio.inputboolean("Do you wish them trained? [yN]: ", "N") is True:
-            player.serfs -= eligible
-            player.land -= eligible
-            player.soldiers += eligible
-        else:
-            ttyio.echo("No promotions performed.")
+        ttyio.echo("{f6}{white}You have %s requirements to be trained %s." % (bbsengine.pluralize(eligible, "serf that meets", "serfs that meet"), bbsengine.pluralize(eligible, "as a soldier", "as soldiers", quantity=False)))
+        if eligible > 0:
+            ttyio.echo("Training cost is 1 acre per serf.")
+            if ttyio.inputboolean("Do you wish them trained? [yN]: ", "N") is True:
+                player.serfs -= eligible
+                player.land -= eligible
+                player.soldiers += eligible
+                ttyio.echo("Promotions completed.")
+            else:
+                ttyio.echo("No promotions performed.")
 
     options = (
         ("C", ":bank: Cyclone's Natural Disaster Bank", naturaldisasterbank),
@@ -1393,7 +1406,7 @@ def town(args, player):
 
 # barbarians are buying
 def trade(args, player:object, attr:str, name:str, price:int, singular:str="singular", plural:str="plural", determiner:str="a"):
-    setarea(player, "trade: %s" % (name))
+#    setarea(player, "trade: %s" % (name))
     if price > player.coins:
         ttyio.echo("You need {var:empyre.highlightcolor}%s{/all} to purchase {var:empyre.highlightcolor}%s %s{/all}" % (bbsengine.pluralize(price - player.coins, "more coin", "more coins"), determiner, singular))
 
@@ -1401,6 +1414,9 @@ def trade(args, player:object, attr:str, name:str, price:int, singular:str="sing
 
     done = False
     while not done:
+        player.save()
+        setarea(player, "trade: %s" % (name), stack=False)
+
         # currentvalue = getattr(player, attr)
         # prompt = "You have {reverse}%s{/reverse} and {reverse}%s{/reverse}{F6}" % (pluralize(currentvalue, singular, plural), pluralize(player.coins, "coin", "coins"))
         # ttyio.echo(prompt)
@@ -1580,7 +1596,7 @@ def combat(args, player):
         if len(res) > 0:
             ttyio.echo("You have %s" % (bbsengine.oxfordcomma(res)))
 
-
+        player.adjust()
         player.save()
 
         otherplayer.adjust()
@@ -1781,6 +1797,7 @@ def combat(args, player):
 
     done = False
     while not done:
+        player.save()
         setarea(player, "combat")
 
         # @see https://github.com/Pinacolada64/ImageBBS/blob/e9f033af1f0b341d0d435ee23def7120821c3960/v1.2/games/empire6/mdl.emp.delx3.txt#L91
@@ -1822,7 +1839,7 @@ def getplayer(args, memberid:int):
     dat = (memberid,)
     dbh = bbsengine.databaseconnect(args)
     cur = dbh.cursor()
-    ttyio.echo("getplayer.110: sql=%r dat=%r" % (sql, dat), level="debug", interpret=True)
+    ttyio.echo("getplayer.110: %s" % (cur.mogrify(sql, dat)), level="debug", interpret=True)
     cur.execute(sql, dat)
     if cur.rowcount == 0:
         ttyio.echo("no player record.")
@@ -1888,6 +1905,7 @@ def mainmenu(args, player):
 #    ttyio.echo("title=%r" % (title))
     done = False
     while not done:
+        player.save()
         terminalwidth = bbsengine.getterminalwidth()
         # ttyio.echo("terminalwith=%r" % (terminalwidth))
         setarea(player, "main menu %s" % (_version.__version__)) # {bggray}{white}%s{/bgcolor}" % ("area: main menu".ljust(terminalwidth)))
@@ -2270,7 +2288,7 @@ def maint(args, player):
                         player = p
             else:
                 if ttyio.inputboolean("save? [yN]: ", "N") is True:
-                    p.save()
+#                    p.save()
                     if player.memberid == p.memberid:
                         ttyio.echo("player.memberid is p.memberid")
                         player = p
@@ -2459,7 +2477,7 @@ def otherrulers(args:object, player=None):
     acscolor = "{white}"
     terminalwidth = ttyio.getterminalwidth()
     dbh = bbsengine.databaseconnect(args)
-    sql = "select id, memberid, name from empyre.player order by (attributes->>'land')::integer desc limit 25"
+    sql = "select id, memberid, name from empyre.player order by (attributes->>'land')::integer desc"
     dat = ()
     cur = dbh.cursor()
     cur.execute(sql, dat)
@@ -2470,7 +2488,7 @@ def otherrulers(args:object, player=None):
     player = Player(args)
     sysop = bbsengine.checkflag(args, "SYSOP")
     cycle = 0
-    for rec in res:
+    for rec in bbsengine.ResultIter(cur): # res:
         if cycle == 0:
             color = "{white}"
         else:
