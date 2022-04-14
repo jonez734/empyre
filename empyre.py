@@ -16,21 +16,7 @@ import _version
 
 PRG = "empyre"
 
-#def title(t:str, titlecolor:str="{bggray}{white}", hrcolor:str="{darkgreen}"):
-#    bbsengine.title(t, titlecolor=titlecolor, hrcolor=hrcolor)
-
-def updatetopbar(player:object, area:str) -> None:
-    terminalwidth = bbsengine.getterminalwidth()
-    leftbuf = area
-    rightbuf = ""
-    if player.isdirty() is True:
-        isdirty = "*"
-    else:
-        isdirty = ""
-    if player is not None:
-        rightbuf += "| %s%s | %s" % (player.name, isdirty, bbsengine.pluralize(player.coins, "coin", "coins"))
-    buf = "{bggray}{white} %s%s " % (leftbuf.ljust(terminalwidth-len(rightbuf)-2, " "), rightbuf) # +leftbuf.ljust(terminalwidth-len(rightbuf))+rightbuf+" {/all}"
-    return
+args = None
 
 def setarea(player, buf, stack=True) -> None:
     def rightside():
@@ -39,9 +25,13 @@ def setarea(player, buf, stack=True) -> None:
                 isdirty = "*"
             else:
                 isdirty = ""
-            return "| %s%s | %s" % (isdirty, player.name, bbsengine.pluralize(player.coins, "coin", "coins"))
+            debug = " | debug" if args.debug is True else ""
+            return "| %s%s | %s%s" % (isdirty, player.name, bbsengine.pluralize(player.coins, "coin", "coins"), debug)
         else:
-            return ""
+            if args.debug is True:
+                return "debug"
+            else:
+                return ""
 #        if player is not None:
 #            return "| :person: %s | :moneybag: %s" % (player.name, bbsengine.pluralize(player.coins, "coin", "coins"))
 #        return ""
@@ -218,7 +208,8 @@ def calculaterank(args:object, player:object) -> int:
     return rank
 
 def getranktitle(args, rank:int):
-    ttyio.echo("getranktitle.100: rank=%r" % (rank), level="debug")
+    if args.debug is True:
+        ttyio.echo("getranktitle.100: rank=%r" % (rank), level="debug")
     if rank == 0:
         return "lord"
     elif rank == 1:
@@ -1314,8 +1305,9 @@ def town(args, player):
         # you have 10 shipyards, BSC
         # you have 10 acres of land
         # prompt = "You have {reverse}%s{/reverse} and {reverse}%s{/reverse}" % (pluralize(player.shipyards, "shipyard", "shipyards"), pluralize(player.credits, "credit", "credits"))
+        # all of these are ints
         trade(args, player, "shipyards", "shipyards", 2500+player.shipyards//2, "shipyard", "shipyards", "a")
-        trade(args, player, "ships", "ships", 5000, "ship", "ships", "a")
+        trade(args, player, "ships", "ships", 5000, "ship", "ships", "a", ":ships:")
         trade(args, player, "foundries", "foundries", 2000+player.foundries//2, "foundry", "foundries", "a")
         trade(args, player, "mills", "mills", 500+player.mills//2, "mill", "mills", "a")
         trade(args, player, "markets", "markets", 250+player.markets//2, "market", "markets", "a")
@@ -1405,7 +1397,7 @@ def town(args, player):
     return
 
 # barbarians are buying
-def trade(args, player:object, attr:str, name:str, price:int, singular:str="singular", plural:str="plural", determiner:str="a"):
+def trade(args, player:object, attr:str, name:str, price:int, singular:str="singular", plural:str="plural", determiner:str="a", emoji=" "):
 #    setarea(player, "trade: %s" % (name))
     if price > player.coins:
         ttyio.echo("You need {var:empyre.highlightcolor}%s{/all} to purchase {var:empyre.highlightcolor}%s %s{/all}" % (bbsengine.pluralize(price - player.coins, "more coin", "more coins"), determiner, singular))
@@ -1426,14 +1418,15 @@ def trade(args, player:object, attr:str, name:str, price:int, singular:str="sing
             ttyio.echo("attribute %r not found.")
             return
         currentvalue = attribute["value"] if "value" in attribute else None
-        if attr == "grain":
-            prompt =  "You have :crop: {var:empyre.highlightcolor}%s{/all} and :moneybag: {var:empyre.highlightcolor}%s{/all}{F6}%s: {var:empyre.highlightcolor}[B]{/all}uy {var:empyre.highlightcolor}[S]{/all}ell {var:empyre.highlightcolor}[C]{/all}ontinue" % (bbsengine.pluralize(currentvalue, singular, plural), bbsengine.pluralize(player.coins, "coin", "coins"), name)
-        else:
-            prompt =  "You have {var:empyre.highlightcolor}%s{/all} and :moneybag: {var:empyre.highlightcolor}%s{/all}{F6}%s: {var:empyre.highlightcolor}[B]{/all}uy {var:empyre.highlightcolor}[S]{/all}ell {var:empyre.highlightcolor}[C]{/all}ontinue" % (bbsengine.pluralize(currentvalue, singular, plural), bbsengine.pluralize(player.coins, "coin", "coins"), name)
-        choices = "BSC"
+        prompt =  "You have %s{var:empyre.highlightcolor}%s{/all} and :moneybag: {var:empyre.highlightcolor}%s{/all}{F6}%s: {var:empyre.highlightcolor}[B]{/all}uy {var:empyre.highlightcolor}[S]{/all}ell {var:empyre.highlightcolor}[C]{/all}ontinue" % (emoji, bbsengine.pluralize(currentvalue, singular, plural), bbsengine.pluralize(player.coins, "coin", "coins"), name)
+        choices = "BSCY"
         if bbsengine.checkflag(args, "SYSOP") is True:
             prompt += " {var:empyre.highlightcolor}[E]{/all}dit"
             choices += "E"
+
+        prompt += " {var:empyre.highlightcolor}[Y]{/all}our stats"
+        choices += "Y"
+
         prompt += ": "
         ch = ttyio.inputchar(prompt, choices, "C")
         if ch == "":
@@ -1450,6 +1443,10 @@ def trade(args, player:object, attr:str, name:str, price:int, singular:str="sing
             ttyio.echo("Continue")
             done = True
             break
+        elif ch == "Y":
+            ttyio.echo("Your Stats")
+            player.status()
+            continue
         elif ch == "B":
             # price = currentplayer.weathercondition*3+12
             ttyio.echo("Buy{F6}The barbarians will sell their %s to you for {var:empyre.highlightcolor}%s{/all} each." % (name, bbsengine.pluralize(price, "coin", "coins")))
@@ -1461,7 +1458,8 @@ def trade(args, player:object, attr:str, name:str, price:int, singular:str="sing
                 ttyio.echo("You have :moneybag: %s and you need :moneybag: %s to complete this transaction." % (bbsengine.pluralize(player.coins, "coin", "coins"), bbsengine.pluralize(abs(player.coins - quantity*price), "more coin", "more coins")))
                 continue
 
-            value = player.getattributes(attr) # getattr(player, attr)
+            a = player.getattribute(attr) # getattr(player, attr)
+            value = a["value"]
             value += quantity
             if args.debug is True:
                 ttyio.echo("value=%r" % (value), level="debug")
@@ -1469,7 +1467,6 @@ def trade(args, player:object, attr:str, name:str, price:int, singular:str="sing
             setattr(player, attr, int(value))
             player.coins -= quantity*price
             ttyio.echo("Bought!")
-            player.status() # status(opts, currentplayer)
             break
         elif ch == "S":
             ttyio.echo("sell{F6}The barbarians will buy your %s for :moneybag: {var:empyre.highlightcolor}%s{/all} each." % (plural, bbsengine.pluralize(price, "coin", "coins")))
@@ -1668,7 +1665,7 @@ def combat(args, player):
             ttyio.echo("{F6}{green}Your noble returns with good news! To avoid attack, you have been given %s of land!" % (bbsengine.pluralize(land, "acre", "acres")))
         else:
             player.nobles -= 1
-            ttyio.echo("{orange}%s {red}BEHEADS{orange} your diplomat and tosses their corpse into the moat!" % (otherplayer.name.title()))
+            ttyio.echo("{orange}%s {red}BEHEADS{orange} your diplomat and tosses their corpse into the moat!" % (otherplayer.name))
         player.save()
         otherplayer.save()
 
@@ -1873,10 +1870,11 @@ def getplayer(args, memberid:int):
     return player
 
 def startup(args):
-    setarea(None, "startup") # bbsengine.updatetopbar("{bggray}{white}%s{/all}" % ("area: startup".ljust(terminalwidth)))
+    setarea(None, "startup")
     # ttyio.echo("empyre.startup.100: args=%r" % (args))
     currentmemberid = bbsengine.getcurrentmemberid(args)
-    ttyio.echo("startup.300: currentmemberid=%r" % (currentmemberid), level="debug")
+    if args.debug is True:
+        ttyio.echo("startup.300: currentmemberid=%r" % (currentmemberid), level="debug")
     player = getplayer(args, currentmemberid)
     if player is None:
         ttyio.echo("startup.200: new player", level="debug")
@@ -1917,7 +1915,8 @@ def mainmenu(args, player):
             choices += opt
         ttyio.echo("{F6}{var:empyre.highlightcolor}[Q]{/bgcolor}{green} Quit{/all}")
 
-        ttyio.echo("mainmenu.100: player.name=%r" % (player.name), level="debug")
+        if args.debug is True:
+            ttyio.echo("mainmenu.100: player.name=%r" % (player.name), level="debug")
         try:
             ch = ttyio.inputchar("{green}Your command, %s %s? {lightgreen}" % (getranktitle(args, player.rank).title(), player.name.title()), choices, "")
 
@@ -2336,8 +2335,7 @@ def harvest(args, player):
     ttyio.echo()
     price = player.weatherconditions*3+12
     price = int(price/(int(player.land/875)+1))
-    # prompt = "You have {reverse}%s{/reverse} and {reverse}%s{/reverse}" % (pluralize(player.grain, "bushel", "bushels"), pluralize(player.credits, "credit", "credits"))
-    trade(args, player, "grain", "grain", price, "bushel", "bushels")
+    trade(args, player, "grain", "grain", price, "bushel", "bushels", ":grain:")
     howmany = serfsrequire if player.grain >= serfsrequire else player.grain
     serfsgiven = ttyio.inputinteger("{cyan}Give them how many? {lightgreen}", howmany)
     ttyio.echo("{/all}")
@@ -2356,7 +2354,7 @@ def harvest(args, player):
     ttyio.echo("Your army requires :crop: {var:empyre.highlightcolor}%s{/all} this year and you have :crop: {var:empyre.highlightcolor}%s{/all}." % (bbsengine.pluralize(armyrequires, "bushel", "bushels"), bbsengine.pluralize(int(player.grain), "bushel", "bushels")))
     price = int(6//player.weathercondition)
     price = int(price/(player.land/875)+1)
-    trade(args, player, "grain", "bushel", price, "bushel", "bushels")
+    trade(args, player, "grain", "bushel", price, "bushel", "bushels", ":grain:")
 
     ttyio.echo("armyrequires=%r player.grain=%r" % (armyrequires, player.grain), level="debug")
 
@@ -2451,7 +2449,7 @@ def investments(args, player):
                     attr = a["name"]
                     singular = a["singular"] if "singular" in a else "singular"
                     plural = a["plural"] if "plural" in a else "plural"
-                    ttyio.echo("{lightgreen}%s{green} -- {cyan}%s{/all} :moneybag: %s each" % (ch, name.title(), bbsengine.pluralize(price, "coin", "coins")), end="")
+                    ttyio.echo("{lightgreen}%s{green} -- {cyan}%s{/all} :moneybag: %s each" % (ch, name.title(), bbsengine.pluralize(price, "coin", "coins")))
                     trade(args, player, attr, name, price, singular, plural)
                     break
             else:
@@ -2535,6 +2533,8 @@ def play(args, player):
     return
 
 def main():
+    global args
+
     parser = argparse.ArgumentParser("empyre")
     
     parser.add_argument("--verbose", action="store_true", dest="verbose")
