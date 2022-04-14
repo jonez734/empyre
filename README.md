@@ -309,5 +309,16 @@ AttributeError: 'NoneType' object has no attribute 'nobles'
 - [ ] use :moneybag: as needed (@since 20220223)
 - [ ] use :sun: and :thunder-cloud-and-rain: (@since 20220224)
 - [ ] use maint, set coins to 2000, "sysop options" still shows 0 coins (@since 20220224)
-
-
+- [ ] when Player is loaded from storage, be sure to set all obj attrs to loaded values so isdirty() is accurate (@since 20220410)
+- [ ] make sure datelastplayedepoch is updated properly (@since 20220410)
+- [ ] Player
+    - when initialized, populated with default values
+    - when a player is selected, self.attributes is populated
+    - as a result, Player is always "dirty" since it is diff than default values
+    - would save a save() if Player was initialized properly on load
+- [ ] trade() (@since 20220411)
+    - [ ] update bottombar after every call so dirty flag is updated (rightbuf) (@since 20220411)
+    - [ ] do not show player stats after a transaction. add 'Y' option to menu (@since 20220412)
+- [ ] player.save() gets called in maint mode even if the choice is not to save (@since 20220411)
+- [ ] player.revert() builds self.attributes (which is a seq of dicts) values based on Player object attrs (@since 20220411)
+- [ ] in player.status(), extend width by 2, result is "lastplayed" vs "lastplay.."
