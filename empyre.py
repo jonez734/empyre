@@ -1397,7 +1397,7 @@ def town(args, player):
     return
 
 # barbarians are buying
-def trade(args, player:object, attr:str, name:str, price:int, singular:str="singular", plural:str="plural", determiner:str="a", emoji=" "):
+def trade(args, player:object, attr:str, name:str, price:int, singular:str="singular", plural:str="plural", determiner:str="a", emoji=""):
 #    setarea(player, "trade: %s" % (name))
     if price > player.coins:
         ttyio.echo("You need {var:empyre.highlightcolor}%s{/all} to purchase {var:empyre.highlightcolor}%s %s{/all}" % (bbsengine.pluralize(price - player.coins, "more coin", "more coins"), determiner, singular))
@@ -1418,7 +1418,8 @@ def trade(args, player:object, attr:str, name:str, price:int, singular:str="sing
             ttyio.echo("attribute %r not found.")
             return
         currentvalue = attribute["value"] if "value" in attribute else None
-        prompt =  "You have %s{var:empyre.highlightcolor}%s{/all} and :moneybag: {var:empyre.highlightcolor}%s{/all}{F6}%s: {var:empyre.highlightcolor}[B]{/all}uy {var:empyre.highlightcolor}[S]{/all}ell {var:empyre.highlightcolor}[C]{/all}ontinue" % (emoji, bbsengine.pluralize(currentvalue, singular, plural), bbsengine.pluralize(player.coins, "coin", "coins"), name)
+        prompt =  "You have %s {var:empyre.highlightcolor}%s{/all} and :moneybag: {var:empyre.highlightcolor}%s{/all}{F6}%s: {var:empyre.highlightcolor}[B]{/all}uy {var:empyre.highlightcolor}[S]{/all}ell {var:empyre.highlightcolor}[C]{/all}ontinue" % (emoji, bbsengine.pluralize(currentvalue, singular, plural), bbsengine.pluralize(player.coins, "coin", "coins"), name)
+#        ttyio.echo("trade.120: prompt=%r" % (prompt), interpret=False)
         choices = "BSCY"
         if bbsengine.checkflag(args, "SYSOP") is True:
             prompt += " {var:empyre.highlightcolor}[E]{/all}dit"
@@ -1890,14 +1891,14 @@ def startup(args):
 # @since 20200913
 def mainmenu(args, player):
     options = (
-        ("I", "   Instructions", None), # instructions),
-        ("M", "   Maintenance", maint),
-        ("N", ":newspaper: News", shownews),
-        ("O", "   Other Rulers", otherrulers),
-        ("P", "   Play Empyre", play),
-        ("T", "   Town Activities", town),
-        ("Y", "   Your Stats", yourstatus),
-        ("G", "   Generate NPC", generatenpc),
+        ("I", "Instructions", None), # instructions),
+        ("M", "Maintenance", maint),
+        ("N", "News", shownews, ":newspaper:"),
+        ("O", "Other Rulers", otherrulers),
+        ("P", "Play Empyre", play),
+        ("T", "Town Activities", town), #, ":building:"),
+        ("Y", "Your Stats", yourstatus),
+        ("G", "Generate NPC", generatenpc),
     )
 
 #    ttyio.echo("title=%r" % (title))
@@ -1905,15 +1906,24 @@ def mainmenu(args, player):
     while not done:
         player.save()
         terminalwidth = bbsengine.getterminalwidth()
-        # ttyio.echo("terminalwith=%r" % (terminalwidth))
-        setarea(player, "main menu %s" % (_version.__version__)) # {bggray}{white}%s{/bgcolor}" % ("area: main menu".ljust(terminalwidth)))
-        bbsengine.title("main menu") # , hrcolor="{darkgreen}")
+        if args.debug is True:
+            setarea(player, "main menu %s" % (_version.__version__))
+        else:
+            setarea(player, "main menu")
+        bbsengine.title("main menu")
         ttyio.echo()
         choices = "Q"
-        for opt, t, callback in options:
-            ttyio.echo("{var:empyre.highlightcolor}[%s]{/bgcolor}{green} %s" % (opt, t))
+        for o in options: #opt, t, callback, emoji in options:
+            opt = o[0]
+            t = o[1]
+            callback = o[2]
+            if len(o) == 3:
+                emoji = "  "
+            elif len(o) == 4:
+                emoji = o[3]
+            ttyio.echo("{/all}%s {var:empyre.highlightcolor}[%s]{/all}{green} %s" % (emoji, opt, t))
             choices += opt
-        ttyio.echo("{F6}{var:empyre.highlightcolor}[Q]{/bgcolor}{green} Quit{/all}")
+        ttyio.echo("{F6}:door: {var:empyre.highlightcolor}[Q]{/bgcolor}{green} Quit{/all}")
 
         if args.debug is True:
             ttyio.echo("mainmenu.100: player.name=%r" % (player.name), level="debug")
@@ -1921,12 +1931,12 @@ def mainmenu(args, player):
             ch = ttyio.inputchar("{green}Your command, %s %s? {lightgreen}" % (getranktitle(args, player.rank).title(), player.name.title()), choices, "")
 
             if ch == "Q":
-                ttyio.echo("{lightgreen}Q{cyan} -- quit game{/all}")
+                ttyio.echo(":door: {lightgreen}Q{cyan} -- quit game{/all}")
                 return False
             else:
                 for opt, t, callback in options:
                     if opt == ch:
-                        ttyio.echo("{lightgreen}%s{cyan} -- %s{/all}" % (opt, t), end="")
+                        ttyio.echo("%s{lightgreen}%s{cyan} -- %s{/all}" % (opt, t), end="")
                         if callable(callback) is True:
                             ttyio.echo()
                             callback(args, player)
@@ -2335,7 +2345,7 @@ def harvest(args, player):
     ttyio.echo()
     price = player.weatherconditions*3+12
     price = int(price/(int(player.land/875)+1))
-    trade(args, player, "grain", "grain", price, "bushel", "bushels", ":grain:")
+    trade(args, player, "grain", "grain", price, "bushel", "bushels", emoji=":crop:")
     howmany = serfsrequire if player.grain >= serfsrequire else player.grain
     serfsgiven = ttyio.inputinteger("{cyan}Give them how many? {lightgreen}", howmany)
     ttyio.echo("{/all}")
@@ -2354,7 +2364,7 @@ def harvest(args, player):
     ttyio.echo("Your army requires :crop: {var:empyre.highlightcolor}%s{/all} this year and you have :crop: {var:empyre.highlightcolor}%s{/all}." % (bbsengine.pluralize(armyrequires, "bushel", "bushels"), bbsengine.pluralize(int(player.grain), "bushel", "bushels")))
     price = int(6//player.weathercondition)
     price = int(price/(player.land/875)+1)
-    trade(args, player, "grain", "bushel", price, "bushel", "bushels", ":grain:")
+    trade(args, player, "grain", "bushel", price, "bushel", "bushels", emoji=":crop:")
 
     ttyio.echo("armyrequires=%r player.grain=%r" % (armyrequires, player.grain), level="debug")
 
