@@ -1005,8 +1005,8 @@ before Castle Dragonmare, the home of Arch-mage Zircon.  It is your hope that yo
         {"name": "islandofspice", "title": "Search for the Island of Spice", "callback": None},
         {"name": "birdcity", "title": "Quest for the Legendary Bird City", "callback": None},
         {
-            "name": "mountainsideship", 
-            "title": "Look for the Mountain Side Ship", 
+            "name": "mountainsideship",
+            "title": "Look for the Mountain Side Ship",
             "callback": mountainsideship
             "successfile": "quests/mountainsideship-win.txt",
         },
