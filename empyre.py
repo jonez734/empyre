@@ -15,6 +15,7 @@ import bbsengine5 as bbsengine
 import _version
 
 PRG = "empyre"
+DATADIR = "~/projects/empyre/data/"
 
 args = None
 
@@ -66,7 +67,7 @@ class completePlayerName(object):
         results = [x for x in vocab if x.startswith(text)] + [None]
         return results[state]
 
-def verifyPlayerNameFound(args, name):
+def verifyPlayerNameFound(args:object, name:str) -> bool:
     dbh = bbsengine.databaseconnect(args)
     cur = dbh.cursor()
     sql = "select 1 from empyre.player where name=%s"
@@ -510,7 +511,7 @@ class Player(object):
                 return True
         return False
 
-    def save(self, updatecredits=False):
+    def save(self, updatecredits=False, adjust=True):
         if self.args.debug is True:
             ttyio.echo("player.save.100: playerid=%r" % (self.playerid), level="debug")
         if self.playerid is None:
@@ -520,6 +521,9 @@ class Player(object):
         if self.memberid is None:
             ttyio.echo("memberid is not set. aborted.", level="error")
             return None
+
+        if adjust is True:
+            self.adjust()
 
         if self.isdirty() is False:
             if "debug" in self.args and self.args.debug is True:
@@ -860,7 +864,7 @@ def quests(args, player):
             player.coins += 30000 # x(3)
         elif x == 3:
             gifts.append(bbsengine.pluralize(5, "noble", "nobles"))
-            player.nobles += 5 # x(6)
+            player.nobles += 5 # x(6) nobles
         elif x == 4:
             gifts.append(bbsengine.pluralize(40000, "bushel", "bushels"))
             player.grain += 40000 # x(17)
@@ -896,53 +900,64 @@ def quests(args, player):
             player.mills += 10 # x(8)
             gifts.append(bbsengine.pluralize(10, "mill", "mills"))
         elif x == 4:
-            player.spices += 10 # x(25)
+            player.spices += 10 # x(25) spices
         elif x == 5:
             player.ships += 4 # x(12)
             gifts.append(bbsengine.pluralize(4, "ship", "ships"))
         return gifts
     def zircon4():
         gifts = []
-        x = bbsengine.diceroll(20) # random.randint(1, 20)
-        if x < 4:
-            return gifts
-        gifts.append(bbsengine.pluralize(10, "ton of spices", "tons of spices"))
-        player.spices += 10 # x(15)
+        if bbsengine.diceroll(20) < 5:
+            gifts.append("10 tons of spices")
+            player.spices += 10 # x(25)
         return gifts
     def zircon5():
         gifts = []
-        x = bbsengine.diceroll(50) # random.randint(1, 50)
-        if x > 3:
-            return gifts
-        gifts.append("a dragon")
-        player.dragons += 1
+        if bbsengine.diceroll(50) < 4:
+            gifts.append("a dragon")
+            player.dragons += 1
         return gifts
     def zircon6():
         gifts = []
-        x = bbsengine.diceroll(30) # random.randint(1, 30)
+        if bbsengine.diceroll(20) < 6:
+            gifts.append("20 tons of spices")
+            player.spices += 20
         return gifts
+    def zircon7():
+        gifts = []
+        if bbsengine.diceroll(20) < 5:
+            gifts.append("4 nobles") # x(6)
+            player.nobles += 4
+        return gifts
+    def zircon8():
+        gifts = []
+        if bbsengine.diceroll(20) < 5:
+            gifts.append("6 cannons")
+            player.cannons += 6
+        return gifts
+
     def zircon():
         # @see https://github.com/Pinacolada64/ImageBBS/blob/e9f033af1f0b341d0d435ee23def7120821c3960/v1.2/games/empire6/mdl.emp.delx3.txt#L362
-        # ttyio.echo("9 -- zircon")
 
-        # https://github.com/Pinacolada64/ImageBBS/blob/e9f033af1f0b341d0d435ee23def7120821c3960/v1.2/games/empire6/mdl.emp.delx3.txt#L366
-        ttyio.echo("""Your rivals are pressing you hard!  In desperation,
-you have undertaken a long and dangerous journey.  Now at last you stand
-before Castle Dragonmare, the home of Arch-mage Zircon.  It is your hope
-that you can convince him to help you..{F6}""")
-        if bbsengine.diceroll(40) <= 30:
+        ttyio.echo("""Your rivals are pressing you hard!  In desperation, you have undertaken a long and dangerous journey.  Now at last you stand
+before Castle Dragonmare, the home of Arch-mage Zircon.  It is your hope that you can convince him to help you..{F6}""")
+
+        if bbsengine.diceroll(40) <= 30: # win 25% of the time
             ttyio.echo("You failed.")
             return False
 
-        remuneration = []
-        remuneration += zircon1()
-        remuneration += zircon2()
-        remuneration += zircon3()
-        remuneration += zircon4()
-        remuneration += zircon5()
-        if len(remuneration) > 0:
-            ttyio.echo("You are gifted %s by Arch-Mage Zircon." % (bbsengine.oxfordcomma(remuneration)))
-            # newsentry()?
+        gifts = []
+        gifts += zircon1()
+        gifts += zircon2()
+        gifts += zircon3()
+        gifts += zircon4()
+        gifts += zircon5()
+        gifts += zircon6()
+        gifts += zircon7()
+        gifts += zircon8()
+        if len(gifts) > 0:
+            ttyio.echo("You are gifted %s by Arch-Mage Zircon." % (bbsengine.oxfordcomma(gifts)))
+            newsentry(args, player, "You have completed the Zircon Quest")
             return True
         return False
 
@@ -957,7 +972,7 @@ that you can convince him to help you..{F6}""")
 
     def hauntedcave():
         if questcompleted() is True:
-            ttyio.echo("You gain :horse: %s." % (bbsengine.pluralize(30, "horse", "horses")))
+            ttyio.echo("You gain :horse: 30 horses.") # %s." % (bbsengine.pluralize(30, "horse", "horses")))
             player.horses += 30
             return True
         else:
@@ -968,30 +983,17 @@ that you can convince him to help you..{F6}""")
     quests = (
         {
             "name": "raidpiratecamp", 
-            "title": "Raid the Pirate's Camp", 
-            "description":"""You have heard that a band of pirates have been
-raiding the area recently, causing much strife to the poor serfs
-in your dominion.  Thus it is with a stout heart and a sharp
-sword that you determine to rid your kingdom of these pests once
-and for all.{F6} After a meeting with your nobles, you decide
-that the best route of invasion would be through a secret tunnel
-which one of your spies discovered about a month ago.  It leads
-into a storage room to the north of the pirates' main cave.{F6}
-This course determined, your hardy band sets out for the cave
-less than a week later.  You arrive at the secret tunnel and,
-after checking for sentries, enter the passage.{F6}""",
+            "title": "Raid the Pirate's Camp",
+#            "descfile": "quests/raidpiratecamp.txt",
+#            "successfile": "quests/raidpiratecamp-success.txt",
+#            "failfile": "quests/raidpiratecamp-fail.txt",
             "callback": raidpiratecamp 
         },
         {
             "name": "hauntedcave", 
             "title":"Mystery of the Haunted Cave", 
-            "description": """
- With the need for good horses, and also having heard of wild horses in the mountains, you set out with some of your nobles to try to find them.{F6}
- Questioning the people you meet you discover that the horses have been seen near a haunted cave.  Not believing in ghosts, you head for the location.{F6}
- Finally you find the cave, seeing one of the horses entering it.  Quietly you and your men approach the cave.  You are within a hundred yards when you hear some spooky sounds coming from it.{F6}
- Determined to discover the secret of the sounds, you advance toward the cave.  Upon reaching the cave's entrance, you see daylight quite far back. Boldly entering, you discover a tunnel through a mountain.  The tunnel distorted the sounds you heard, producing the "ghostly" manifestations!{F6}
- There is a hidden valley on the other end of the tunnel.  In the valley you find a herd of horses.{F6}""", 
-             "callback": hauntedcave
+#            "file": "quests/hauntedcave.txt",
+            "callback": hauntedcave
         },
         {
             "name": "maidenssister", 
@@ -1002,15 +1004,17 @@ after checking for sentries, enter the passage.{F6}""",
         {"name": "evilcult", "title": "Eradicate the Evil Cult", "callback": None},
         {"name": "islandofspice", "title": "Search for the Island of Spice", "callback": None},
         {"name": "birdcity", "title": "Quest for the Legendary Bird City", "callback": None},
-        {"name": "mountainsideship", "title": "Look for the Mountain Side Ship", "callback": None},
-        {"name": "zircon", "title": "Seek Arch-Mage Zircon's Help {yellow}{f6}    Warning: Zircon's help is a gamble!", "description": """Your rivals are pressing you hard!  In desperation,
-you have undertaken a long and dangerous journey.  Now at last you stand
-before Castle Dragonmare, the home of Arch-mage Zircon.  It is your hope
-that you can convince him to help you..{F6:2}""", "callback": zircon}
+        {
+            "name": "mountainsideship", 
+            "title": "Look for the Mountain Side Ship", 
+            "callback": mountainsideship
+            "successfile": "quests/mountainsideship-win.txt",
+        },
+        {"name": "zircon", "title": "Seek Arch-Mage Zircon's Help {yellow}{f6}    Warning: Zircon's help is a gamble!", "callback": zircon},
     )
 
     def questcompleted():
-        if bbsengine.diceroll(20) > 5:
+        if bbsengine.diceroll(20) > 7:
             ttyio.echo("You failed to complete the quest.")
             return False
         return True
@@ -1059,10 +1063,6 @@ that you can convince him to help you..{F6:2}""", "callback": zircon}
     done = False
     while not done:
         ch = ttyio.inputchar("quest [%s]: " % (options), options, "Q")
-#        if ch == "9":
-#            ttyio.echo("9 -- zircon")
-#            zircon()
-#            continue
         if ch == "Q":
             ttyio.echo("Q -- quit")
             done = True
@@ -1086,9 +1086,10 @@ that you can convince him to help you..{F6:2}""", "callback": zircon}
             if questcompleted() is True:
                 ttyio.echo("""Your invasion is swift and merciless and the pirate camp is soon under your control.  Flushed with victory, your band counts the treasure which you have received. You gain 30,000 coins!{F6:2}""")
                 player.coins += 30000
+                newsentry(args, player, "You win quest #1: %s" % (bbsengine.pluralize(30000, "coin", "coins")))
         elif ch == "2":
-            ttyio.echo(quests[1][0])
-            ttyio.echo(quests[1][1])
+            ttyio.echo(quests[1][0], level="debug")
+            ttyio.echo(quests[1][1], level="debug")
             ttyio.echo("""
 With the need for good horses, and also having heard of wild horses in the mountains, you set out with some of your Nobles to try to find them.{F6:2}
 Questioning the people you meet you discover that the horses have been seen near a haunted cave.  Not believing in ghosts, you head for the location.{F6:2}
@@ -1262,7 +1263,7 @@ def town(args, player):
                 player.serfs -= 100
                 if player.serfs < 0:
                     player.serfs = 1
-                player.adjust() # player.adjust()
+                player.save()
                 
         if player.soldiers < 10:
             ttyio.echo("None of your soldiers are eligible for promotion to Noble right now.{F6}")
@@ -1313,6 +1314,7 @@ def town(args, player):
         trade(args, player, "markets", "markets", 250+player.markets//2, "market", "markets", "a")
         
         player.save()
+
         bbsengine.poparea()
         return
 
@@ -1594,10 +1596,8 @@ def combat(args, player):
         if len(res) > 0:
             ttyio.echo("You have %s" % (bbsengine.oxfordcomma(res)))
 
-        player.adjust()
         player.save()
 
-        otherplayer.adjust()
         otherplayer.save()
         
         return
@@ -1634,8 +1634,6 @@ def combat(args, player):
             foo.append("your dragon was killed!")
             player.dragons -= 1
         ttyio.echo(bbsengine.oxfordcomma(foo))
-        player.adjust() # adjust(args, player)
-        otherplayer.adjust() # adjust(args, otherplayer)
 
     def sneakattack():
         pass
@@ -1934,9 +1932,16 @@ def mainmenu(args, player):
                 ttyio.echo(":door: {lightgreen}Q{cyan} -- quit game{/all}")
                 return False
             else:
-                for opt, t, callback in options:
+                for o in options:# opt, t, callback in options:
+                    opt = o[0]
+                    t = o[1]
+                    callback = o[2]
+                    if len(o) == 4:
+                        emoji = o[3]
+                    else:
+                        emoji = ""
                     if opt == ch:
-                        ttyio.echo("%s{lightgreen}%s{cyan} -- %s{/all}" % (opt, t), end="")
+                        ttyio.echo("%s{lightgreen}%s{cyan} -- %s{/all}" % (emoji, opt, t), end="")
                         if callable(callback) is True:
                             ttyio.echo()
                             callback(args, player)
@@ -1991,7 +1996,6 @@ def endturn(args, player):
         player.save(updatecredits=True)
         return
         
-    player.adjust() # adjust(args, player)
     player.save()
     
     # tr = taxrate
@@ -2030,8 +2034,6 @@ def endturn(args, player):
     soldierpay = int((player.soldiers*(player.combatvictory+2))+(player.taxrate*player.palaces*10)//40) # py
     payables = soldierpay+noblegifts+palacerent
     
-    player.adjust() # adjust(args, player)
-
     bbsengine.title("yearly report")
         # pn=pn-(py+xx-pt)
 
@@ -2074,7 +2076,6 @@ def endturn(args, player):
     #' en=bbs credit/money exchange active
     #' nn=bbs credit/money exchange rate
     # if mp=0 and la>ln then gosub {:486} ' part of sub.rank
-    player.adjust() # adjust(args, player) #  player.adjust() # calculaterank(opts, player)
     rank = calculaterank(args, player)
     
     if args.debug is True:
@@ -2355,7 +2356,8 @@ def harvest(args, player):
     if serfsgiven > player.grain:
         serfsgiven = player.grain
     player.grain -= serfsgiven
-    ttyio.echo("player.grain=%r" % (player.grain), level="debug")
+    if args.debug is True:
+        ttyio.echo("player.grain=%r" % (player.grain), level="debug")
     if player.grain < 1:
         player.grain = 0
         
@@ -2379,8 +2381,6 @@ def harvest(args, player):
         armygiven = 0
     player.grain -= armygiven
 
-    player.adjust() # adjust(args, player)
-
     if player.horses > 0:
         horsesrequire = random.randint(2, 7)*player.horses
         ttyio.echo("Your :horse: %s %s" % (bbsengine.pluralize(player.horses, "horse requires", "horses require", quantity=False), bbsengine.pluralize(horsesrequire, "bushel", "bushels")))
@@ -2391,7 +2391,7 @@ def harvest(args, player):
             horsesgiven = player.grain
         player.grain -= horsesgiven
 
-    player.adjust() # adjust(args, player) # player.adjust()
+    player.save()
     return
 
 def buildinvestopts(args, player):
@@ -2538,7 +2538,6 @@ def play(args, player):
             res = None
         if res is False:
             break
-        player.adjust() # adjust(args, player)
         player.save()
     return
 
