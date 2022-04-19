@@ -322,3 +322,4 @@ AttributeError: 'NoneType' object has no attribute 'nobles'
 - [ ] player.save() gets called in maint mode even if the choice is not to save (@since 20220411)
 - [ ] player.revert() builds self.attributes (which is a seq of dicts) values based on Player object attrs (@since 20220411)
 - [ ] in player.status(), extend width by 2, result is "lastplayed" vs "lastplay.."
+- https://www.omnicalculator.com/statistics/dice
