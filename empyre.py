@@ -942,8 +942,26 @@ def quests(args, player):
         ttyio.echo("""Your rivals are pressing you hard!  In desperation, you have undertaken a long and dangerous journey.  Now at last you stand
 before Castle Dragonmare, the home of Arch-mage Zircon.  It is your hope that you can convince him to help you..{F6}""")
 
-        if bbsengine.diceroll(40) <= 30: # win 25% of the time
-            ttyio.echo("You failed.")
+        if bbsengine.diceroll(20) >= 5: # win 20% of the time
+            land = 2000 if player.land >= 2000 else player.land
+            nobles = 4 if player.nobles >= 4 else player.nobles
+            coins = 9000 if player.coins >= 9000 else player.coins
+            serfs = 600 if player.serfs >= 600 else player.serfs
+
+            player.land -= land
+            player.nobles -= nobles
+            player.coins -= coins
+            player.serfs -= serfs
+
+            ttyio.echo("""You have really stuck your foot in it now!  As the
+            price for being allowed to keep your present form, you have
+            agreed to give Arch-Mage Zircon %s, the %s living on
+            them, the %s governing them, and the %s currently
+            in the treasury!""" % (bbsengine.pluralize(land, "acre", "acres"),
+              bbsengine.pluralize(serfs, "serf", "serfs"),
+              bbsengine.pluralize(nobles, "noble", "nobles"),
+              bbsengine.pluralize(coins, "coin", "coins")))
+            player.save()
             return False
 
         gifts = []
@@ -1008,14 +1026,21 @@ before Castle Dragonmare, the home of Arch-mage Zircon.  It is your hope that yo
             "name": "mountainsideship",
             "title": "Look for the Mountain Side Ship",
             "callback": mountainsideship
-            "successfile": "quests/mountainsideship-win.txt",
+            "winfile": "quests/mountainsideship-win.txt",
         },
-        {"name": "zircon", "title": "Seek Arch-Mage Zircon's Help {yellow}{f6}    Warning: Zircon's help is a gamble!", "callback": zircon},
+        {
+            "name": "zircon",
+            "title": "Seek Arch-Mage Zircon's Help {yellow}{f6}    Warning: Zircon's help is a gamble!",
+            "callback": zircon,
+            "intro": "quests/zircon-intro.txt",
+            "win": zirconwin,
+            "fail": zirconfail,
+        },
     )
 
     def questcompleted():
         if bbsengine.diceroll(20) > 7:
-            ttyio.echo("You failed to complete the quest.")
+#            ttyio.echo("You failed to complete the quest.")
             return False
         return True
 
@@ -1193,7 +1218,7 @@ def town(args, player):
         
         bbsengine.title("LUCIFER'S DEN - Where Gamblin's no Sin!", hrcolor="{orange}", titlecolor="{bgred}{yellow}")
         ttyio.echo("{yellow}I will let you play for the price of a few souls!")
-        ch = ttyio.inputboolean("{cyan}Will you agree to this?{/all} ", "N")
+        ch = ttyio.inputboolean("{cyan}Will you agree to this? [yN]: {/all} ", "N")
         if ch is False:
             ttyio.echo("Some other time, then.")
             return
