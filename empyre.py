@@ -1064,7 +1064,7 @@ before Castle Dragonmare, the home of Arch-mage Zircon.  It is your hope that yo
 
     def menu():
         bbsengine.title("quests")
-        
+
         ttyio.echo("Quests are currently disabled pending repairs.")
         return
 
@@ -1078,7 +1078,7 @@ before Castle Dragonmare, the home of Arch-mage Zircon.  It is your hope that yo
                 index += 1
         ttyio.echo("{/all}")
         return
-            
+
         # not called
         ttyio.echo("{bggray}{white}[1]{/bgcolor} {green}Raid the Pirates Camp")
         ttyio.echo("{bggray}{white}[2]{/bgcolor} {green}Mystery of the Haunted Cave")
@@ -1676,9 +1676,12 @@ def combat(args, player):
         if x > 0:
             otherplayer.acres -= x
             foo.append("%s incinerated" % (bbsengine.pluralize(x, "acre", "acres")))
-        if bbsengine.diceroll(40) < 21:
-            foo.append("a dragon was killed!")
+        if bbsengine.diceroll(40) < 21 and player.dragons > 0:
             player.dragons -= 1
+            if player.dragons == 0:
+                foo.append("your last dragon was killed!")
+            else:
+                foo.append("a dragon was killed!")
         ttyio.echo(bbsengine.oxfordcomma(foo))
 
     def sneakattack():
