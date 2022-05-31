@@ -1535,7 +1535,7 @@ def trade(args, player:object, attr:str, name:str, price:int, singular:str="sing
     return
 
 def colonytrip(args, player):
-    ttyio.echo("colony trip...{f6}")
+    ttyio.echo("colony trip... %s{f6}" % (bbsengine.pluralize(player.colonies, "colony", "colonies")))
     if player.colonies > 0:
         ttyio.echo("King George wishes you a safe and prosperous trip to your %s{f6}" % (bbsengine.pluralize(player.colonies, "colony", "colonies", quantity=False)))
     return
@@ -2634,5 +2634,5 @@ if __name__ == "__main__":
         ttyio.echo("{/all}{bold}EOF{/bold}")
     finally:
         ttyio.echo("empyre.200: areastack=%r" % (bbsengine.areastack), level="debug")
-        ttyio.inputboolean("continue? [Yn]: ", "Y")
+#        ttyio.inputboolean("continue? [Yn]: ", "Y")
         ttyio.echo("{decsc}{curpos:%d,0}{el}{decrc}{reset}{/all}" % (ttyio.getterminalheight()))
