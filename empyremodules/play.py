@@ -22,6 +22,7 @@ def main(args, player):
         ttyio.echo("{red}The other rulers unite against you for hogging the game!{/all}")
         return False
     
+    player.adjust()
     player.save()
 
 #    adjust(args, player)
@@ -38,12 +39,11 @@ def main(args, player):
         player.save()
         return
         
+    player.adjust()
     player.save()
 
     if lib.runsubmodule(args, player, "yearlyreport") is not True:
         ttyio.echo("error running 'yearlyreport' submodule.", level="debug")
-    
-    player.save()
     
     ttyio.echo("turn complete!", level="success")
     ttyio.echo("{/all}")
