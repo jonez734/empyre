@@ -92,3 +92,4 @@ def main(args, **kw):
         ttyio.echo("player.rank=%d rank=%d" % (player.rank, rank), level="debug")
     # check for > player.rank, < player.rank and write entry to game log
     player.rank = rank
+    return True
