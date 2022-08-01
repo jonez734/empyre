@@ -1,4 +1,7 @@
-def resetempire(args, player):
+import ttyio5 as ttyio
+import bbsengine5 as bbsengine
+
+def main(args, player):
     if ttyio.inputboolean("reset empyre? [yN]: ", "N") is True:
         ttyio.echo("Yes")
         sql = "select id from empyre.player"
@@ -11,10 +14,12 @@ def resetempire(args, player):
         for rec in res:
             playerids.append(str(rec["id"]))
         ttyio.echo("playerids=%r" % (playerids))
-        sql = "delete from engine.__node where id in (%s)" % (", ".join(playerids))
-        # ttyio.echo(sql)
-        cur.execute(sql)
-        dbh.commit()
+        if ttyio.inputboolean("proceed? [yN]: ", "N") is True:
+            sql = "delete from engine.__node where id in (%s)" % (", ".join(playerids))
+            cur.execute(sql)
+            dbh.commit()
+        else:
+            ttyio.echo("aborted.")
     else:
         ttyio.echo("No")
-    return
+    return True
