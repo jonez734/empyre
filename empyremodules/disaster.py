@@ -5,7 +5,7 @@ import bbsengine5 as bbsengine
 
 from . import lib
 
-def plague(args):
+def plague(player):
     res = []
 
     x = random.randint(0, player.serfs//4) # int(random.random()*player.serfs/4)
