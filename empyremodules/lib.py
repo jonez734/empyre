@@ -7,19 +7,16 @@ import bbsengine5 as bbsengine
 DATADIR = "~jam/projects/empyre/data/"
 
 class Player(object):
-    def __init__(self, args, playerid:int=None, rank=0, npc=False):
+    def __init__(self, args):
         self.playerid = playerid
         # self.name = None # na$
         self.memberid = bbsengine.getcurrentmemberid(args)
         self.args = args
-        self.rank = rank
+        self.rank = 0
         self.previousrank = 0
         self.turncount = 0
         self.soldierpromotioncount = 0
         self.weatherconditions = 0
-        self.npc = npc
-
-        self.dbh = bbsengine.databaseconnect(self.args)
 
         #self.datelastplayed = "now()"
         #self.acres = 5000 # la
@@ -74,7 +71,6 @@ class Player(object):
             {"type": "int",  "name": "horses", "default":1, "emoji":":horse:"}, # x(23)
             {"type": "int",  "name": "timber", "default":0, "emoji":":wood:"}, # x(16)
             {"type": "epoch","name": "datelastplayedepoch", "default":0},
-            {"type": "bool", "name": "npc", "default":False},
             {"type": "int",  "name": "rebels", "default":0},
             {"type": "int",  "name": "exports", "default":0},
         ]
@@ -185,10 +181,10 @@ class Player(object):
     def load(self, playerid:int):
         if self.args.debug is True:
             ttyio.echo("player.load.100: playerid=%r" % (playerid), level="debug")
-        # dbh = bbsengine.databaseconnect(self.args)
+        dbh = bbsengine.databaseconnect(self.args)
         sql = "select * from empyre.player where id=%s"
         dat = (playerid,)
-        cur = self.dbh.cursor()
+        cur = dbh.cursor()
         cur.execute(sql, dat)
         res = cur.fetchone()
 
@@ -239,7 +235,8 @@ class Player(object):
                 continue
             attributes[name] = attr["value"] # self.getattribute(name) # getattr(self, name)
 
-        return bbsengine.updatenodeattributes(self.dbh, self.args, self.playerid, attributes)
+        dbh = bbsengine.databaseconnect(self.args)
+        return bbsengine.updatenodeattributes(dbh, self.args, self.playerid, attributes)
 
     def isdirty(self):
         def getattrval(name):
@@ -259,7 +256,7 @@ class Player(object):
                 return True
         return False
 
-    def save(self, updatecredits=False, adjust=True):
+    def save(self):
         if self.args.debug is True:
             ttyio.echo("player.save.100: playerid=%r" % (self.playerid), level="debug")
         if self.playerid is None:
@@ -274,27 +271,15 @@ class Player(object):
 #            ttyio.echo("save aborted")
 #            return
 
-        if adjust is True:
-            self.adjust()
-
         if self.isdirty() is False:
             if "debug" in self.args and self.args.debug is True:
                 ttyio.echo("%s: clean. no save." % (self.name))
             return
         ttyio.echo("%s: dirty. saving." % (self.name))
 
-        # self.dbh = bbsengine.databaseconnect(self.args)
-        try:
-            self.update()
-            if updatecredits is True:
-                # corruption if credits are updated after player.load()
-                bbsengine.setmembercredits(self.dbh, self.memberid, self.credits)
-        except:
-            ttyio.echo("exception saving player record")
-        else:
-            ttyio.echo("player.save.100: running commit()", level="debug")
-            self.dbh.commit()
-            ttyio.echo("player record saved", level="success")
+        dbh = bbsengine.databaseconnect(self.args)
+        self.update()
+        dbh.commit()
         return
 
     def insert(self):
@@ -303,16 +288,17 @@ class Player(object):
             name = a["name"]
             attr = self.getattribute(name)
             value = attr["value"]
-            ttyio.echo("player.insert.100: %r=%r" % (name, value))
+            ttyio.echo("player.insert.100: %r=%r" % (name, value), level="debug")
             attributes[name] = value
 
-        ttyio.echo("attributes.name=%r" % (attributes["name"]))
+        ttyio.echo("attributes.name=%r" % (attributes["name"]), level="debug")
 
         node = {}
         node["prg"] = "empyre.player"
         node["attributes"] = attributes
-        # self.dbh = bbsengine.databaseconnect(self.args)
-        nodeid = bbsengine.insertnode(self.dbh, self.args, node, mogrify=False)
+
+        dbh = bbsengine.databaseconnect(args)
+        nodeid = bbsengine.insertnode(dbh, self.args, node, mogrify=False)
         self.playerid = nodeid
         ttyio.echo("player.insert.100: playerid=%r" % (self.playerid), level="debug")
         return nodeid
@@ -348,12 +334,14 @@ class Player(object):
 
         self.insert()
 
+        dbh = bbsengine.databaseconnect(args)
+
         if self.playerid is None:
             ttyio.echo("unable to insert player record.", level="error")
-            self.dbh.rollback()
+            dbh.rollback()
             return None
 
-        self.dbh.commit()
+        dbh.commit()
 
         if self.args.debug is True:
             ttyio.echo("Player.new.100: playerid=%r" % (self.playerid), level="debug")
@@ -597,15 +585,17 @@ class Player(object):
 
 class completePlayerName(object):
     def __init__(self, args):
-        self.dbh = bbsengine.databaseconnect(args)
+        self.args = args
         self.matches = []
         self.debug = args.debug
 
     def complete(self:object, text:str, state:int):
+        dbh = bbsengine.databaseconnect(self.args)
+
         vocab = []
         sql = "select name from empyre.player"
         dat = ()
-        cur = self.dbh.cursor()
+        cur = dbh.cursor()
         cur.execute(sql, dat)
         res = cur.fetchall()
         cur.close()
@@ -616,6 +606,7 @@ class completePlayerName(object):
 
 def verifyPlayerNameFound(args:object, name:str) -> bool:
     dbh = bbsengine.databaseconnect(args)
+
     cur = dbh.cursor()
     sql = "select 1 from empyre.player where name=%s"
     dat = (name,)
@@ -974,3 +965,14 @@ def inputattributename(args:object, prompt:str="attribute name: ", oldvalue:str=
     attrs = kw["attrs"] if "attrs" in kw else None
     completer = completeAttributeName(args, attrs)
     return ttyio.inputstring(prompt, oldvalue, opts=args, verify=verify, multiple=multiple, completer=completer, returnseq=False, **kw)
+
+# @since 20220731
+currentplayer = None
+
+def setcurrentplayer(args, player):
+    global currentplayer
+    currentplayer = player
+
+def getcurrentplayer(args):
+    global currentplayer
+    return currentplayer
