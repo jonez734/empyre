@@ -5,7 +5,7 @@
 import ttyio5 as ttyio
 import bbsengine5 as bbsengine
 
-from empyremodules import lib
+from . import lib
 
 def main(args, **kwargs):
     player = kwargs["player"] if "player" in kwargs else None

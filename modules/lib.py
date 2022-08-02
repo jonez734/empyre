@@ -686,8 +686,9 @@ def playerstatus(args, player):
     return player.status()
 
 def runsubmodule(args, player, submodule, **kw):
-    x = "empyremodules.%s" % (submodule)
-    ttyio.echo("lib.runsubmodule.100: x=%r" % (x), level="debug")
+    x = "modules.%s" % (submodule)
+    if args.debug is True:
+        ttyio.echo("lib.runsubmodule.100: x=%r" % (x), level="debug")
     return bbsengine.runsubmodule(args, x, player=player, **kw)
 
 def calculaterank(args:object, player:object) -> int:
