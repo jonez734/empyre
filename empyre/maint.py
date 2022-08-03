@@ -17,7 +17,7 @@ def main(args, **kw):
     while not done:
         bbsengine.title("maint")
         lib.setarea(args, player, "maint")
-        buf = """{f6}{purple}Options:{/all}{f6}
+        buf = """{f6}{gray}Options:{/all}{f6}
 {yellow}[D]{gray} Auto-Reset{f6}
 {yellow}[X]{gray} bbs credit / empyre coin exchange rate{f6}
 {yellow}[E]{gray} Edit Player's profile{f6}

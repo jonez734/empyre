@@ -27,7 +27,7 @@ def main(args, player):
 
 #    adjust(args, player)
     for x in ("weather", "disaster", "harvest", "colonytrip", "town", "combat", "quests", "investments"):
-        if lib.runsubmodule(args, player, x) is not True:
+        if lib.runsubmodule(args, player, x) is False:
             ttyio.echo("error running submodule %r" % (x), level="error")
         player.save()
 

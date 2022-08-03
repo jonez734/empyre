@@ -1,5 +1,14 @@
-def harvest(args, player):
-    setarea(args, player, "harvest")
+import random
+
+import ttyio5 as ttyio
+import bbsengine5 as bbsengine
+
+from . import lib
+
+def main(args, **kw):
+    player = kw["player"] if "player" in kw else None
+
+    lib.setarea(args, player, "harvest")
     x = int((player.land*player.weathercondition+(random.random()*player.serfs)+player.grain*player.weathercondition)/3)
     x = min(x, player.land+player.serfs*4)
     #if x > (player.land+player.serfs)*4:
@@ -14,7 +23,7 @@ def harvest(args, player):
     ttyio.echo()
     price = player.weatherconditions*3+12
     price = int(price/(int(player.land/875)+1))
-    trade(args, player, "grain", "grain", price, "bushel", "bushels", emoji=":crop:")
+    lib.trade(args, player, "grain", "grain", price, "bushel", "bushels", emoji=":crop:")
     howmany = serfsrequire if player.grain >= serfsrequire else player.grain
     serfsgiven = ttyio.inputinteger("{cyan}Give them how many? {lightgreen}", howmany)
     ttyio.echo("{/all}")
@@ -34,7 +43,7 @@ def harvest(args, player):
     ttyio.echo("Your army requires :crop: {var:empyre.highlightcolor}%s{/all} this year and you have :crop: {var:empyre.highlightcolor}%s{/all}." % (bbsengine.pluralize(armyrequires, "bushel", "bushels"), bbsengine.pluralize(int(player.grain), "bushel", "bushels")))
     price = int(6//player.weathercondition)
     price = int(price/(player.land/875)+1)
-    trade(args, player, "grain", "bushel", price, "bushel", "bushels", emoji=":crop:")
+    lib.trade(args, player, "grain", "bushel", price, "bushel", "bushels", emoji=":crop:")
 
     ttyio.echo("armyrequires=%r player.grain=%r" % (armyrequires, player.grain), level="debug")
 

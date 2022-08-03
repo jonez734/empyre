@@ -8,7 +8,7 @@ DATADIR = "~jam/projects/empyre/data/"
 
 class Player(object):
     def __init__(self, args):
-        self.playerid = playerid
+        self.playerid = None
         # self.name = None # na$
         self.memberid = bbsengine.getcurrentmemberid(args)
         self.args = args
@@ -42,7 +42,7 @@ class Player(object):
             {"type": "int",  "name": "serfs", "default": 2000+random.randint(0, 200)}, # sf x(19)
             {"type": "int",  "name": "soldierpromotioncount", "default":0},
             {"type": "int",  "name": "turncount", "default":0},
-            {"type": "int",  "name": "rank", "default":rank},
+            {"type": "int",  "name": "rank", "default":0},
             {"type": "int",  "name": "previousrank", "default":0},
             {"type": "int",  "name": "memberid", "default": bbsengine.getcurrentmemberid(self.args)},
             {"type": "int",  "name": "weatherconditions", "default":0},
@@ -479,35 +479,40 @@ class Player(object):
         soldierpay = (self.soldiers*(self.combatvictory+2))+(self.taxrate*self.palaces*10)/40 # py
         ttyio.echo("adjust.140: soldierpay=%d" % (soldierpay), level="debug")
 
+        # soldiers = self.soldiers
+        soldiers = ttyio.inputinteger("soldiers=", self.soldiers)
+
         a = 0
-        if soldierpay < 1 and self.soldiers >= 500:
-            ttyio.echo("soldierpay < 1, self.soldiers >= 500", level="debug")
-            a += self.soldiers//5
-            ttyio.echo("adjust.100: a=%d self.soldiers=%d" % (a, self.soldiers), level="debug")
+        if soldierpay < 1 and soldiers >= 500:
+            ttyio.echo("soldierpay < 1, soldiers >= 500", level="debug")
+            a += soldiers//5
+            ttyio.echo("adjust.100: a=%d soldiers=%d" % (a, soldiers), level="debug")
         ttyio.echo("adjust.160: a=%d" % (a), level="debug")
 
         if self.nobles < 1:
             ttyio.echo("You have no nobles!")
             self.nobles = 0
+            a += soldiers
+            soldiers = 0
 
-        if self.soldiers < 1:
-            self.soliders = 0
+        if soldiers < 1:
+            soldiers = 0
             ttyio.echo("You have no soldiers!")
 
-        if self.soldiers > (self.nobles*20)+1:
-            a += self.nobles*20
-            ttyio.echo("Not enough nobles for your %s!" % (bbsengine.pluralize(self.soldiers, "soldier", "soldiers", emoji="military-helmet")))
-        self.soldiers -= a
+        if soldiers > (self.nobles*20)+1:
+            a +=  abs(self.nobles*20 - soldiers)
+            ttyio.echo("Not enough nobles for your %s!" % (bbsengine.pluralize(soldiers, "soldier", "soldiers", emoji=":military-helmet:")))
+        soldiers -= a
         ttyio.echo("adjust.180: a=%d" % (a), level="debug")
 
         if a > 0:
-            ttyio.echo("{yellow}%s{/all} your army" % (bbsengine.pluralize(a, "soldier deserts", "soldiers desert", emoji="military-helmet")))
+            ttyio.echo("{yellow}%s{/all} your army" % (bbsengine.pluralize(a, "soldier deserts", "soldiers desert", emoji=":military-helmet:")))
 
         if self.land < 0:
             ttyio.echo("You lost your last %s." % (bbsengine.pluralize(abs(self.land), "acre", "acres")))
             self.land = 0
+
         if self.land == 0:
-            self.land = 1
             ttyio.echo("You have no land!")
 
         if self.shipyards > 10: # > 400
@@ -580,6 +585,7 @@ class Player(object):
         # player.save()
 
         return
+
     def revert(self):
         pass
 
@@ -665,17 +671,6 @@ def setarea(args, player, buf, stack=False) -> None:
                 return "debug"
             else:
                 return ""
-#        if player is not None:
-#            return "| :person: %s | :moneybag: %s" % (player.name, bbsengine.pluralize(player.coins, "coin", "coins"))
-#        return ""
-
-#    terminalwidth = ttyio.getterminalwidth()
-#    leftbuf = buf
-#    rightbuf = ""
-#    if player is not None:
-#        rightbuf += "| %s | %s" % (player.name, bbsengine.pluralize(player.coins, "coin", "coins"))
-#    buf = "%s%s" % (leftbuf.ljust(terminalwidth-len(rightbuf)-2, " "), rightbuf)
-#    # ttyio.echo("buf=%r" % (buf), interpret=False, level="debug")
 
     bbsengine.setarea(buf, rightside, stack)
     if args.debug is True:

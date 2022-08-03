@@ -19,22 +19,23 @@ def main(args, player):
             loss = bbsengine.diceroll(player.land//2)
             player.land -= loss
             ttyio.echo("You lost %s." % (bbsengine.pluralize(loss, "acre", "acres")))
-            return
+            return True
+
         lib.setarea(args, player, "joust")
 
         ttyio.echo("joust.100: otherplayer=%r" % (otherplayer), level="debug")
 
         if player.horses == 0:
             ttyio.echo("You do not have a horse for your noble to use!")
-            return
+            return True
 
         if player.serfs < 900:
             ttyio.echo("Not enough serfs attend. The joust is cancelled.")
-            return
+            return True
 
         if otherplayer is None or otherplayer.nobles < 2:
             ttyio.echo("Your opponent does not have enough nobles.")
-            return
+            return True
 
         ttyio.echo("{f6:2}Your Noble mounts his mighty steed and aims his lance... ", end="")
         # @see https://github.com/Pinacolada64/ImageBBS/blob/e9f033af1f0b341d0d435ee23def7120821c3960/v1.2/games/empire6/plus_emp6_tourney.lbl#L12
@@ -44,8 +45,8 @@ def main(args, player):
             otherplayer.nobles -= 1
             ttyio.echo("Your noble's lance knocks their opponent to the ground. They get up and swear loyalty to you!")
             # if nj=1 then tt$="{gray1}"+d2$+"{lt. blue}"+na$+"{white} wins joust - {lt. blue}"+en$+"{white} is shamed."
-            newsentry(args, player, "{lightblue}%s{white} wins joust - {lightblue}%s{white} is shamed" % (player.name, otherplayer.name))
-            return
+            lib.newsentry(args, player, "{lightblue}%s{white} wins joust - {lightblue}%s{white} is shamed" % (player.name, otherplayer.name))
+            return True
 
         lost = []
         gained = []
@@ -111,16 +112,16 @@ def main(args, player):
 
         otherplayer.save()
         
-        return
+        return True
 
     def dragon():
         if player.dragons < 0:
             player.dragons = 0
-            return
+            return True
         ttyio.echo("You have %s" % (bbsengine.pluralize(player.dragons, "dragon", "dragons")))
         if player.dragons > 0:
             if ttyio.inputboolean("Unleash a dragon? [yN]: ", "N") is False:
-                return
+                return True
 
         foo = []
         n = otherplayer.grain//10

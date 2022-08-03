@@ -67,7 +67,7 @@ def main(args, **kw):
                         emoji = o[3]
                     else:
                         emoji = ""
-                    ttyio.echo("%s{lightgreen}%s{cyan} -- %s{/all}" % (emoji, option, title), end="")
+                    ttyio.echo("%s{lightgreen}%s{cyan} -- %s{/all}" % (emoji, option, title))
                     if lib.runsubmodule(args, player, submodule) is not True:
                         ttyio.echo("error running submodule %r" % (submodule), level="error")
                     ttyio.echo()
