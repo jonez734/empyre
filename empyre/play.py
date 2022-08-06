@@ -16,12 +16,12 @@ def main(args, player):
 
     ttyio.echo("{f6}{cyan}it is a new year...{/all}")
 
-    player.turncount += 1
-
-    if player.turncount > 4:
+    if player.turncount >= lib.TURNSPERDAY:
         ttyio.echo("{red}The other rulers unite against you for hogging the game!{/all}")
-        return False
+        player.turncount = lib.TURNSPERDAY
+        return True
     
+    player.turncount += 1
     player.adjust()
     player.save()
 
