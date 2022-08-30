@@ -131,7 +131,7 @@
 - [ ] allow diff cargo per ship?
 - [x] 50 horses per stable (mdl.emp.delx1.txt)
 - [ ] spices are only on the colony or the fleet, not the mainland
-- [ ] rename "cannons" -> "canons" and make sure Player can handle it.
+- [-] rename "cannons" -> "canons" and make sure Player can handle it.
 - [ ] poll for notifications (combat)
 - [ ] "%s mills are overworked!": use bbsengine.pluralize()
 - [x] handle 'breaking even' in P&L
@@ -316,10 +316,125 @@ AttributeError: 'NoneType' object has no attribute 'nobles'
     - when a player is selected, self.attributes is populated
     - as a result, Player is always "dirty" since it is diff than default values
     - would save a save() if Player was initialized properly on load
+    - reload player record after maint of current player (@since 20220522)
 - [ ] trade() (@since 20220411)
-    - [ ] update bottombar after every call so dirty flag is updated (rightbuf) (@since 20220411)
-    - [ ] do not show player stats after a transaction. add 'Y' option to menu (@since 20220412)
+    - [x] update bottombar after every call so dirty flag is updated (rightbuf) (@since 20220411)
+    - [x] do not show player stats after a transaction by default. add 'Y' option to menu (@since 20220412, @done 20220422)
 - [ ] player.save() gets called in maint mode even if the choice is not to save (@since 20220411)
 - [ ] player.revert() builds self.attributes (which is a seq of dicts) values based on Player object attrs (@since 20220411)
 - [ ] in player.status(), extend width by 2, result is "lastplayed" vs "lastplay.."
 - https://www.omnicalculator.com/statistics/dice
+- [ ] if more than one player for given memberid, make sure player name input can deal with empty input (@since 20220422)
+- [x] "other players" list is empty, but shows box chars anyway (@since 20220430 @done 20220430)
+    * uses bbsengine.ResultIter()
+- [x] go over every call to bbsengine5.setarea() and set most of them to 'stack=False' (@since 20220511 @done 20220522)
+- [x] if a dragon has been killed, echo diff message based on if it is the *only* dragon (@since 20220522 @done 20220522)
+- [ ] establish /usr/share/empyre/ and put text files related to quests there to start (@since 20220522)
+- [ ] keep track of which quests have been completed, date, and a count (@since 20220719)
+
+ttyio.echo("{bggray}{white}[1]{/bgcolor} {green}Raid the Pirates Camp")
+ttyio.echo("{bggray}{white}[2]{/bgcolor} {green}Mystery of the Haunted Cave")
+ttyio.echo("{bggray}{white}[3]{/bgcolor} {green}Rescue the Maiden's Sister")
+ttyio.echo("{bggray}{white}[4]{/bgcolor} {green}The Quest of the Gods")
+ttyio.echo("{bggray}{white}[5]{/bgcolor} {green}Eradicate the Evil Cult")
+ttyio.echo("{bggray}{white}[6]{/bgcolor} {green}Search for the Island of Spice")
+ttyio.echo("{bggray}{white}[7]{/bgcolor} {green}Quest for the Legendary Bird City")
+ttyio.echo("{bggray}{white}[8]{/bgcolor} {green}Look for the Mountain Side Ship")
+ttyio.echo("{bggray}{white}[9]{/bgcolor} {green}Seek Arch-Mage Zircon's Help {yellow}Warning: Zircon's Help is a {blink}GAMBLE{/blink}")
+ttyio.echo("{/all}")
+
+        if ch == "1":
+            if isquestcompleted() is True:
+#                ttyio.echo("""Your invasion is swift and merciless and the pirate camp is soon under your control.  Flushed with victory, your band counts the treasure which you have received. You gain 30,000 coins!{F6:2}""")
+                bbsengine.filedisplay(args, "data/quests/raidpiratecamp-win.txt")
+                player.coins += 30000
+                newsentry(args, player, "You win quest #1: raid pirate camp - %s" % (bbsengine.pluralize(30000, "coin", "coins")))
+        elif ch == "2":
+            ttyio.echo(quests[1][0], level="debug")
+            ttyio.echo(quests[1][1], level="debug")
+            bbsengine.filedisplay(args, "data/quests/hauntedcave-win.txt")
+#            ttyio.echo("""
+#With the need for good horses, and also having heard of wild horses in the mountains, you set out with some of your Nobles to try to find them.{F6:2}
+#Questioning the people you meet you discover that the horses have been seen near a haunted cave.  Not believing in ghosts, you head for the location.{F6:2}
+#Finally, you find the cave, seeing one of the horses entering it.  Quietly you and your men approach the cave.  You are within a hundred yards when you hear some spooky sounds coming from it.{F6:2}
+#Determined to discover the secret of the sounds, you advance toward the cave.  Upon reaching the cave's entrance, you see daylight quite far back. Boldly entering, you discover a tunnel through a mountain.  The tunnel distorted the sounds you heard, producing the "ghostly" manifestations!{F6:2}
+#There is a hidden valley on the other end of the tunnel.  In the valley you find a herd of horses.{F6:2}
+#You gain 30 horses!{F6:2}
+#""")
+            if isquestcompleted() is True:
+                ttyio.echo("You win quest #2: haunted cave - 30 horses")
+                player.horses += 30 # x(23)
+        elif ch == "3":
+            ttyio.echo("""
+You are in need of timber for your forts and ships.  Your land is well-suited for growing grain, but you have very little timber.{F6:2}
+So, at last you decide if your empire is to survive, you must find a source of timber.  Discussing this with your Nobles, you decide to lead an expedition into the mountains. Though most of the trees are bent from the high winds, you have heard of a small valley, with good timber.{F6:2}
+You and your men have been searching for some weeks, when you come upon a young woman.  She is in tears, explaining that a band of brigands had captured her and her sister.  They were being used as slave labor at the brigands' camp. She further explains she managed to slip away, and begs you to come and free her sister.{F6:2}
+Considering that these brigands may some day become a threat to your land, you agree.{F6:2}
+""")
+            if isquestcompleted() is True:
+                ttyio.echo("""So it was that when you and your men came upon the brigands, you were prepared to fight. The brigands, believing themselves safe, were caught off guard.{F6:2}
+Your seasoned troops make quick work of the task.  But you have found something more.  The brigands' camp is in a small valley with good timber! You gain 15 tons of timber!""")
+                player.timber += 15 # x(16)
+            else:
+                ttyio.echo("Your soldiers were not properly prepared, and they retreat before completing the quest.")
+        elif ch == "4":
+            ttyio.echo("You win quest #4: 30,000 grain")
+            player.grain += 30000
+        elif ch == "5":
+            ttyio.echo("You win quest #5: 4,000 acres")
+            player.acres += 4000
+        elif ch == "6":
+            ttyio.echo("You win quest #6: 20 tons of spices")
+            player.spices += 20 # x(25)
+        elif ch == "7":
+            ttyio.echo("You win quest #7: 4 nobles")
+            player.nobles += 4 # x(6)
+        elif ch == "8":
+            ttyio.echo("You win quest #8: 6 cannons")
+            player.cannons += 6 # x(14)
+
+- [ ] in empyremodules.investments, make a way to buy horses (@since 20220731)
+
+- [x] rename empyremodules to modules (@since 20220801 @done 20220801)
+- https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html
+- https://setuptools.pypa.io/en/latest/userguide/quickstart.html
+- https://setuptools.pypa.io/en/latest/userguide/development_mode.html
+- https://realpython.com/python-wheels/
+- __main__.py is allowed and run when 'modules' is called from the command-line (have not tested with letteredolive)
+- https://stackoverflow.com/questions/4042905/what-is-main-py
+- use https://setuptools.pypa.io/en/latest/userguide/datafiles.html for data files like quest intro/pass/fail files, credits, etc. *as part of package*
+
+- https://packaging.python.org/en/latest/guides/dropping-older-python-versions/#using-twine-to-publish
+- https://stackoverflow.com/questions/26528178/right-way-to-set-python-package-with-sub-packages
+- https://discuss.dizzycoding.com/how-to-include-package-data-with-setuptools-distutils/
+- track if a ship is made by a shipyard. change adjust() to only track those shipyards (@since 20220810)
+- where to get navigators (instead of making it automagic) (@since 20220810)
+
+tho per the instructions, you automagically get enough navigators
+where would you recruit navigators?
+maybe at the dry dock?
+Pinacolada64
+ — 
+Today at 10:54 PM
+The Seaman's Union. :>
+We have a lot of port/dock stuff here in Tacoma. It's a huge shipping point. There are longshoreman unions and stuff.
+jam
+ — 
+Today at 10:55 PM
+hmm
+Pinacolada64
+ — 
+Today at 10:55 PM
+point to consider? :>
+jam
+ — 
+Today at 10:55 PM
+indeed
+
+- [ ] trap INTR/EOF when ship(s) are docked, reset so docks are free (@since 20220810)
+- [ ] Ship
+- [ ] Port
+- [ ] make _version a resource instead of using a py file
+- [ ] handle beheading properly (@since 20220829)
+- [ ] handle "no nobles" in zircon-fail.txt (@since 20220829)
+- [x] python -m empyre works, but running from letteredolive does not (@since 20220828 @done 20220829)
