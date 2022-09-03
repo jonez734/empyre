@@ -1,0 +1,3 @@
+[submodule "empire51"]
+	path = empire51
+	url = git@github.com:jonez734/empire51.git
