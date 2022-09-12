@@ -41,7 +41,8 @@ def main(args, **kwargs):
     player = lib.getplayer(args, currentmemberid)
     if player is None:
         ttyio.echo("startup.200: new player", level="debug")
-        player = newplayer(args)
+        player = lib.Player(args)
+        player.new()
         lib.newsentry(args, player, "New Player %r!" % (player.name))
 
     if lib.runsubmodule(args, player, "mainmenu") is not True:
