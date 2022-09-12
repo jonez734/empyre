@@ -23,7 +23,7 @@ def main(args, **kw):
         ("L", "List Players",    "listplayers"),
         ("P", "Play Empyre",     "play"),
         ("T", "Town Activities", "town"), #, ":building:"),
-        ("S", "Player Status",   "playerstatus"),
+        ("Y", "Your Status",     "playerstatus"),
         ("G", "Generate NPC",    "generatenpc"),
     )
 
