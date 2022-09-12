@@ -160,7 +160,7 @@ def main(args, **kw):
         pass
 
     def menu():
-        bbsengine.title("Fight Menu")
+        bbsengine.title("Combat Menu")
         buf = """
 {bggray}{white}[1]{/bgcolor} {green}Attack Army{f6}
 {bggray}{white}[2]{/bgcolor} {green}Attack Palace{f6}
@@ -186,7 +186,7 @@ def main(args, **kw):
             ttyio.echo("{F6}{green}Your noble returns with good news! To avoid attack, you have been given %s of land!" % (bbsengine.pluralize(land, "acre", "acres")))
         else:
             player.nobles -= 1
-            ttyio.echo("{orange}%s {red}BEHEADS{orange} your diplomat and tosses their corpse into the moat!" % (otherplayer.name))
+            ttyio.echo("{orange}%s {red}BEHEADS{orange} your noble and tosses their corpse into the moat!" % (otherplayer.name))
         player.save()
         otherplayer.save()
 
