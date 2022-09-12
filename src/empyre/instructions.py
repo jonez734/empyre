@@ -6,7 +6,7 @@ from . import data
 def init(args, **kw):
     return True
 
-def access(args, **kw):
+def access(args, op, **kw):
     return True
 
 def main(args, **kw):
