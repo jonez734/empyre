@@ -64,6 +64,7 @@ class Player(object):
             {"type": "int",  "name": "shipyards", "default":0, "price":8000, "singular":"shipyard", "plural":"shipyards"}, # yc or f%(5)? x(10)
             {"type": "int",  "name": "diplomats", "default":0, "price":50000, "singular":"diplomat", "plural":"diplomats"}, # f%(6) 0
             {"type": "int",  "name": "ships", "default":0, "price":5000, "singular":"ship", "plural":"ships", "emoji":":anchor:"}, # 5000 each, yc? x(12)
+            {"type": "int",  "name": "navigators", "default":0, "emoji":":compass:"}, # @since 20220907
             {"type": "int",  "name": "stables", "default":1, "price": 10000, "singular": "stable", "plural":"stables"}, # x(11)
             {"type": "int",  "name": "colonies", "default":0}, # i8
             {"type": "int",  "name": "training", "default":1}, # z9 - number of units for training
@@ -78,7 +79,7 @@ class Player(object):
 #            {"type": "epoch","name": "datelastplayedepoch", "default":0},
             {"type": "datetime", "name": "datelastplayed", "default":"now"},
             {"type": "int",  "name": "rebels", "default":0},
-            {"type": "int",  "name": "exports", "default":0},
+            {"type": "int",  "name": "exports", "default":0, "emoji": ":package:"},
         ]
 
         for a in self.attributes:
@@ -303,7 +304,7 @@ class Player(object):
         node["prg"] = "empyre.player"
         node["attributes"] = attributes
 
-        dbh = bbsengine.databaseconnect(args)
+        dbh = bbsengine.databaseconnect(self.args)
         nodeid = bbsengine.insertnode(dbh, self.args, node, mogrify=False)
         self.playerid = nodeid
         ttyio.echo("player.insert.100: playerid=%r" % (self.playerid), level="debug")
@@ -340,7 +341,7 @@ class Player(object):
 
         self.insert()
 
-        dbh = bbsengine.databaseconnect(args)
+        dbh = bbsengine.databaseconnect(self.args)
 
         if self.playerid is None:
             ttyio.echo("unable to insert player record.", level="error")
@@ -599,7 +600,7 @@ class completePlayerName(object):
     def __init__(self, args):
         self.args = args
         self.matches = []
-        self.debug = args.debug
+        self.debug = args.debug if "debug" in args else False
 
     def complete(self:object, text:str, state:int):
         dbh = bbsengine.databaseconnect(self.args)
@@ -609,9 +610,7 @@ class completePlayerName(object):
         dat = ()
         cur = dbh.cursor()
         cur.execute(sql, dat)
-        res = cur.fetchall()
-        cur.close()
-        for rec in res:
+        for rec in bbsengine.resultiter(cur):
             vocab.append(rec["name"])
         results = [x for x in vocab if x.startswith(text)] + [None]
         return results[state]
@@ -628,6 +627,7 @@ def verifyPlayerNameFound(args:object, name:str) -> bool:
     return True
 
 def verifyPlayerNameNotFound(args:object, name:str) -> bool:
+    ttyio.echo("verifyPlayerNameNotFound.120: args=%r" % (args))
     ttyio.echo("verifyPlayerNameNotFound.100: name=%r" % (name))
     dbh = bbsengine.databaseconnect(args)
     cur = dbh.cursor()
@@ -709,7 +709,6 @@ def runmodule(args, player, submodule, **kw):
 
 def runsubmodule(args, player, submodule, **kw):
     return runmodule(args, player, submodule, buildargs=False, **kw)
-
 
 def calculaterank(args:object, player:object) -> int:
     #i1=f%(1) palaces
