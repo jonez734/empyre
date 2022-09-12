@@ -1,0 +1,2 @@
+include empyre/data/*.txt
+include empyre/data/quests/*.txt
