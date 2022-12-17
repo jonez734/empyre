@@ -379,7 +379,7 @@ class Player(object):
                 # ttyio.echo("player.status.140: t=%r" % (t), level="debug")
                 if t == "int":
                     # ttyio.echo("player.status.100: n=%r t=int v=%r" % (n, v), level="debug")
-                    v = "{:>6n}".format(int(v))
+                    v = f"{v:>6n}"
                     # ttyio.echo("player.status.120: new v=%r" % (v), level="debug")
                 elif t == "epoch":
                     # ttyio.echo("player.status.100: v=%r" % (v), interpret=False)
@@ -388,11 +388,11 @@ class Player(object):
                     else:
                         v = bbsengine.datestamp(v)
             buf = "%s: %s" % (n.ljust(maxlabellen), v)
-            buflen = len(ttyio.interpretmci(buf, strip=True, wordwrap=False))
+            buflen = len(ttyio.interpretecho(buf, strip=True, wordwrap=False))
             if buflen > maxwidth:
                 maxwidth = buflen
                 ttyio.echo("player.status.160: maxwidth=%s buflen=%s" % (maxwidth, buflen), level="debug")
-        ttyio.echo("terminalwidth=%r maxwidth=%r" % (terminalwidth, maxwidth), level="debug")
+        ttyio.echo(f"terminalwidth={terminalwidth} maxwidth={maxwidth}", level="debug")
         columns = terminalwidth // maxwidth
         if columns < 1:
             columns = 1
@@ -424,7 +424,7 @@ class Player(object):
             else:
                 buf = "{yellow}%s: %s{/all}" % (n.ljust(maxlabellen), v)
 
-            buflen = len(ttyio.interpretmci(buf, strip=True, wordwrap=False))
+            buflen = len(ttyio.interpretecho(buf, strip=True, wordwrap=False))
             if currentcolumn == columns-1:
                 ttyio.echo("%s" % (buf))
             else:
@@ -513,7 +513,7 @@ class Player(object):
         ttyio.echo("adjust.180: a=%d" % (a), level="debug")
 
         if a > 0:
-            ttyio.echo("{yellow}%s{/all} your army" % (bbsengine.pluralize(a, "soldier deserts", "soldiers desert", emoji=":military-helmet:")))
+            ttyio.echo("{yellow}{}{/all} your army".format((bbsengine.pluralize(a, "soldier deserts", "soldiers desert", emoji=":military-helmet:"))))
 
         if self.land < 0:
             ttyio.echo("You lost your last %s." % (bbsengine.pluralize(abs(self.land), "acre", "acres")))
