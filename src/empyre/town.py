@@ -10,6 +10,9 @@ from . import lib
 def init(args, **kw):
     pass
 
+def access(args, op, **kw):
+    return True
+
 def main(args, **kwargs):
     player = kwargs["player"] if "player" in kwargs else None
 
@@ -225,7 +228,7 @@ def main(args, **kwargs):
             else:
                 ttyio.echo("No promotions performed.")
 
-    options = (
+    optiontable = (
         ("C", ":bank: Cyclone's Natural Disaster Bank", naturaldisasterbank),
         ("L", ":fire: Lucifer's Den", lucifersden), # lucifersden),
         ("P", ":prince: Soldier Promotion to Noble", soldierpromotion),
@@ -243,32 +246,32 @@ def main(args, **kwargs):
     def menu():
         bbsengine.title("town menu")
 
-        for hotkey, description, func in options:
+        for hotkey, description, func in optiontable:
             if callable(func):
                 ttyio.echo("{var:empyre.highlightcolor}[%s]{/all} {green}%s" % (hotkey, description))
         ttyio.echo("{/all}")
-        ttyio.echo("{var:empyre.highlightcolor}[Q]{/all} :door: {green}Return to the Empyre{/all}")
+        ttyio.echo("{var:empyre.highlightcolor}[Q]{/all} :door: {green}Return to the Empyre{/all}{f6}")
     
     terminalwidth = bbsengine.getterminalwidth()
 
     hotkeys = "Q"
-    for hotkey, desc, func in options:
+    for hotkey, desc, func in optiontable:
         if callable(func):
             hotkeys+= hotkey
             ttyio.echo("empyre.town.menu.100: adding hotkey %r" % (hotkey), level="debug")
 
-    done = False
-    while not done:
+    loop = True
+    while loop:
         lib.setarea(args, player, "town menu")
         player.save()
         menu()
-        ch = ttyio.inputchar("town [clprstuwxyQ]: ", hotkeys, "Q")
+        ch = ttyio.inputchar(f"town [{hotkeys}]: ", hotkeys, "Q")
         if ch == "Q":
             ttyio.echo(":door: {green}Return to the Empyre{/all}")
-            done = True
+            loop = False
             continue
         else:
-            for key, desc, func in options:
+            for key, desc, func in optiontable:
                 if ch == key:
                     if callable(func):
                         ttyio.echo(desc)
