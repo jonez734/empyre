@@ -57,14 +57,14 @@ def main(args, **kw):
 #    ttyio.echo("Receivables: %s" % "{:>6n}".format(receivables)) # (pluralize(receivables, "credit", "credits")))
 #    ttyio.echo("Payables:    %s" % "{:>6n}".format(payables)) # (pluralize(payables, "credit", "credits")))
 
-    ttyio.echo("{cyan}EXPENSES - %s{/all}" % ("{:>6n}".format(payables)))
+    ttyio.echo(f"{cyan}EXPENSES - {payables:>6n}{/all}")
     ttyio.echo()
     ttyio.echo(" Soldier's Pay:  %s" % ("{:>6n}".format(soldierpay)))
     ttyio.echo(" Palace Rent:    %s" % ("{:>6n}".format(palacerent)))
     ttyio.echo(" Noble's Gifts:  %s" % ("{:>6n}".format(noblegifts)))
     ttyio.echo()
 
-    ttyio.echo("{cyan}INCOME --- %s{/all}" % ("{:>6n}".format(receivables)))
+    ttyio.echo(f"{cyan}INCOME --- {receivables:>6n}{/all}")
     ttyio.echo()
     ttyio.echo(" Markets:        %s" % ("{:>6n}".format(p2))) # p2 markets
     ttyio.echo(" Mills:          %s" % ("{:>6n}".format(p3))) # p3 mills
