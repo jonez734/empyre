@@ -10,8 +10,7 @@ if __name__ == "__main__":
     parser = buildargs()
     args = parser.parse_args()
 
-    ttyio.echo("{f6:3}{cursorup:3}")
-    bbsengine.initscreen(bottommargin=1)
+    bbsengine.initscreen()
 
     locale.setlocale(locale.LC_ALL, "")
     time.tzset()
