@@ -1,16 +1,19 @@
 import time
 
+from datetime import datetime
+
 import ttyio5 as ttyio
 import bbsengine5 as bbsengine
 
-from . import lib
+from . import lib # this means "import lib from the current package" also allows .. and ...
 
 def init(args, **kwargs):
     pass
 
 def main(args, **kw):
     player = kw["player"] if "player" in kw else None
-    player.datelastplayedepoch = time.mktime(time.localtime())
+#    player.datelastplayedepoch = time.mktime(time.localtime())
+    player.datelastplayed = datetime.now().isoformat()
     
     if lib.runsubmodule(args, player, "sysopoptions") is not True:
         ttyio.echo("error running module 'sysopoptions'", level="error")
@@ -26,9 +29,8 @@ def main(args, **kw):
     player.adjust()
     player.save()
 
-#    adjust(args, player)
-    for x in ("quests",):
-#    for x in ("weather", "disaster", "harvest", "colonytrip", "town", "combat", "quests", "investments"):
+#    for x in ("drydock",):
+    for x in ("weather", "disaster", "harvest", "colonytrip", "town", "combat", "drydock", "quests", "investments"):
         if lib.runsubmodule(args, player, x) is False:
             ttyio.echo("error running submodule %r" % (x), level="error")
         player.save()
@@ -38,6 +40,7 @@ def main(args, **kw):
     if player.serfs < 100:
         ttyio.echo("{green}You haven't enough serfs to maintain the empyre! It's turned over to King George and you are {yellow}beheaded{/fgcolor}{green}.{/all}")
         player.memberid = None
+        player.beheaded = True
         player.save()
         return
         
