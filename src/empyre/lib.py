@@ -382,21 +382,25 @@ class Player(object):
                     v = f"{v:>6n}"
                     # ttyio.echo("player.status.120: new v=%r" % (v), level="debug")
                 elif t == "epoch":
-                    # ttyio.echo("player.status.100: v=%r" % (v), interpret=False)
+                    ttyio.echo("player.status.100: v=%r" % (v), level="debug")
                     if v < 1:
                         v = "None"
                     else:
-                        v = bbsengine.datestamp(v)
+                        v = bbsengine.datestamp(v, format="%Y%m%d")
+#                elif t == "datetime":
+#                    ttyio.echo(f"---> player.status.120: v={v!r} type={type(v)}", level="debug")
+#                    v = bbsengine.datestamp(v, format="%Y%m%d")
+
             buf = "%s: %s" % (n.ljust(maxlabellen), v)
             buflen = len(ttyio.interpretecho(buf, strip=True, wordwrap=False))
             if buflen > maxwidth:
                 maxwidth = buflen
                 ttyio.echo("player.status.160: maxwidth=%s buflen=%s" % (maxwidth, buflen), level="debug")
-        ttyio.echo(f"terminalwidth={terminalwidth} maxwidth={maxwidth}", level="debug")
+#        ttyio.echo(f"terminalwidth={terminalwidth} maxwidth={maxwidth}", level="debug")
         columns = terminalwidth // maxwidth
         if columns < 1:
             columns = 1
-        ttyio.echo("columns=%d" % (columns), level="debug")
+#        ttyio.echo("columns=%d" % (columns), level="debug")
 
         currentcolumn = 0
         for a in self.attributes:
@@ -418,11 +422,11 @@ class Player(object):
                     else:
                         v = "%s" % (bbsengine.datestamp(v))
             if a["name"] == "soldiers" and self.nobles*20 < self.soldiers:
-                buf = "{orange}%s: %s{/all}" % (n.ljust(maxlabellen), v)
-            elif a["name"] == "horses" and self.stables*50 < self.horses:
-                buf = "{orange}%s: %s{/all}" % (n.ljust(maxlabellen), v)
+                buf = f"{{var:labelcolor}}{n.ljust(maxlabellen)}: {{var:highlightcolor}}{v}{{var:normalcolor}}" # % (n.ljust(maxlabellen), v)
+            elif a["name"] == "horses" and self.stables*5 < self.horses:
+                buf = f"{{var:labelcolor}}{n.ljust(maxlabellen)}: {{var:highlightcolor}}{v}{{var:normalcolor}}" # % (n.ljust(maxlabellen), v)
             else:
-                buf = "{yellow}%s: %s{/all}" % (n.ljust(maxlabellen), v)
+                buf = f"{{var:labelcolor}}{n.ljust(maxlabellen)}: {{var:valuecolor}}{v}{{var:normalcolor}}" # % (n.ljust(maxlabellen), v)
 
             buflen = len(ttyio.interpretecho(buf, strip=True, wordwrap=False))
             if currentcolumn == columns-1:
@@ -654,7 +658,7 @@ def getplayerid(args:object, name:str) -> int:
     return res["id"]
 
 def inputplayername(prompt:str="player name: ", oldvalue:str="", multiple:bool=False, verify=verifyPlayerNameFound, args=argparse.Namespace(), noneok:bool=True, **kw):
-    name = ttyio.inputstring(prompt, oldvalue, args=args, verify=verify, multiple=multiple, completer=completePlayerName(args), completerdelims="", noneok=noneok, **kw)
+    name = ttyio.inputstring(prompt, oldvalue, verify=verify, multiple=multiple, completer=completePlayerName(args), completerdelims="", noneok=noneok, **kw)
     ttyio.echo("inputplayername.160: name=%r" % (name), level="debug")
     return name
 #    playerid = getplayerid(args, name)
