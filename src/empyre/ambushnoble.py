@@ -6,7 +6,7 @@ import bbsengine5 as bbsengine
 from . import lib
 
 def init(args, **kw):
-    return
+    return True
 
 def main(args, **kw):
     player = kw["player"] if "player" in kw else None
