@@ -25,11 +25,11 @@ def main(args, **kw):
         lib.setarea(args, player, "dry dock")
 
         ttyio.echo("You have %s and %s" % (bbsengine.pluralize(player.ships, "ship", "ships"), bbsengine.pluralize(player.navigators, "navigator", "navigators")))
-        ttyio.echo(":compass: [R]ecruit navigator") # show how many are needed per ship
-        ttyio.echo(":package: [E]xports")
-        ttyio.echo(":anchor: [S]hips")
-        ttyio.echo("{f6} [Q]uit")
-        ch = ttyio.inputchar("dry dock: ", "RESQ", "Q")
+        ttyio.echo(":compass: {var:optioncolor}[R]{var:labelcolor}ecruit navigator{var:normalcolor}") # show how many are needed per ship
+        ttyio.echo(":package: {var:optioncolor}[E]{var:labelcolor}xports{var:normalcolor}")
+        ttyio.echo(":anchor: {var:optioncolor}[S]{var:labelcolor}hips{var:normalcolor}")
+        ttyio.echo("{f6}:door: {var:optioncolor}[Q]{var:labelcolor}uit{var:normalcolor}")
+        ch = ttyio.inputchar("{var:promptcolor}dry dock: {var:inputcolor}", "RESQ", "Q")
         if ch == "Q":
             loop = False
             break
