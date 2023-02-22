@@ -9,8 +9,8 @@ from . import lib
 from . import _version
 
 def init(args=None, **kw):
-    ttyio.setvariable("empyre.highlightcolor", "{bggray}{white}")
-#    ttyio.echo("empyre.init")
+#    ttyio.setvariable("empyre.highlightcolor", "{bggray}{white}")
+    ttyio.echo("empyre.boot.init", level="debug")
     return True
 
 def buildargs(args=None, **kw):
@@ -45,6 +45,6 @@ def main(args, **kwargs):
         player.new()
         lib.newsentry(args, player, "New Player %r!" % (player.name))
 
-    if lib.runsubmodule(args, player, "mainmenu") is not True:
+    if lib.runsubmodule(args, player, "mainmenu") is False:
         ttyio.echo("error running submodule 'mainmenu'", level="error")
     return    
