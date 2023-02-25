@@ -21,7 +21,7 @@ setup(
   scripts=["bin/empyre"],
   license="GPLv2",
   provides=[projectname],
-  packages=["empyre", "empyre.island", "empyre.quests", "empyre.data"],
+  packages=["empyre", "empyre.combat", "empyre.maint", "empyre.island", "empyre.quests", "empyre.data", "empyre.town"],
   long_description = """empyre -- turn-based strategy game based on empire6 and built upon bbsengine5""",
   include_package_data = True,
 )
