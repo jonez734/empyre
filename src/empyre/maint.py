@@ -11,11 +11,11 @@ def init(args, **kw):
     pass
 
 def access(args, op, **kw):
-    ttyio.echo("empyre.maint.access.100: trace")
+    if args.debug is True:
+        ttyio.echo("empyre.maint.access.100: trace")
 #    sysop = False
     sysop = bbsengine.checkflag(args, "SYSOP")
     if sysop is True:
         return True
-    ttyio.echo("empyre.sysopoptions.access.100: permission denied")
+    ttyio.echo("empyre.sysopoptions.access.100: permission denied", level="error")
     return False
-
