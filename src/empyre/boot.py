@@ -10,7 +10,7 @@ from . import _version
 
 def init(args=None, **kw):
 #    ttyio.setvariable("empyre.highlightcolor", "{bggray}{white}")
-    ttyio.echo("empyre.boot.init", level="debug")
+#    ttyio.echo("empyre.boot.init", level="debug")
     return True
 
 def buildargs(args=None, **kw):
@@ -23,11 +23,9 @@ def buildargs(args=None, **kw):
 
     return parser
     
-def main(args, **kwargs):
-    ttyio.echo("empyre.main.140: args=%r" % (args), level="debug")
-
+def main(args, **kw):
     if args is not None and "debug" in args and args.debug is True:
-        ttyio.echo("empyre.main.100: args=%r" % (args))
+        ttyio.echo(f"empyre.main.100: args={args!r}", level="debug")
 
     bbsengine.title("empyre")
     if args.debug is True:
