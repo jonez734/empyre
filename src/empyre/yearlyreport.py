@@ -57,28 +57,28 @@ def main(args, **kw):
 #    ttyio.echo("Receivables: %s" % "{:>6n}".format(receivables)) # (pluralize(receivables, "credit", "credits")))
 #    ttyio.echo("Payables:    %s" % "{:>6n}".format(payables)) # (pluralize(payables, "credit", "credits")))
 
-    ttyio.echo(f"{cyan}EXPENSES - {payables:>6n}{/all}")
+    ttyio.echo(f"{{var:labelcolor}}EXPENSES - {{var:valuecolor}}{payables:>6n}{{var:normalcolor}}")
     ttyio.echo()
-    ttyio.echo(" Soldier's Pay:  %s" % ("{:>6n}".format(soldierpay)))
-    ttyio.echo(" Palace Rent:    %s" % ("{:>6n}".format(palacerent)))
-    ttyio.echo(" Noble's Gifts:  %s" % ("{:>6n}".format(noblegifts)))
+    ttyio.echo(f"{{var:labelcolor}} Soldier's Pay:  {soldierpay:>6n}") # % ("{:>6n}".format(soldierpay)))
+    ttyio.echo(f"{{var:labelcolor}} Palace Rent:    {palacerent:>6n}") # %s" % ("{:>6n}".format(palacerent)))
+    ttyio.echo(f"{{var:labelcolor}} Noble's Gifts:  {noblegifts:>6n}") # % ("{:>6n}".format(noblegifts)))
     ttyio.echo()
 
-    ttyio.echo(f"{cyan}INCOME --- {receivables:>6n}{/all}")
+    ttyio.echo(f"{{var:labelcolor}}INCOME --- {{var:valuecolor}}{receivables:>6n}{{var:normalcolor}}")
     ttyio.echo()
-    ttyio.echo(" Markets:        %s" % ("{:>6n}".format(p2))) # p2 markets
-    ttyio.echo(" Mills:          %s" % ("{:>6n}".format(p3))) # p3 mills
-    ttyio.echo(" Foundries:      %s" % ("{:>6n}".format(p4))) # p4 foundries
-    ttyio.echo(" Shipyards:      %s" % ("{:>6n}".format(p5))) # p5 shipyards
-    ttyio.echo(" Taxes:          %s" % ("{:>6n}".format(taxes))) # tg/taxes
+    ttyio.echo(f"{{var:labelcolor}} Markets:        {{var:valuecolor}}{p2:>6n}") # % ("{:>6n}".format(p2))) # p2 markets
+    ttyio.echo(f"{{var:labelcolor}} Mills:          {{var:valuecolor}}{p3:>6n}") # % ("{:>6n}".format(p3))) # p3 mills
+    ttyio.echo(f"{{var:labelcolor}} Foundries:      {{var:valuecolor}}{p4:>6n}") # % ("{:>6n}".format(p4))) # p4 foundries
+    ttyio.echo(f"{{var:labelcolor}} Shipyards:      {{var:valuecolor}}{p5:>6n}") # % ("{:>6n}".format(p5))) # p5 shipyards
+    ttyio.echo(f"{{var:labelcolor}} Taxes:          {{var:valuecolor}}{taxes:>6n}") # % ("{:>6n}".format(taxes))) # tg/taxes
     ttyio.echo()
 
     if receivables == payables:
-        ttyio.echo("{lightgreen}Break Even:           %s{/all}" % ("{:>6n}".format(payables)))
+        ttyio.echo(f"{{lightgreen}}Break Even: {payables:>6n}") #%s{/all}" % ("{:>6n}".format(payables)))
     elif receivables > payables:
-        ttyio.echo("{lightgreen}Profit:               %s{/all}" % ("{:>6n}".format(receivables-payables))) # (pluralize(receivables-payables, "credit", "credits")))
+        ttyio.echo(f"{{lightgreen}}Profit:     {receivables-payables:>6n}") # %s{/all}" % ("{:>6n}".format(receivables-payables))) # (pluralize(receivables-payables, "credit", "credits")))
     elif receivables < payables:
-        ttyio.echo("{lightred}Loss:                -%s{/all}" % ("{:>6n}".format(payables-receivables))) # pluralize(payables-receivables, "credit", "credits")))
+        ttyio.echo(f"{{lightred}}Loss:       {payables-receivables:>6n}") # %s{/all}" % ("{:>6n}".format(payables-receivables))) # pluralize(payables-receivables, "credit", "credits")))
     ttyio.echo("{/all}")
 
     player.coins += receivables
