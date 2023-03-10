@@ -1,7 +1,7 @@
 import ttyio5 as ttyio
 import bbsengine5 as bbsengine
 
-from . import lib
+from .. import lib
 
 def init(args, **kw):
     ttyio.setvariable("acscolor", "{white}")
