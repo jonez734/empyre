@@ -8,6 +8,9 @@ from . import lib
 def init(args, **kw):
     pass
 
+def access(args, op, **kw):
+    return True
+
 def main(args, **kw):
     player = kw["player"] if "player" in kw else None
 
