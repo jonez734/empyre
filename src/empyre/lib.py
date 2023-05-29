@@ -8,7 +8,7 @@ TURNSPERDAY = 4
 
 # @since 20220813
 PACKAGENAME = "empyre"
-QUESTDIR = "~jam/projects/empyre/empyre/data/quests/"
+QUESTDIR = "~jam/projects/empyre/data/quests/"
 PRG = "empyre"
 
 class Player(object):
@@ -64,7 +64,7 @@ class Player(object):
             {"type": "int",  "name": "shipyards", "default":0, "price":8000, "singular":"shipyard", "plural":"shipyards"}, # yc or f%(5)? x(10)
             {"type": "int",  "name": "diplomats", "default":0, "price":50000, "singular":"diplomat", "plural":"diplomats"}, # f%(6) 0
             {"type": "int",  "name": "ships", "default":0, "price":5000, "singular":"ship", "plural":"ships", "emoji":":anchor:"}, # 5000 each, yc? x(12)
-            {"type": "int",  "name": "navigators", "default":0, "emoji":":compass:"}, # @since 20220907
+            {"type": "int",  "name": "navigators", "default":0, "singular": "navigator", "plural": "navigators", "emoji":":compass:"}, # @since 20220907
             {"type": "int",  "name": "stables", "default":1, "price": 10000, "singular": "stable", "plural":"stables"}, # x(11)
             {"type": "int",  "name": "colonies", "default":0}, # i8
             {"type": "int",  "name": "training", "default":1}, # z9 - number of units for training
@@ -129,7 +129,7 @@ class Player(object):
 #        self.memberid = None
 #        return
  
-    def verifyPlayerAttributeName(self, args, name:str):
+    def verifyPlayerAttributeName(self, name:str, **kw):
         found = False
         for a in self.attributes:
             n = a["name"]
@@ -159,7 +159,7 @@ class Player(object):
             t = a["type"] if "type" in a else "int"
             v = a["value"] if "value" in a else None
             if t == "playername":
-                x = inputplayername("%s (playername): " % (n), v, args=self.args, verify=verifyPlayerNameNotFound)
+                x = inputplayername(f"{n} (playername): ", v, args=self.args, verify=verifyPlayerNameNotFound, name=name)
                 ttyio.echo("player.edit.100: playername=%r" % (x), level="debug")
 #                if x is not None:
 #                    x = getplayerid(args, playername)
@@ -315,7 +315,7 @@ class Player(object):
         # ttyio.echo("player.new() called!")
 
         currentmemberid = bbsengine.getcurrentmemberid(self.args)
-        currentmembername = bbsengine.getcurrentmembername(self.args)
+        currentmembername = bbsengine.getmembername(self.args)
         ttyio.echo("player.new.100: currentmemberid=%r, currentmembername=%r" % (currentmemberid, currentmembername))
         # if self.args.debug is True:
         #     ttyio.echo("new.100: currentmemberid=%r" % (currentmemberid), level="debug")
@@ -517,7 +517,7 @@ class Player(object):
         ttyio.echo("adjust.180: a=%d" % (a), level="debug")
 
         if a > 0:
-            ttyio.echo("{yellow}{}{/all} your army".format((bbsengine.pluralize(a, "soldier deserts", "soldiers desert", emoji=":military-helmet:"))))
+            ttyio.echo("{var:valuecolor}{}{/all} your army".format((bbsengine.pluralize(a, "soldier deserts", "soldiers desert", emoji=":military-helmet:"))))
 
         if self.land < 0:
             ttyio.echo("You lost your last %s." % (bbsengine.pluralize(abs(self.land), "acre", "acres")))
@@ -619,7 +619,9 @@ class completePlayerName(object):
         results = [x for x in vocab if x.startswith(text)] + [None]
         return results[state]
 
-def verifyPlayerNameFound(args:object, name:str) -> bool:
+def verifyPlayerNameFound(name:str, **kwargs) -> bool:
+    args = kwargs["args"] if "args" in kwargs else Namespace()
+
     dbh = bbsengine.databaseconnect(args)
 
     cur = dbh.cursor()
@@ -630,14 +632,16 @@ def verifyPlayerNameFound(args:object, name:str) -> bool:
         return False
     return True
 
-def verifyPlayerNameNotFound(args:object, name:str) -> bool:
-    ttyio.echo("verifyPlayerNameNotFound.120: args=%r" % (args))
-    ttyio.echo("verifyPlayerNameNotFound.100: name=%r" % (name))
+def verifyPlayerNameNotFound(name:str, **kwargs) -> bool:
+    args = kwargs["args"] if "args" in kwargs else Namespace()
+
+    ttyio.echo(f"verifyPlayerNameNotFound.120: args={args!r} name={name!r}", level="debug")
     dbh = bbsengine.databaseconnect(args)
     cur = dbh.cursor()
     sql = "select 1 from empyre.player where name=%s"
     dat = (name,)
     cur.execute(sql, dat)
+    ttyio.echo("verifyPlayerNameNotFound.100: mogrify={cur.mogrify(sql, dat)}", level="debug")
     if cur.rowcount == 0:
         return True
     return False
@@ -657,8 +661,17 @@ def getplayerid(args:object, name:str) -> int:
         return None
     return res["id"]
 
-def inputplayername(prompt:str="player name: ", oldvalue:str="", multiple:bool=False, verify=verifyPlayerNameFound, args=argparse.Namespace(), noneok:bool=True, **kw):
-    name = ttyio.inputstring(prompt, oldvalue, verify=verify, multiple=multiple, completer=completePlayerName(args), completerdelims="", noneok=noneok, **kw)
+def inputplayername(prompt:str="player name: ", oldvalue:str="", **kw):
+    multiple = kw["multiple"] if "multiple" in kw else False
+    args = kw["args"] if "args" in kw else argparse.Namespace()
+    noneok = kw["noneok"] if "noneok" in kw else True
+    if "verify" in kw:
+        verify = kw["verify"]
+        del kw["verify"]
+    else:
+        verify = verifyPlayerNameFound
+
+    name = ttyio.inputstring(prompt, oldvalue, verify=verify, completer=completePlayerName(args), completerdelims="", **kw)
     ttyio.echo("inputplayername.160: name=%r" % (name), level="debug")
     return name
 #    playerid = getplayerid(args, name)
@@ -705,13 +718,15 @@ def runmodule(args, player, submodule, **kw):
     if args.debug is True:
         ttyio.echo("empyre.lib.runmodule.100: x=%r" % (x), level="debug")
 
-    if bbsengine.checkmodule(args, x) is False:
+    if bbsengine.checkmodule(args, x, **kw) is False:
         ttyio.echo("empyre.lib.runmodule.120: module %r not available" % (x), level="error")
-        return
+        return False
 
     return bbsengine.runmodule(args, x, player=player, **kw)
 
 def runsubmodule(args, player, submodule, **kw):
+    if args.debug is True:
+        ttyio.echo(f"runsubmodule.100: submodule={submodule!r}")
     return runmodule(args, player, submodule, buildargs=False, **kw)
 
 def calculaterank(args:object, player:object) -> int:
@@ -815,7 +830,7 @@ def generatename(args):
         "Elen",
         "Jane",
         "Kathel",
-        "Icell"
+        "Icell",
     )
     return namelist[random.randint(0, len(namelist)-1)]
 
@@ -980,7 +995,7 @@ class completeAttributeName(object):
     def complete(self:object, text:str, state:int):
         vocab = []
         for a in self.attrs:
-            vocab.append("%s" % (a["name"]))
+            vocab.append(a["name"])
         results = [x for x in vocab if x.startswith(text)] + [None]
         return results[state]
 
