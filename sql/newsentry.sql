@@ -11,13 +11,13 @@
 
 create or replace view empyre.newsentry as
     select
-      n.*,
-      (n.attributes->>'message')::text as message,
-      (n.attributes->>'playerid')::bigint as playerid,
-      (n.attributes->>'memberid')::bigint as memberid,
-      (n.attributes->>'status')::text as status -- 'scratched', etc
-    from engine.node as n -- empyre.__newsentry
+      b.*,
+      (b.attributes->>'message')::text as message,
+      (b.attributes->>'playerid')::bigint as playerid,
+      (b.attributes->>'memberid')::bigint as memberid,
+      (b.attributes->>'status')::text as status -- 'scratched', etc
+    from engine.blurb as b -- empyre.__newsentry
     where prg='empyre.newsentry' and attributes ? 'message' and attributes ? 'playerid' and attributes ? 'memberid'
 ;
 
-grant select on empyre.newsentry to apache;
+grant select on empyre.newsentry to :web;
