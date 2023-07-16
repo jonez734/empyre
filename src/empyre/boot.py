@@ -2,8 +2,8 @@ import time
 import locale
 import argparse
 
-import ttyio5 as ttyio
-import bbsengine5 as bbsengine
+import ttyio6 as ttyio
+import bbsengine6 as bbsengine
 
 from . import lib
 from . import _version
@@ -18,8 +18,8 @@ def buildargs(args=None, **kw):
     parser.add_argument("--verbose", action="store_true", dest="verbose")
     parser.add_argument("--debug", action="store_true", dest="debug")
 
-    defaults = {"databasename": "zoidweb5", "databasehost":"localhost", "databaseuser": None, "databaseport":5432, "databasepassword":None}
-    bbsengine.buildargdatabasegroup(parser, defaults)
+    defaults = {"databasename": "zoid6", "databasehost":"localhost", "databaseuser": None, "databaseport":5432, "databasepassword":None}
+    bbsengine.database.buildargdatabasegroup(parser, defaults)
 
     return parser
     
@@ -27,13 +27,13 @@ def main(args, **kw):
     if args is not None and "debug" in args and args.debug is True:
         ttyio.echo(f"empyre.main.100: args={args!r}", level="debug")
 
-    bbsengine.title("empyre")
+    bbsengine.util.heading("empyre")
     if args.debug is True:
         ttyio.echo("database: %s host: %s:%s" % (args.databasename, args.databasehost, args.databaseport), level="debug")
 
     lib.setarea(args, None, "startup %s rev %s" % (_version.__datestamp__, _version.__version__))
 
-    currentmemberid = bbsengine.getcurrentmemberid(args)
+    currentmemberid = bbsengine.member.getcurrentid(args)
     if args.debug is True:
         ttyio.echo("startup.300: currentmemberid=%r" % (currentmemberid), level="debug")
     player = lib.getplayer(args, currentmemberid)
