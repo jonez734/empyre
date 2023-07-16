@@ -7,13 +7,14 @@
 
 create or replace view empyre.player as
     select
-        n.*,
-        extract(epoch from (n.attributes->>'datelastplayed')::timestamptz) as datelastplayedepoch,
+        b.*,
+        extract(epoch from (b.attributes->>'datelastplayed')::timestamptz) as datelastplayedepoch,
         (attributes->>'memberid')::bigint as memberid,
         (attributes->>'playerid')::bigint as playerid,
         (attributes->>'name') as name
-    from engine.__node as n
+    from engine.__blurb as b
     where prg='empyre.player'
 ;
 
-grant select on empyre.player to apache;
+grant select on empyre.player to :web;
+grant select on empyre.player to :bbs;
