@@ -7,4 +7,4 @@ from ..lib import PACKAGENAME
 # @see https://stackoverflow.com/questions/3596979/manifest-in-ignored-on-python-setup-py-install-no-data-files-installed
 # @see https://the-hitchhikers-guide-to-packaging.readthedocs.io/en/latest/quickstart.html
 def get(name):
-    return resources.open_text(PACKAGENAME+".data", name)
+    return resources.open_text(PACKAGENAME+".sql", name)
