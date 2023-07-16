@@ -1,7 +1,7 @@
 import random
 
-import ttyio5 as ttyio
-import bbsengine5 as bbsengine
+import ttyio6 as ttyio
+import bbsengine6 as bbsengine
 
 # @since 20230106 moved to empyre.town.soldierpromotion
 # @since 20200830
@@ -39,9 +39,9 @@ def main(args, player, **kwargs):
         
     promotable = random.randint(0, 4)
     
-    bbsengine.title(": Soldier Promotions :")
+    bbsengine.util.heading(": Soldier Promotions :")
     ttyio.echo("{F6}{yellow}Good day, I take it that you are here to see if any of your soldiers are eligible for promotion to the status of noble.{F6}")
-    ttyio.echo("Well, after checking all of them, I have found that %s eligible.{f6}" % (bbsengine.pluralize(promotable, "soldier is", "soldiers are")))
+    ttyio.echo("{wait:5}Well, after checking all of them, I have found that %s eligible.{f6}" % (bbsengine.util.pluralize(promotable, "soldier is", "soldiers are")))
     if promotable == 0:
         return
 
@@ -52,6 +52,8 @@ def main(args, player, **kwargs):
 
     player.soldiers -= promotable
     player.nobles += promotable
+
+    player.save()
 
     ttyio.echo("{F6}OK, all have been promoted! We hope they serve you well.")
     

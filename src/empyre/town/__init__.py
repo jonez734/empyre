@@ -1,5 +1,5 @@
-import ttyio5 as ttyio
-import bbsengine5 as bbsengine
+import ttyio6 as ttyio
+import bbsengine6 as bbsengine
 
 from .. import lib
 
@@ -33,14 +33,14 @@ def main(args, **kwargs):
     # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_town.lbl#L130
     # @since 20200830
     def menu():
-        bbsengine.title("town menu")
+        bbsengine.util.heading("town menu")
 
         help()
         
         ttyio.echo("{/all}")
         ttyio.echo("{var:empyre.highlightcolor}[Q]{/all} :door: {green}Return to the Empyre{/all}{f6}")
     
-    terminalwidth = bbsengine.getterminalwidth()
+    terminalwidth = ttyio.getterminalwidth()
 
     hotkeys = "Q"
     for hotkey, desc, func in optiontable:
@@ -48,8 +48,8 @@ def main(args, **kwargs):
             # ttyio.echo("empyre.town.menu.100: adding hotkey %r" % (hotkey), level="debug")
             hotkeys += hotkey
 
-    loop = True
-    while loop:
+    done = False
+    while not done:
         lib.setarea(args, player, "town menu")
         player.adjust()
 #        player.save()
@@ -68,6 +68,6 @@ def main(args, **kwargs):
                     elif lib.checkmodule(args, player, func):
                         lib.runsubmodule(args, player, func)
                     else:
-                        ttyio.echo("this option is not operable", level="error")
+                        ttyio.echo(f"option {desc!r} is not operable", level="error")
                     break
     return True
