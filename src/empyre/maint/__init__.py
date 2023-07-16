@@ -1,5 +1,5 @@
-import ttyio5 as ttyio
-import bbsengine5 as bbsengine
+import ttyio6 as ttyio
+import bbsengine6 as bbsengine
 
 from .. import lib
 
@@ -9,14 +9,8 @@ def init(args, **kw):
 def access(args, op, **kw):
     return True
 
-def main(args, **kw):
-    player = kw["player"] if "player" in kw else None
-    sysop = bbsengine.checksysop(args)
-    done = False
-    while not done:
-        bbsengine.title("maint")
-        lib.setarea(args, player, "maint")
-        buf = """{f6}{var:labelcolor}Options:{/all}{f6}
+def help(args=None):
+    buf = """{f6}{var:labelcolor}Maint Options:{/all}{f6}
 {var:optioncolor}[D]{var:labelcolor}} Auto-Reset{f6}
 {var:optioncolor}[X]{var:labelcolor} bbs credit / empyre coin exchange rate{f6}
 {var:optioncolor}[E]{var:labelcolor} Edit Player's profile{f6}
@@ -26,8 +20,17 @@ def main(args, **kw):
 {var:optioncolor}[Y]{var:labelcolor} Your Stats{f6:2}
 {var:optioncolor}[Q]{var:labelcolor} Quit{F6}
 """
-        ttyio.echo(buf)
-        ch = ttyio.inputchar("{var:promptcolor}maintenance: {var:inputcolor}", "XELRSYQ", "")
+    ttyio.echo(buf)
+
+def main(args, **kw):
+    player = kw["player"] if "player" in kw else None
+    sysop = bbsengine.member.checksysop(args)
+    done = False
+    while not done:
+        bbsengine.util.heading("maint")
+        lib.setarea(args, player, "maint")
+        help()
+        ch = ttyio.inputchar("{var:promptcolor}maintenance: {var:inputcolor}", "XELRSYQ", "", help=help)
 
         if ch == "Q":
             ttyio.echo("Quit")
@@ -76,7 +79,7 @@ def main(args, **kw):
                 playername = player.name
             playerid = lib.getplayerid(args, playername)
             if playerid is None:
-                ttyio.echo(f"{playername!s} not found.", level="error")
+                ttyio.echo(f"{playername} not found.", level="error")
                 continue
             p = lib.Player(args)
             p.load(playerid)
