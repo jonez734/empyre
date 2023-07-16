@@ -1,19 +1,23 @@
 # @since 20220729
+# @since 20230716 ported to bbsengine6
 
-import ttyio5 as ttyio
-import bbsengine5 as bbsengine
+import ttyio6 as ttyio
+import bbsengine6 as bbsengine
 
 def init(args, **kw):
-    pass
+    return True
+
+def access(args, op, **kw):
+    return True
 
 def main(args, **kwargs):
     player = kwargs["player"] if "player" in kwargs else None
 
     # if you are a KING, you only get average weather and below
     if player.rank == 2:
-        weathercondition = bbsengine.diceroll(4) # random.randint(1, 4)
+        weathercondition = bbsengine.util.diceroll(4) # random.randint(1, 4)
     else:
-        weathercondition = bbsengine.diceroll(6) # random.randint(1, 6)
+        weathercondition = bbsengine.util.diceroll(6) # random.randint(1, 6)
 
     ttyio.echo("{cyan}")
     if weathercondition == 1:
