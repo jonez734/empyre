@@ -1,5 +1,5 @@
-import ttyio5 as ttyio
-import bbsengine5 as bbsengine
+import ttyio6 as ttyio
+import bbsengine6 as bbsengine
 
 from .. import lib
 
@@ -12,7 +12,7 @@ def access(args, op, **kwargs):
 # @since 20200830
 # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_town.lbl#L244
 def main(args, player, **kwargs):
-    bbsengine.title(": Soldier Training :")
+    bbsengine.util.heading(": Soldier Training :")
     lib.setarea(args, player, "town -> train soldiers")
     ttyio.echo()
     eligible = int(player.nobles*20-player.soldiers)
