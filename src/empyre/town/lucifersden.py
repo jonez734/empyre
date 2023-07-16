@@ -4,8 +4,8 @@
 
 import random
 
-import ttyio5 as ttyio
-import bbsengine5 as bbsengine
+import ttyio6 as ttyio
+import bbsengine6 as bbsengine
 
 from .. import lib
 
@@ -22,11 +22,11 @@ def main(args, player, **kwargs):
 
     lib.setarea(args, player, "town: lucifer's den")
     
-    bbsengine.title("LUCIFER'S DEN - Where Gamblin's no Sin!") # , hrcolor="{orange}", titlecolor="{bgred}{yellow}")
+    bbsengine.util.heading("LUCIFER'S DEN - Where Gamblin's no Sin!") # , hrcolor="{orange}", titlecolor="{bgred}{yellow}")
     ttyio.echo("{yellow}I will let you play for the price of a few souls!")
     ch = ttyio.inputboolean("{var:promptcolor}Will you agree to this? [yN]: {var:inputcolor}", "N")
     if ch is False:
-        ttyio.echo("Some other time, then.")
+        ttyio.echo("{var:normalcolor}Some other time, then.")
         return True
     # always win, but it costs 10 serfs, 50 serfs if you guess correctly
     # og=int(3*rnd(0)+2)
