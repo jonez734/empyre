@@ -1,9 +1,11 @@
 create or replace view empyre.island as
     select
-        n.*,
-        (attributes->>'memberid')::bigint as memberid
-    from engine.__node as n
+        b.*,
+        (attributes->>'memberid')::bigint as memberid,
+        (attributes->>'playerid')::bigint as playerid,
+        (attributes->>'timber')::bigint as timer
+    from engine.__blurb as b
     where prg='empyre.island'
 ;
 
-grant select on empyre.island to apache;
+grant select on empyre.island to :bbs;
