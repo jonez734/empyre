@@ -28,6 +28,7 @@ def main(args, **kw):
         ttyio.echo(f"empyre.main.100: args={args!r}", level="debug")
 
     bbsengine.util.heading("empyre")
+
     if args.debug is True:
         ttyio.echo("database: %s host: %s:%s" % (args.databasename, args.databasehost, args.databaseport), level="debug")
 
@@ -41,8 +42,8 @@ def main(args, **kw):
         ttyio.echo("startup.200: new player", level="debug")
         player = lib.Player(args)
         player.new()
-        lib.newsentry(args, player, "New Player %r!" % (player.name))
+        lib.newsentry(args, player, f"New Player {player.name}!")
 
-    if lib.runsubmodule(args, player, "mainmenu") is False:
-        ttyio.echo("error running submodule 'mainmenu'", level="error")
+    if lib.runsubmodule(args, player, "main") is False:
+        ttyio.echo("error running submodule 'main'", level="error")
     return    
