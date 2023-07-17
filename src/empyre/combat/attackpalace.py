@@ -1,6 +1,6 @@
 import random
 
-import ttyio5 as ttyio
+import ttyio6 as ttyio
 
 def init(args, **kw):
     return True

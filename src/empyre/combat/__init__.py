@@ -4,8 +4,8 @@
 
 import random
 
-import ttyio5 as ttyio
-import bbsengine5 as bbsengine
+import ttyio6 as ttyio
+import bbsengine6 as bbsengine
 
 from .. import lib
 
@@ -27,7 +27,7 @@ def main(args, **kw):
         pass
 
     def help():
-        bbsengine.title("Combat Menu")
+        bbsengine.util.heading("Combat Menu")
         for m in menu:
             ttyio.echo(f"{{var:optioncolor}}[{m['hotkey']}]{{var:labelcolor}} {m['label']}")
         return
