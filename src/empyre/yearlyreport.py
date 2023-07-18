@@ -1,7 +1,7 @@
 import random
 
-import ttyio5 as ttyio
-import bbsengine5 as bbsengine
+import ttyio6 as ttyio
+import bbsengine6 as bbsengine
 
 from . import lib
 
@@ -10,6 +10,9 @@ def init(args, **kw):
 
 def main(args, **kw):
     player = kw["player"] if "player" in kw else None
+    if player is None:
+        ttyio.echo("You do not exist! Go Away!", level="error")
+        return False
 
     # tr = taxrate
     # ff = "combat victory" flag
@@ -47,7 +50,7 @@ def main(args, **kw):
     soldierpay = int((player.soldiers*(player.combatvictory+2))+(player.taxrate*player.palaces*10)//40) # py
     payables = soldierpay+noblegifts+palacerent
     
-    bbsengine.title("yearly report")
+    bbsengine.util.heading("yearly report")
         # pn=pn-(py+xx-pt)
 
         # &"{f6:2}{lt. green}PAYABLES{white}"
@@ -92,7 +95,7 @@ def main(args, **kw):
     rank = lib.calculaterank(args, player)
     
     if args.debug is True:
-        ttyio.echo("player.rank=%d rank=%d" % (player.rank, rank), level="debug")
+        ttyio.echo(f"player.rank={player.rank} rank={rank}", level="debug")
     # check for > player.rank, < player.rank and write entry to game log
     player.rank = rank
     return True
