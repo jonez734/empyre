@@ -17,11 +17,11 @@ setup(
   url="https://repo.zoidtechnologies.com/%s/" % (projectname),
   author="zoidtechnologies.com",
   author_email="%s@projects.zoidtechnologies.com" % (projectname),
-  requires=["ttyio5", "bbsengine5"],
+  requires=["ttyio6", "bbsengine6"],
   scripts=["bin/empyre"],
   license="GPLv2",
   provides=[projectname],
-  packages=["empyre", "empyre.combat", "empyre.maint", "empyre.island", "empyre.quests", "empyre.data", "empyre.town"],
+  packages=["empyre", "empyre.combat", "empyre.maint", "empyre.island", "empyre.quests", "empyre.data", "empyre.town", "empyre.sql"  ],
   long_description = """empyre -- turn-based strategy game based on empire6 and built upon bbsengine5""",
   include_package_data = True,
 )
