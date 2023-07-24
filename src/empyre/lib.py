@@ -1,8 +1,8 @@
 import random
 import argparse
 
-import ttyio5 as ttyio
-import bbsengine5 as bbsengine
+import ttyio6 as ttyio
+import bbsengine6 as bbsengine
 
 TURNSPERDAY = 4
 
@@ -11,11 +11,31 @@ PACKAGENAME = "empyre"
 QUESTDIR = "~jam/projects/empyre/data/quests/"
 PRG = "empyre"
 
+class Ship(object):
+    def __init__(self, args):
+        self.args = args
+        self.playerid = None
+        self.name = None
+        self.timber = 0
+        self.lumber = 0
+        self.navigator = False
+
+class Island(object):
+    def __init__(self, args):
+        self.args = args
+        self.playerid = None
+        self.memberid = None
+        self.trees = 500
+
+class Colony(object):
+    def __init__(self, args):
+        self.args = args
+
 class Player(object):
     def __init__(self, args):
         self.playerid = None
         # self.name = None # na$
-        self.memberid = bbsengine.getcurrentmemberid(args)
+        self.memberid = bbsengine.member.getcurrentid(args)
         self.args = args
         self.rank = 0
         self.previousrank = 0
@@ -49,35 +69,35 @@ class Player(object):
             {"type": "int",  "name": "turncount", "default":0},
             {"type": "int",  "name": "rank", "default":0},
             {"type": "int",  "name": "previousrank", "default":0},
-            {"type": "int",  "name": "memberid", "default": bbsengine.getcurrentmemberid(self.args)},
+            {"type": "int",  "name": "memberid", "default": bbsengine.member.getcurrentid(self.args)},
             {"type": "int",  "name": "weatherconditions", "default":0},
             {"type": "int",  "name": "land", "default":5000, "singular":"acre", "plural":"acres"}, # la x(2)
-            {"type": "int",  "name": "coins", "default":1000, "singular":"coin", "plural":"coins"}, # pn x(3)
-            {"type": "int",  "name": "grain", "default":10000, "singular": "bushel", "plural": "bushels", "emoji":":crop:"}, # gr
+            {"type": "int",  "name": "coins", "default":250000, "singular":"coin", "plural":"coins"}, # pn x(3)
+            {"type": "int",  "name": "grain", "default":20000, "singular": "bushel", "plural": "bushels", "emoji":":crop:"}, # gr
             {"type": "int",  "name": "taxrate", "default":15}, # tr
-            {"type": "int",  "name": "soldiers", "default":20, "price": 20, "singular":"soldier", "plural":"soldiers"},
-            {"type": "int",  "name": "nobles", "default":2, "price":25000, "singular":"noble", "plural":"nobles"}, # x(6)
+            {"type": "int",  "name": "soldiers", "default":40, "price": 20, "singular":"soldier", "plural":"soldiers"},
+            {"type": "int",  "name": "nobles", "default":3, "price":25000, "singular":"noble", "plural":"nobles"}, # x(6)
             {"type": "int",  "name": "palaces", "default":1, "price":20, "singular":"palace", "plural":"palaces"}, # f%(1)
             {"type": "int",  "name": "markets", "default":1, "price":1000, "singular":"market", "plural":"markets"}, # f%(2) x(7)
             {"type": "int",  "name": "mills", "default":1, "price":2000, "singular":"mill", "plural":"mills"}, # f%(3) x(8)
-            {"type": "int",  "name": "foundries", "default":0, "price":7000, "singular":"foundry", "plural":"foundries"}, # f%(4) x(9)
+            {"type": "int",  "name": "foundries", "default":2, "price":7000, "singular":"foundry", "plural":"foundries"}, # f%(4) x(9)
             {"type": "int",  "name": "shipyards", "default":0, "price":8000, "singular":"shipyard", "plural":"shipyards"}, # yc or f%(5)? x(10)
             {"type": "int",  "name": "diplomats", "default":0, "price":50000, "singular":"diplomat", "plural":"diplomats"}, # f%(6) 0
             {"type": "int",  "name": "ships", "default":0, "price":5000, "singular":"ship", "plural":"ships", "emoji":":anchor:"}, # 5000 each, yc? x(12)
-            {"type": "int",  "name": "navigators", "default":0, "singular": "navigator", "plural": "navigators", "emoji":":compass:"}, # @since 20220907
+            {"type": "int",  "name": "navigators", "default":0, "price":500, "singular": "navigator", "plural": "navigators", "emoji":":compass:"}, # @since 20220907
             {"type": "int",  "name": "stables", "default":1, "price": 10000, "singular": "stable", "plural":"stables"}, # x(11)
             {"type": "int",  "name": "colonies", "default":0}, # i8
             {"type": "int",  "name": "training", "default":1}, # z9 - number of units for training
             {"type": "int",  "name": "warriors", "default":0}, # wa soldier -> warrior or noble?
             {"type": "int",  "name": "combatvictory", "default":0},
             {"type": "int",  "name": "spices", "default":0}, # x(25)
-            {"type": "int",  "name": "cannons", "default":0}, # x(14)
+#            {"type": "int",  "name": "cannons", "default":0}, # x(14)
             {"type": "int",  "name": "forts", "default":0}, # x(13)
-            {"type": "int",  "name": "dragons", "default":0},
-            {"type": "int",  "name": "horses", "default":1, "emoji":":horse:"}, # x(23)
+            {"type": "int",  "name": "dragons", "default":0, "emoji":":dragon:"},
+            {"type": "int",  "name": "horses", "default":50, "emoji":":horse:"}, # x(23)
             {"type": "int",  "name": "timber", "default":0, "emoji":":wood:"}, # x(16)
 #            {"type": "epoch","name": "datelastplayedepoch", "default":0},
-            {"type": "datetime", "name": "datelastplayed", "default":"now"},
+            {"type": "datetime", "name": "datelastplayed", "default":"now()"},
             {"type": "int",  "name": "rebels", "default":0},
             {"type": "int",  "name": "exports", "default":0, "emoji": ":package:"},
         ]
@@ -188,7 +208,7 @@ class Player(object):
     def load(self, playerid:int):
         if self.args.debug is True:
             ttyio.echo("player.load.100: playerid=%r" % (playerid), level="debug")
-        dbh = bbsengine.databaseconnect(self.args)
+        dbh = bbsengine.database.connect(self.args)
         sql = "select * from empyre.player where id=%s"
         dat = (playerid,)
         cur = dbh.cursor()
@@ -196,7 +216,7 @@ class Player(object):
         res = cur.fetchone()
 
         if self.args.debug is True:
-            ttyio.echo("player.load.res=%r" % (res), level="debug") # strip=True, interpret=False)
+            ttyio.echo(f"player.load.res={res!r}", level="debug") # strip=True, interpret=False)
 
         if res is None:
             return False
@@ -242,8 +262,7 @@ class Player(object):
                 continue
             attributes[name] = attr["value"] # self.getattribute(name) # getattr(self, name)
 
-        dbh = bbsengine.databaseconnect(self.args)
-        return bbsengine.updatenodeattributes(dbh, self.args, self.playerid, attributes)
+        return bbsengine.blurb.updateattributes(self.args, self.playerid, attributes)
 
     def isdirty(self):
         def getattrval(name):
@@ -284,9 +303,8 @@ class Player(object):
             return
         ttyio.echo("%s: dirty. saving." % (self.name))
 
-        dbh = bbsengine.databaseconnect(self.args)
         self.update()
-        dbh.commit()
+        bbsengine.database.commit(self.args)
         return
 
     def insert(self):
@@ -300,23 +318,21 @@ class Player(object):
 
         ttyio.echo("attributes.name=%r" % (attributes["name"]), level="debug")
 
-        node = {}
-        node["prg"] = "empyre.player"
-        node["attributes"] = attributes
+        blurb = {}
+        blurb["attributes"] = attributes
 
-        dbh = bbsengine.databaseconnect(self.args)
-        nodeid = bbsengine.insertnode(dbh, self.args, node, mogrify=False)
-        self.playerid = nodeid
-        ttyio.echo("player.insert.100: playerid=%r" % (self.playerid), level="debug")
-        return nodeid
+        blurbid = bbsengine.blurb.insert(self.args, blurb, prg="empyre.player", mogrify=True)
+        self.playerid = blurbid
+        ttyio.echo(f"player.insert.100: playerid={self.playerid!r}", level="debug")
+        return blurbid
 
     def new(self):
         setarea(self.args, self, "new player!")
         # ttyio.echo("player.new() called!")
 
-        currentmemberid = bbsengine.getcurrentmemberid(self.args)
-        currentmembername = bbsengine.getmembername(self.args)
-        ttyio.echo("player.new.100: currentmemberid=%r, currentmembername=%r" % (currentmemberid, currentmembername))
+        currentmemberid = bbsengine.member.getcurrentid(self.args)
+        currentmembername = bbsengine.member.getcurrentmoniker(self.args)
+        ttyio.echo(f"player.new.100: currentmemberid={currentmemberid}, currentmembername={currentmembername}", level="debug")
         # if self.args.debug is True:
         #     ttyio.echo("new.100: currentmemberid=%r" % (currentmemberid), level="debug")
         # attributes["memberid"] = currentmemberid
@@ -341,14 +357,12 @@ class Player(object):
 
         self.insert()
 
-        dbh = bbsengine.databaseconnect(self.args)
-
         if self.playerid is None:
             ttyio.echo("unable to insert player record.", level="error")
-            dbh.rollback()
+            bbsengine.database.rollback(self.args)
             return None
 
-        dbh.commit()
+        bbsengine.database.commit(self.args)
 
         if self.args.debug is True:
             ttyio.echo("Player.new.100: playerid=%r" % (self.playerid), level="debug")
@@ -357,10 +371,10 @@ class Player(object):
 
     def status(self):
         if self.args.debug is True:
-            ttyio.echo("bbsengine.getcurrentmemberid()=%r" % (bbsengine.getcurrentmemberid(self.args)), level="debug")
+            ttyio.echo("bbsengine.member.getcurrentid()=%r" % (bbsengine.member.getcurrentid(self.args)), level="debug")
             ttyio.echo("player.playerid=%r, player.memberid=%r, player.name=%r" % (self.playerid, self.memberid, self.name), level="debug")
 
-        bbsengine.title("player status for %r" % (self.name))
+        bbsengine.util.heading("player status for %r" % (self.name))
 
         terminalwidth = ttyio.getterminalwidth()-2
 
@@ -392,7 +406,7 @@ class Player(object):
 #                    v = bbsengine.datestamp(v, format="%Y%m%d")
 
             buf = "%s: %s" % (n.ljust(maxlabellen), v)
-            buflen = len(ttyio.interpretecho(buf, strip=True, wordwrap=False))
+            buflen = len(ttyio.tostr(buf))
             if buflen > maxwidth:
                 maxwidth = buflen
                 ttyio.echo("player.status.160: maxwidth=%s buflen=%s" % (maxwidth, buflen), level="debug")
@@ -428,7 +442,7 @@ class Player(object):
             else:
                 buf = f"{{var:labelcolor}}{n.ljust(maxlabellen)}: {{var:valuecolor}}{v}{{var:normalcolor}}" # % (n.ljust(maxlabellen), v)
 
-            buflen = len(ttyio.interpretecho(buf, strip=True, wordwrap=False))
+            buflen = len(ttyio.tostr(buf, strip=True)) # ttyio.interpret(buf, strip=True, wordwrap=False))
             if currentcolumn == columns-1:
                 ttyio.echo("%s" % (buf))
             else:
@@ -512,15 +526,15 @@ class Player(object):
 
         if soldiers > (self.nobles*20)+1:
             a +=  abs(self.nobles*20 - soldiers)
-            ttyio.echo("Not enough nobles for your %s!" % (bbsengine.pluralize(soldiers, "soldier", "soldiers", emoji=":military-helmet:")))
+            ttyio.echo("Not enough nobles for your %s!" % (bbsengine.util.pluralize(soldiers, "soldier", "soldiers", emoji=":military-helmet:")))
         soldiers -= a
         ttyio.echo("adjust.180: a=%d" % (a), level="debug")
 
         if a > 0:
-            ttyio.echo("{var:valuecolor}{}{/all} your army".format((bbsengine.pluralize(a, "soldier deserts", "soldiers desert", emoji=":military-helmet:"))))
+            ttyio.echo("{var:valuecolor}{}{/all} your army".format((bbsengine.util.pluralize(a, "soldier deserts", "soldiers desert", emoji=":military-helmet:"))))
 
         if self.land < 0:
-            ttyio.echo("You lost your last %s." % (bbsengine.pluralize(abs(self.land), "acre", "acres")))
+            ttyio.echo("You lost your last %s." % (bbsengine.util.pluralize(abs(self.land), "acre", "acres")))
             self.land = 0
 
         if self.land == 0:
@@ -528,51 +542,57 @@ class Player(object):
 
         if self.shipyards > 10: # > 400
             a = int(self.shipyards / 1.1)
-            ttyio.echo("{cyan}Your kingdom cannot support %s! %s closed.{/all}" % (bbsengine.pluralize(self.shipyards, "shipyard", "shipyards"), bbsengine.pluralize(self.shipyards, "shipyard is", "shipyards are")))
+            ttyio.echo("{cyan}Your kingdom cannot support %s! %s closed.{/all}" % (bbsengine.util.pluralize(self.shipyards, "shipyard", "shipyards"), bbsengine.util.pluralize(self.shipyards, "shipyard is", "shipyards are")))
             self.shipyards -= a
 
+        if self.shipyards == 0:
+            if self.ships > 0:
+                ttyio.echo("{cyan}You do not have any shipyards! %s scrapped." % (bbsengine.util.pluralize(self.ships, "ship is", "ships are", emoji=":anchor:")))
+                diff = self.ships - self.shipyards*10
+                self.ships -= diff
+        # take away the ship if there isn't enough shipyard capacity
         if self.ships > self.shipyards*10:
             a = self.ships - self.shipyards*10
-            ttyio.echo("{cyan}Your {var:empyre.highlightcolor}%s{/all} cannot support :anchor: {var:empyre.highlightcolor}%s{/all}! %s scrapped{/all}" % (bbsengine.pluralize(self.shipyards, "shipyard", "shipyards"), bbsengine.pluralize(self.ships, "ship", "ships", emoji=":anchor:"), bbsengine.pluralize(a, "ship is", "ships are", emoji=":anchor:")))
+            ttyio.echo("{cyan}Your {var:empyre.highlightcolor}%s{/all} cannot support {var:empyre.highlightcolor}%s{/all}! %s scrapped{/all}" % (bbsengine.util.pluralize(self.shipyards, "shipyard", "shipyards"), bbsengine.util.pluralize(self.ships, "ship", "ships", emoji=":anchor:"), bbsengine.util.pluralize(a, "ship is", "ships are", emoji=":anchor:")))
             self.ships -= a
 
         # if pn>1e6 then a%=pn/1.5:pn=pn-a%:&"{f6}{lt. blue}You pay {lt. green}${pound}%f {lt. blue}to the monks for this{f6}year's provisions for your subjects' survival.{f6}"
         if self.coins > 1000000:
             a = int(self.coins / 1.5)
             self.coins -= a
-            ttyio.echo("{cyan}You donate {var:empyre.highlightcolor}%s{/all} to the monks." % (bbsengine.pluralize(a, "coin", "coins")))
+            ttyio.echo("{cyan}You donate {var:empyre.highlightcolor}%s{/all} to the monks." % (bbsengine.util.pluralize(a, "coin", "coins")))
 
         if self.coins < 0:
-            ttyio.echo("You lost your last %s." % (bbsengine.pluralize(abs(self.coins), "coin", "coins")))
+            ttyio.echo("You lost your last %s." % (bbsengine.util.pluralize(abs(self.coins), "coin", "coins")))
             self.coins = 0
 
         if self.land > 2500000:
             a = int(self.land / 2.5)
             self.land -= a
-            ttyio.echo("{cyan}You donate {var:empyre.highlightcolor}%s{/all} to the monks." % (bbsengine.pluralize(a, "acre", "acres")))
+            ttyio.echo("{cyan}You donate {var:empyre.highlightcolor}%s{/all} to the monks." % (bbsengine.util.pluralize(a, "acre", "acres")))
 
         if self.foundries > 400:
             a = self.foundries // 3
             self.foundries -= a
-            ttyio.echo("{green}{var:empyre.highlightcolor} MAJOR EXPLOSION! {/all} %s destroyed." % (bbsengine.pluralize(a, "foundry is", "foundries are")))
+            ttyio.echo("{green}{var:empyre.highlightcolor} MAJOR EXPLOSION! {/all} %s destroyed." % (bbsengine.util.pluralize(a, "foundry is", "foundries are")))
 
         if self.markets > 500:
             a = self.markets // 5
             self.markets -= a
-            ttyio.echo("{red}Some market owners retire; %s closed." % (bbsengine.pluralize(a, "market is", "markets are")))
+            ttyio.echo("{red}Some market owners retire; %s closed." % (bbsengine.util.pluralize(a, "market is", "markets are")))
 
         if self.mills > 500:
             a = self.mills // 4
             self.mills -= a
-            ttyio.echo("{green}The mills are overworked! %s mills have broken millstones and are closed.{/all}" % (bbsengine.pluralize(a, "mill has a broken millstone", "mills have broken millstones")))
+            ttyio.echo("{green}The mills are overworked! %s mills have broken millstones and are closed.{/all}" % (bbsengine.util.pluralize(a, "mill has a broken millstone", "mills have broken millstones")))
 
         if self.coins < 0:
-            ttyio.echo("{lightred}You are overdrawn by %s!{/all}" % (bbsengine.pluralize(abs(self.coins), "coin", "coins")))
+            ttyio.echo("{lightred}You are overdrawn by %s!{/all}" % (bbsengine.util.pluralize(abs(self.coins), "coin", "coins")))
             self.coins = 1
 
         if self.horses > self.stables*50:
             a = self.horses - self.stables*50
-            ttyio.echo("{green}You have %s for %s, %s set free." % (bbsengine.pluralize(self.stables, "stable", "stables"), bbsengine.pluralize(self.horses, "horse", "horses", emoji=":horse:"), bbsengine.pluralize(a, "horse is", "horses are", emoji=":horse:")))
+            ttyio.echo("{green}You have %s for %s, %s set free." % (bbsengine.util.pluralize(self.stables, "stable", "stables"), bbsengine.util.pluralize(self.horses, "horse", "horses", emoji=":horse:"), bbsengine.util.pluralize(a, "horse is", "horses are", emoji=":horse:")))
             # self.horses -= a
 
         lost = []
@@ -587,7 +607,7 @@ class Player(object):
             plural = a["plural"] if "plural" in a else "plural"
             val = a["value"] if "value" in a else a["default"]
             if val < 0:
-                lost.append(bbsengine.pluralize(abs(val), singular, plural))
+                lost.append(bbsengine.util.pluralize(abs(val), singular, plural))
                 self.setattribute(name, 0) # setattr(player, name, 0)
         if len(lost) > 0:
             ttyio.echo("You have lost %s" % (bbsengine.oxfordcomma(lost)))
@@ -607,7 +627,7 @@ class completePlayerName(object):
         self.debug = args.debug if "debug" in args else False
 
     def complete(self:object, text:str, state:int):
-        dbh = bbsengine.databaseconnect(self.args)
+        dbh = bbsengine.database.connect(self.args)
 
         vocab = []
         sql = "select name from empyre.player"
@@ -622,7 +642,7 @@ class completePlayerName(object):
 def verifyPlayerNameFound(name:str, **kwargs) -> bool:
     args = kwargs["args"] if "args" in kwargs else Namespace()
 
-    dbh = bbsengine.databaseconnect(args)
+    dbh = bbsengine.database.connect(args)
 
     cur = dbh.cursor()
     sql = "select 1 from empyre.player where name=%s"
@@ -636,7 +656,7 @@ def verifyPlayerNameNotFound(name:str, **kwargs) -> bool:
     args = kwargs["args"] if "args" in kwargs else Namespace()
 
     ttyio.echo(f"verifyPlayerNameNotFound.120: args={args!r} name={name!r}", level="debug")
-    dbh = bbsengine.databaseconnect(args)
+    dbh = bbsengine.database.connect(args)
     cur = dbh.cursor()
     sql = "select 1 from empyre.player where name=%s"
     dat = (name,)
@@ -650,7 +670,7 @@ def getplayerid(args:object, name:str) -> int:
     if name is None or name == "":
         return None
 
-    dbh = bbsengine.databaseconnect(args)
+    dbh = bbsengine.database.connect(args)
     cur = dbh.cursor()
     sql = "select id from empyre.player where name=%s"
     dat = (name,)
@@ -694,35 +714,35 @@ def setarea(args, player, buf, stack=False) -> None:
             turnremain = TURNSPERDAY - player.turncount
             
             debug = " | debug" if args is not None and args.debug is True else ""
-            return "empyre {black}|{var:engine.areacolor} %s {black}|{var:engine.areacolor} %s%s {black}|{var:engine.areacolor} %s%s" % (bbsengine.pluralize(turnremain, "turn remains", "turns remain"), isdirty, player.name, bbsengine.pluralize(player.coins, "coin", "coins"), debug)
+            return "empyre {black}|{var:engine.areacolor} %s {black}|{var:engine.areacolor} %s%s {black}|{var:engine.areacolor} %s%s" % (bbsengine.util.pluralize(turnremain, "turn remains", "turns remain"), isdirty, player.name, bbsengine.util.pluralize(player.coins, "coin", "coins"), debug)
         else:
             if debug is True:
                 return "debug"
             else:
                 return ""
 
-    bbsengine.setarea(buf, rightside, stack)
+    bbsengine.screen.setarea(buf, rightside, stack)
     if args.debug is True:
-        ttyio.echo("empyre.setarea.100: buf=%r stack=%r areastack=%r" % (buf, stack, bbsengine.areastack), level="debug")
+        ttyio.echo("empyre.setarea.100: buf=%r stack=%r areastack=%r" % (buf, stack, bbsengine.screen.areastack), level="debug")
     return
 
 def playerstatus(args, player):
     return player.status()
 
 def checkmodule(args, player, module, **kw):
-    module = PACKAGENAME + "." + module
-    return bbsengine.checkmodule(args, module, **kw)
+    module = f"{PACKAGENAME}.{module}"
+    return bbsengine.module.check(args, module, **kw)
 
-def runmodule(args, player, submodule, **kw):
-    x = "%s.%s" % (PACKAGENAME, submodule)
+def runmodule(args, player, module, **kw):
+    x = "%s.%s" % (PACKAGENAME, module)
     if args.debug is True:
         ttyio.echo("empyre.lib.runmodule.100: x=%r" % (x), level="debug")
 
-    if bbsengine.checkmodule(args, x, **kw) is False:
+    if bbsengine.module.check(args, x, **kw) is False:
         ttyio.echo("empyre.lib.runmodule.120: module %r not available" % (x), level="error")
         return False
 
-    return bbsengine.runmodule(args, x, player=player, **kw)
+    return bbsengine.module.runmodule(args, x, player=player, **kw)
 
 def runsubmodule(args, player, submodule, **kw):
     if args.debug is True:
@@ -840,21 +860,19 @@ def newsentry(args:object, player:object, message:str, otherplayer:object=None):
     attributes["playerid"] = player.playerid
     attributes["memberid"] = player.memberid
 
-    node = {}
-    node["attributes"] = attributes
-    node["prg"] = "empyre.newsentry"
+    blurb = {}
+    blurb["attributes"] = attributes
 
-    dbh = bbsengine.databaseconnect(args)
-    nodeid = bbsengine.insertnode(dbh, args, node, mogrify=False)
+    nodeid = bbsengine.blurb.insert(args, blurb, "empyre.newsentry", mogrify=False)
     if args.debug is True:
-        ttyio.echo("added newsentry for player %r with message %r" % (player.name, message), level="debug")
-    dbh.commit()
+        ttyio.echo(f"added newsentry for player {player.name!r} with message {message!r}", level="debug")
+    bbsengine.blurb.commit(args)
     return
 
 def trade(args, player:object, attr:str, name:str, price:int, singular:str="singular", plural:str="plural", determiner:str="a", emoji=""):
 #    setarea(player, "trade: %s" % (name))
     if price > player.coins:
-        ttyio.echo("You need {var:empyre.highlightcolor}%s{/all} to purchase {var:empyre.highlightcolor}%s %s{/all}" % (bbsengine.pluralize(price - player.coins, "more coin", "more coins"), determiner, singular))
+        ttyio.echo("You need {var:empyre.highlightcolor}%s{/all} to purchase {var:empyre.highlightcolor}%s %s{/all}" % (bbsengine.util.pluralize(price - player.coins, "more coin", "more coins"), determiner, singular))
 
     # ttyio.echo("trade.100: admin=%r" % (bbsengine.checkflag(opts, "ADMIN")), level="debug")
 
@@ -872,10 +890,10 @@ def trade(args, player:object, attr:str, name:str, price:int, singular:str="sing
             ttyio.echo("attribute %r not found.")
             return
         currentvalue = attribute["value"] if "value" in attribute else None
-        prompt =  "You have %s {var:empyre.highlightcolor}%s{/all} and :moneybag: {var:empyre.highlightcolor}%s{/all}{F6}%s: {var:empyre.highlightcolor}[B]{/all}uy {var:empyre.highlightcolor}[S]{/all}ell {var:empyre.highlightcolor}[C]{/all}ontinue" % (emoji, bbsengine.pluralize(currentvalue, singular, plural), bbsengine.pluralize(player.coins, "coin", "coins"), name)
+        prompt =  "You have %s {var:empyre.highlightcolor}%s{/all} and :moneybag: {var:empyre.highlightcolor}%s{/all}{F6}%s: {var:empyre.highlightcolor}[B]{/all}uy {var:empyre.highlightcolor}[S]{/all}ell {var:empyre.highlightcolor}[C]{/all}ontinue" % (emoji, bbsengine.util.pluralize(currentvalue, singular, plural), bbsengine.util.pluralize(player.coins, "coin", "coins"), name)
 #        ttyio.echo("trade.120: prompt=%r" % (prompt), interpret=False)
         choices = "BSCY"
-        if bbsengine.checkflag(args, "SYSOP") is True:
+        if bbsengine.member.checkflag(args, "SYSOP") is True:
             prompt += " {var:empyre.highlightcolor}[E]{/all}dit"
             choices += "E"
 
@@ -904,13 +922,13 @@ def trade(args, player:object, attr:str, name:str, price:int, singular:str="sing
             continue
         elif ch == "B":
             # price = currentplayer.weathercondition*3+12
-            ttyio.echo("Buy{F6}The barbarians will sell their %s to you for {var:empyre.highlightcolor}%s{/all} each." % (name, bbsengine.pluralize(price, "coin", "coins")))
+            ttyio.echo("Buy{F6}The barbarians will sell their %s to you for {var:empyre.highlightcolor}%s{/all} each." % (name, bbsengine.util.pluralize(price, "coin", "coins")))
             quantity = ttyio.inputinteger("buy how many?: ")
             if quantity is None or quantity < 1:
                 break
 
             if player.coins < quantity*price:
-                ttyio.echo("You have :moneybag: %s and you need :moneybag: %s to complete this transaction." % (bbsengine.pluralize(player.coins, "coin", "coins"), bbsengine.pluralize(abs(player.coins - quantity*price), "more coin", "more coins")))
+                ttyio.echo("You have :moneybag: %s and you need :moneybag: %s to complete this transaction." % (bbsengine.util.pluralize(player.coins, "coin", "coins"), bbsengine.util.pluralize(abs(player.coins - quantity*price), "more coin", "more coins")))
                 continue
 
             a = player.getattribute(attr) # getattr(player, attr)
@@ -924,7 +942,7 @@ def trade(args, player:object, attr:str, name:str, price:int, singular:str="sing
             ttyio.echo("Bought!")
             break
         elif ch == "S":
-            ttyio.echo("sell{F6}The barbarians will buy your %s for :moneybag: {var:empyre.highlightcolor}%s{/all} each." % (plural, bbsengine.pluralize(price, "coin", "coins")))
+            ttyio.echo("sell{F6}The barbarians will buy your %s for :moneybag: {var:empyre.highlightcolor}%s{/all} each." % (plural, bbsengine.util.pluralize(price, "coin", "coins")))
             quantity = ttyio.inputinteger("sell how many?: ")
             if quantity is None or quantity < 1:
                 break
@@ -945,7 +963,7 @@ def getplayer(args, memberid:int):
     ttyio.echo("getplayer.100: memberid=%r" % (memberid), level="debug")
     sql = "select * from empyre.player where memberid=%s"
     dat = (memberid,)
-    dbh = bbsengine.databaseconnect(args)
+    dbh = bbsengine.database.connect(args)
     cur = dbh.cursor()
     ttyio.echo("getplayer.110: %s" % (cur.mogrify(sql, dat)), level="debug")
     cur.execute(sql, dat)
@@ -1038,3 +1056,7 @@ class Port(object):
 class Island(object):
     def __init__(self, args):
         pass
+
+def init(args, **kw):
+    ttyio.setvar("empyre.highlightcolor", "{var:highlightcolor}")
+    return True
