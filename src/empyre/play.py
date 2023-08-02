@@ -30,12 +30,9 @@ def main(args, **kw):
     player.adjust()
     player.save()
 
-    for x in ("drydock",):
-#    for x in ("quests",):
-#    for x in ("combat", ):
+    for x in ("weather", "disaster", "harvest", "colonytrip", "town", "combat", "drydock", "quests", "investments"):
         if args.debug is True:
             ttyio.echo(f"play.100: x={x!r}", level="debug")
-#    for x in ("weather", "disaster", "harvest", "colonytrip", "town", "combat", "drydock", "quests", "investments"):
         if lib.runsubmodule(args, player, x) is False:
             ttyio.echo("error running submodule %r" % (x), level="error")
         player.adjust()
