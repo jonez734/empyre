@@ -20,4 +20,4 @@ create or replace view empyre.newsentry as
     where prg='empyre.newsentry' and attributes ? 'message' and attributes ? 'playerid' and attributes ? 'memberid'
 ;
 
-grant select on empyre.newsentry to :web;
+grant select on empyre.newsentry to :web, :bbs;

@@ -11,4 +11,4 @@ create or replace view empyre.ship as
     where prg='empyre.ship'
 ;
 
-grant select on empyre.ship to apache;
+grant select on empyre.ship to :web, :bbs;

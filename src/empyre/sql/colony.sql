@@ -9,3 +9,5 @@ create or replace view empyre.colony as
     from engine.__blurb
     where prg='empyre.colony'
 ;
+
+grant select on empyre.colony to :bbs;
