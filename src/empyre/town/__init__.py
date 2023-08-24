@@ -2,6 +2,7 @@ import ttyio6 as ttyio
 import bbsengine6 as bbsengine
 
 from .. import lib
+from .. import module
 
 def init(args, **kw):
     pass
@@ -9,8 +10,15 @@ def init(args, **kw):
 def access(args, op, **kw):
     return True
 
+def buildargs(args, **kw):
+    return None
+
 def main(args, **kwargs):
-    player = kwargs["player"] if "player" in kwargs else None
+    if not "player" in kwargs:
+        ttyio.echo("You do not exist! Go Away!", level="error")
+        return False
+
+    player = kwargs["player"]
 
     optiontable = (
         ("C", ":bank: Cyclone's Natural Disaster Bank", "town.naturaldisasterbank"),
@@ -27,7 +35,7 @@ def main(args, **kwargs):
 
     def help():
         for hotkey, description, func in optiontable:
-            if callable(func) or lib.checkmodule(args, player, func):
+            if callable(func) is True or module.checkmodule(args, player, func) is True:
                 ttyio.echo("{var:empyre.highlightcolor}[%s]{/all} {green}%s" % (hotkey, description))
     
     # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_town.lbl#L130
@@ -37,14 +45,13 @@ def main(args, **kwargs):
 
         help()
         
-        ttyio.echo("{/all}")
-        ttyio.echo("{var:empyre.highlightcolor}[Q]{/all} :door: {green}Return to the Empyre{/all}{f6}")
+        ttyio.echo("{/all}{var:empyre.highlightcolor}[Q]{/all} :door: {green}Return to the Empyre{/all}{f6}")
     
     terminalwidth = ttyio.getterminalwidth()
 
     hotkeys = "Q"
     for hotkey, desc, func in optiontable:
-        if callable(func) or lib.checkmodule(args, player, func):
+        if callable(func) or module.checkmodule(args, player, func):
             # ttyio.echo("empyre.town.menu.100: adding hotkey %r" % (hotkey), level="debug")
             hotkeys += hotkey
 
@@ -52,12 +59,12 @@ def main(args, **kwargs):
     while not done:
         lib.setarea(args, player, "town menu")
         player.adjust()
-#        player.save()
+        player.save()
         menu()
-        ch = ttyio.inputchar(f"town [{hotkeys}]: ", hotkeys, "Q")
+        ch = ttyio.inputchar(f"{{var:promptcolor}}town {{var:optioncolor}}[{hotkeys}]{{var:promptcolor}}: {{var:inputcolor}}", hotkeys, "Q")
         if ch == "Q":
             ttyio.echo(":door: {green}Return to the Empyre{/all}")
-            loop = False
+            done = True
             continue
         else:
             for key, desc, func in optiontable:
@@ -65,8 +72,8 @@ def main(args, **kwargs):
                     ttyio.echo(desc)
                     if callable(func):
                         func(args, player)
-                    elif lib.checkmodule(args, player, func):
-                        lib.runsubmodule(args, player, func)
+                    elif module.checkmodule(args, player, func):
+                        module.runsubmodule(args, player, func)
                     else:
                         ttyio.echo(f"option {desc!r} is not operable", level="error")
                     break
