@@ -13,12 +13,12 @@ def access(args, op, **kw):
 def buildargs(args, **kw):
     return None
 
-def main(args, **kwargs):
-    if not "player" in kwargs:
+def main(args, **kw):
+    if not "player" in kw:
         ttyio.echo("You do not exist! Go Away!", level="error")
         return False
 
-    player = kwargs["player"]
+    player = kw["player"]
 
     optiontable = (
         ("C", ":bank: Cyclone's Natural Disaster Bank", "town.naturaldisasterbank"),
@@ -35,7 +35,7 @@ def main(args, **kwargs):
 
     def help():
         for hotkey, description, func in optiontable:
-            if callable(func) is True or module.checkmodule(args, player, func) is True:
+            if callable(func) is True or module.checkmodule(args, func) is True:
                 ttyio.echo("{var:empyre.highlightcolor}[%s]{/all} {green}%s" % (hotkey, description))
     
     # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_town.lbl#L130
@@ -51,7 +51,7 @@ def main(args, **kwargs):
 
     hotkeys = "Q"
     for hotkey, desc, func in optiontable:
-        if callable(func) or module.checkmodule(args, player, func):
+        if callable(func) or module.checkmodule(args, func, **kw):
             # ttyio.echo("empyre.town.menu.100: adding hotkey %r" % (hotkey), level="debug")
             hotkeys += hotkey
 
@@ -72,8 +72,8 @@ def main(args, **kwargs):
                     ttyio.echo(desc)
                     if callable(func):
                         func(args, player)
-                    elif module.checkmodule(args, player, func):
-                        module.runsubmodule(args, player, func)
+                    elif module.checkmodule(args, func, **kw) is True:
+                        module.runsubmodule(args, func, **kw)
                     else:
                         ttyio.echo(f"option {desc!r} is not operable", level="error")
                     break
