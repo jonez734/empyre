@@ -9,13 +9,18 @@ import bbsengine6 as bbsengine
 
 from .. import lib
 
-def init(args, **kwargs):
+def init(args, **kw):
     return True
 
-def access(args, op, **kwargs):
+def access(args, op, **kw):
     return True
 
-def main(args, player, **kwargs):
+def main(args, **kw):
+    player = kw["player"] if "player" in kw else None
+    if player is None:
+        ttyio.echo("You do not exist. Go away!", level="error")
+        return False
+
     if player.coins > 10000 or player.land > 15000:
         ttyio.echo("{F6}I checked our inventory and we have plenty of souls. Maybe we can deal some other time.")
         return True
