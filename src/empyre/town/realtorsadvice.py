@@ -17,8 +17,8 @@ def main(args, player, **kwargs):
     # you have 10 acres of land
     # prompt = "You have {reverse}%s{/reverse} and {reverse}%s{/reverse}" % (pluralize(player.shipyards, "shipyard", "shipyards"), pluralize(player.credits, "credit", "credits"))
     # all of these are ints
-    lib.trade(args, player, "shipyards", "shipyards", 2500+player.shipyards//2, "shipyard", "shipyards", "a")
-    lib.trade(args, player, "ships", "ships", 5000, "ship", "ships", "a", ":anchor:")
+#    lib.trade(args, player, "shipyards", "shipyards", 2500+player.shipyards//2, "shipyard", "shipyards", "a")
+#    lib.trade(args, player, "ships", "ships", 5000, "ship", "ships", "a", ":anchor:")
     lib.trade(args, player, "foundries", "foundries", 2000+player.foundries//2, "foundry", "foundries", "a")
     lib.trade(args, player, "mills", "mills", 500+player.mills//2, "mill", "mills", "a")
     lib.trade(args, player, "markets", "markets", 250+player.markets//2, "market", "markets", "a")
