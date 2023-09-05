@@ -1,6 +1,6 @@
 create table if not exists empyre.__colony (
     name text unique not null primary key,
-    ownerid bigint not null constraint fk_empyre_colony_ownerid references engine.__member(id) on update cascade on delete set null,
+    founderid bigint not null constraint fk_empyre_colony_founderid references engine.__member(id) on update cascade on delete set null,
     islandid bigint not null constraint fk_empyre_colony_islandid references empyre.__island(id) on update cascade on delete set null,
     resources jsonb,
     datefounded timestamptz,
