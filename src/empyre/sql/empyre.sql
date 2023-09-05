@@ -1,4 +1,4 @@
-\set web apache
+\set web "www-data" -- apache
 \set bbs bbs
 
 \i schema.sql
