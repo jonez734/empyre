@@ -26,7 +26,7 @@ def main(args, player, **kwargs):
     #&"{f6}{lt. green}Do you want them trained (Y/N) >> ":gosub 1902
     #if a then sf=sf-wb:la=la-wb:wa=wa+wb:&"{f6:2}{pound}w2{yellow}Ok, all serfs have been trained.{f6}{pound}q1"
     # ttyio.echo("{f6}{white}You have %s requirements to be trained %s." % (bbsengine.pluralize(eligible, "serf that meets", "serfs that meet"), bbsengine.pluralize(eligible, "as a soldier", "as soldiers", quantity=False)))
-    ttyio.echo("{f6}{var:normalcolor}You have %s requirments to be trained as %s." % (bbsengine.pluralize(eligible, "serf that meets", "serfs that meet"), bbsengine.pluralize(eligible, "a :military-helmet: warrior", ":military-helmet: warriors", quantity=False)))
+    ttyio.echo("{f6}{var:normalcolor}You have %s requirments to be trained as %s." % (bbsengine.util.pluralize(eligible, "serf that meets", "serfs that meet"), bbsengine.util.pluralize(eligible, "a :military-helmet: warrior", ":military-helmet: warriors", quantity=False)))
     if eligible > 0:
         ttyio.echo("Training cost is 1 acre per serf.")
         if ttyio.inputboolean("{var:promptcolor}Do you wish them trained? {var:optioncolor}[yN]{var:promptcolor}: {var:inputcolor}", "N") is True:
