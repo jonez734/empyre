@@ -19,7 +19,7 @@ def main(args, player, **kwargs):
     ttyio.echo()
     exchangerate = 3 #:1 -- 3 coins per credit
     credits = bbsengine.member.getcredits(args)
-    buf = "You have :moneybag: {var:empyre.highlightcolor}%s{/all} and {var:empyre.highlightcolor}%s{/all}" % (bbsengine.util.pluralize(player.coins, "coin", "coins"), bbsengine.util.pluralize(credits, "credit", "credits"))
+    buf = "You have {var:empyre.highlightcolor}%s{/all} and {var:empyre.highlightcolor}%s{/all}" % (bbsengine.util.pluralize(player.coins, "coin", "coins", emoji=":moneybag:"), bbsengine.util.pluralize(credits, "credit", "credits"))
     ttyio.echo(buf)
     if credits is not None and credits > 0:
         ttyio.echo("The exchange rate is {var:empyre.highlightcolor}%s per credit{/all}.{F6}"  % (bbsengine.util.pluralize(exchangerate, "coin", "coins")))
@@ -31,10 +31,11 @@ def main(args, player, **kwargs):
     if amount is None or amount < 1:
         return
 
-    credits = bbsengine.member.getcredits(args, player.memberid)
+    if args.debug is True:
+        ttyio.echo(f"empyre.town.bank.100: {credits=}", level="debug")
 
     if amount > credits:
-        ttyio.echo("Get REAL! You only have {var:empyre.highlightcolor} %s {/all}!" % (bbsengine.util.pluralize(amount, "credit", "credits")))
+        ttyio.echo("Get REAL! You only have {var:empyre.highlightcolor} %s {/all}!" % (bbsengine.util.pluralize(credits, "credit", "credits")))
         return
 
     credits -= amount
@@ -42,4 +43,4 @@ def main(args, player, **kwargs):
 
     bbsengine.member.setcredits(args, player.memberid, credits)
 
-    ttyio.echo("You now have {var:empyre.highlightcolor}%s{/all} and {var:empyre.highlightcolor}%s{/all}" % (bbsengine.util.pluralize(player.coins, "coin", "coins"), bbsengine.util.pluralize(credits, "credit", "credits")))
+    ttyio.echo("You now have {var:empyre.highlightcolor}%s{/all} and {var:empyre.highlightcolor}%s{/all}" % (bbsengine.util.pluralize(player.coins, "coin", "coins", emoji=":moneybag:"), bbsengine.util.pluralize(credits, "credit", "credits")))
