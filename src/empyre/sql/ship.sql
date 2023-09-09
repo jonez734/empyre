@@ -12,9 +12,9 @@ create table if not exists empyre.__ship (
 -- @since 20230716
 create or replace view empyre.ship as
     select
-        s.*,
+        s.*
     from empyre.__ship as s
-    left join engine.__member as owner on (owner.id = empyre.__ship.ownerid)
+    left join engine.__member as owner on (owner.id = s.ownerid)
 ;
 
 grant select on empyre.ship to :web, :bbs;

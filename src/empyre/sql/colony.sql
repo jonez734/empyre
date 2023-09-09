@@ -1,7 +1,7 @@
 create table if not exists empyre.__colony (
     name text unique not null primary key,
     founderid bigint not null constraint fk_empyre_colony_founderid references engine.__member(id) on update cascade on delete set null,
-    islandid bigint not null constraint fk_empyre_colony_islandid references empyre.__island(id) on update cascade on delete set null,
+    islandname text not null constraint fk_empyre_colony_islandname references empyre.__island(name) on update cascade on delete set null,
     resources jsonb,
     datefounded timestamptz,
     status text
@@ -24,10 +24,9 @@ grant all on empyre.__colony to :bbs;
 create or replace view empyre.colony as
     select 
       c.*,
-      owner.moniker as ownermoniker,
-      island.name as islandname
+      founder.moniker as foundermoniker
     from empyre.__colony as c
-    left join engine.__member owner on (owner.id = empyre.__colony.playerid)
-    left join engine.__island island on (island.id = empyre.__colony.islandid)
+    left join engine.__member founder on (founder.id = c.founderid)
+;
 
 grant select on empyre.colony to :bbs, :web;

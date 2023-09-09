@@ -1,7 +1,7 @@
 create table if not exists empyre.__player (
     "id" bigserial unique primary key not null,
     "memberid" bigint constraint fk_empyre_player_memberid references engine.__member(id) on update cascade on delete set null,
-    "moniker" unique,
+    "moniker" text unique,
     "datelastplayed" timestamptz,
     "datecreated" timestamptz,
     "rank" bigint,
@@ -12,16 +12,15 @@ create table if not exists empyre.__player (
     "soldierpromotioncount" bigint,
     "combatvictorycount" bigint,
     "coins" bigint,
-    "resouces" jsonb
+    "resources" jsonb
 );
 
 create or replace view empyre.player as
     select
         p.*
-        member.moniker
     from empyre.__player as p
-    left outer join engine.__member as member on (member.id = empyre.__player.memberid)
-
+    left outer join engine.__member as member on (member.id = p.memberid)
+;
 --create or replace view empyre.player as
 --    select
 --        b.*,

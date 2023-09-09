@@ -20,5 +20,5 @@ create or replace view empyre.island as
 --    where prg='empyre.island'
 --;
 
-grant select on empyre.island to :bbs;
+--grant select on empyre.island to :bbs, :web;
 grant all on empyre.__island to :bbs;

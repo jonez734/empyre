@@ -1,5 +1,5 @@
 \set web "www-data" -- apache
-\set bbs bbs
+\set bbs "bbs"
 
 \i schema.sql
 \i player.sql
