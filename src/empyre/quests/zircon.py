@@ -108,7 +108,10 @@ def zircon8(player):
     return gifts
 
 def init(args, **kw):
-    pass
+    return True
+
+def access(args, op, **kw):
+    return True
 
 # @see https://github.com/Pinacolada64/ImageBBS/blob/e9f033af1f0b341d0d435ee23def7120821c3960/v1.2/games/empire6/mdl.emp.delx3.txt#L362
 def main(args, **kw):
@@ -132,7 +135,7 @@ def main(args, **kw):
         player.coins -= coins
         player.serfs -= serfs
 
-        ttyio.echo("player.land=%d" % (player.land), level="debug")
+        ttyio.echo(f"{player.land=}", level="debug")
 
         ttyio.setvariable("land", bbsengine.util.pluralize(land, "acre", "acres"))
         ttyio.setvariable("serfs", bbsengine.util.pluralize(serfs, "serf", "serfs"))
@@ -142,6 +145,7 @@ def main(args, **kw):
             ttyio.setvariable("nobles", "")
         ttyio.setvariable("coins", bbsengine.util.pluralize(coins, "coin", "coins", emoji=":moneybag:"))
 
+        player.adjust()
         player.save()
         return True
 
