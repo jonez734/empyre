@@ -1,7 +1,7 @@
 import ttyio6 as ttyio
 import bbsengine6 as bbsengine
 
-SUBMODULENAME = "quests"
+SUBMODULENAME = "island"
 PACKAGENAME = "empyre"
 
 def init(args=None, **kw):
