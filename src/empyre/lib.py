@@ -444,7 +444,7 @@ class Player(object):
                         v = "%s" % (bbsengine.util.datestamp(v))
                 elif t == "datetime":
                     v = bbsengine.util.datestamp(v, format="%m/%d@%I%M%P%Z")
-            
+
             if a["name"] == "soldiers" and self.nobles*20 < self.soldiers:
                 buf = f"{{var:labelcolor}}{n.ljust(maxlabellen)}: {{var:highlightcolor}}{v}{{var:normalcolor}}" # % (n.ljust(maxlabellen), v)
             elif a["name"] == "horses" and self.stables*5 < self.horses:
@@ -604,7 +604,7 @@ class Player(object):
             a = self.horses - self.stables*50
             ttyio.echo("{green}You have %s for %s, %s set free." % (bbsengine.util.pluralize(self.stables, "stable", "stables"), bbsengine.util.pluralize(self.horses, "horse", "horses", emoji=":horse:"), bbsengine.util.pluralize(a, "horse is", "horses are", emoji=":horse:")))
             # self.horses -= a
-            
+
         lost = []
         for a in self.attributes:
             type = a["type"] if "type" in a else "int"
