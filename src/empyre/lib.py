@@ -1,6 +1,8 @@
 import random
 import argparse
 
+from dateutil.tz import tzlocal
+
 import ttyio6 as ttyio
 import bbsengine6 as bbsengine
 
@@ -8,7 +10,7 @@ TURNSPERDAY = 4
 
 # @since 20220813
 PACKAGENAME = "empyre"
-QUESTDIR = "~jam/projects/empyre/data/quests/"
+# QUESTDIR = "~/projects/empyre/data/quests/"
 PRG = "empyre"
 
 class Ship(object):
@@ -97,7 +99,7 @@ class Player(object):
             {"type": "int",  "name": "horses", "default":50, "emoji":":horse:"}, # x(23)
             {"type": "int",  "name": "timber", "default":0, "emoji":":wood:"}, # x(16)
 #            {"type": "epoch","name": "datelastplayedepoch", "default":0},
-            {"type": "datetime", "name": "datelastplayed", "default":"now()"},
+#            {"type": "datetime", "name": "datelastplayed", "default":"now"},
             {"type": "int",  "name": "rebels", "default":0},
             {"type": "int",  "name": "exports", "default":0, "emoji": ":package:"},
         ]
@@ -244,23 +246,27 @@ class Player(object):
 
         self.playerid = playerid
         
-        newsentry(self.args, self, "player %r loaded." % (self.name))
+        newsentry(self.args, self, f"player {self.name} loaded.")
 
         return True
 
     def update(self):
         if self.playerid < 1:
             ttyio.echo("invalid playerid passed to Player.update.", level="error")
-            return
+            return False
 
         attributes = {}
         for a in self.attributes:
             name = a["name"]
             attr = self.getattribute(name)
             if attr is None:
-                ttyio.echo("invalid attribute %r" % (name))
+                ttyio.echo(f"invalid attribute {name=}")
                 continue
-            attributes[name] = attr["value"] # self.getattribute(name) # getattr(self, name)
+            if attr["type"] == "datetime":
+#                tz = tzlocal()
+                attributes[name] = attr["value"]
+            else:
+                attributes[name] = attr["value"] # self.getattribute(name) # getattr(self, name)
 
         return bbsengine.blurb.updateattributes(self.args, self.playerid, attributes)
 
@@ -395,15 +401,16 @@ class Player(object):
                     # ttyio.echo("player.status.100: n=%r t=int v=%r" % (n, v), level="debug")
                     v = f"{v:>6n}"
                     # ttyio.echo("player.status.120: new v=%r" % (v), level="debug")
-                elif t == "epoch":
-                    ttyio.echo("player.status.100: v=%r" % (v), level="debug")
-                    if v < 1:
-                        v = "None"
-                    else:
-                        v = bbsengine.datestamp(v, format="%Y%m%d")
-#                elif t == "datetime":
-#                    ttyio.echo(f"---> player.status.120: v={v!r} type={type(v)}", level="debug")
-#                    v = bbsengine.datestamp(v, format="%Y%m%d")
+#                elif t == "epoch":
+#                    ttyio.echo("player.status.100: v=%r" % (v), level="debug")
+#                    if v < 1:
+#                        v = "None"
+#                    else:
+#                        v = bbsengine.util.datestamp(v, format="%Y%m%d")
+                elif t == "datetime":
+                    ttyio.echo(f"---> player.status.120: {v=} {type(v)=}", level="debug")
+                    v = bbsengine.util.datestamp(v, format="%m/%d@%H%M%P%Z")
+                    ttyio.echo(f"{v=}", level="debug")
 
             buf = "%s: %s" % (n.ljust(maxlabellen), v)
             buflen = len(ttyio.tostr(buf))
@@ -434,7 +441,10 @@ class Player(object):
                     if v < 1:
                         v = "None"
                     else:
-                        v = "%s" % (bbsengine.datestamp(v))
+                        v = "%s" % (bbsengine.util.datestamp(v))
+                elif t == "datetime":
+                    v = bbsengine.util.datestamp(v, format="%m/%d@%I%M%P%Z")
+            
             if a["name"] == "soldiers" and self.nobles*20 < self.soldiers:
                 buf = f"{{var:labelcolor}}{n.ljust(maxlabellen)}: {{var:highlightcolor}}{v}{{var:normalcolor}}" # % (n.ljust(maxlabellen), v)
             elif a["name"] == "horses" and self.stables*5 < self.horses:
@@ -594,7 +604,7 @@ class Player(object):
             a = self.horses - self.stables*50
             ttyio.echo("{green}You have %s for %s, %s set free." % (bbsengine.util.pluralize(self.stables, "stable", "stables"), bbsengine.util.pluralize(self.horses, "horse", "horses", emoji=":horse:"), bbsengine.util.pluralize(a, "horse is", "horses are", emoji=":horse:")))
             # self.horses -= a
-
+            
         lost = []
         for a in self.attributes:
             type = a["type"] if "type" in a else "int"
@@ -652,14 +662,14 @@ def verifyPlayerNameFound(name:str, **kwargs) -> bool:
         return False
     return True
 
-def verifyPlayerNameNotFound(name:str, **kwargs) -> bool:
+def verifyPlayerNameNotFound(moniker:str, **kwargs) -> bool:
     args = kwargs["args"] if "args" in kwargs else Namespace()
 
-    ttyio.echo(f"verifyPlayerNameNotFound.120: args={args!r} name={name!r}", level="debug")
+    ttyio.echo(f"verifyPlayerNameNotFound.120: {args=} {moniker=}", level="debug")
     dbh = bbsengine.database.connect(args)
     cur = dbh.cursor()
-    sql = "select 1 from empyre.player where name=%s"
-    dat = (name,)
+    sql = "select 1 from empyre.player where moniker=%s"
+    dat = (moniker,)
     cur.execute(sql, dat)
     ttyio.echo("verifyPlayerNameNotFound.100: mogrify={cur.mogrify(sql, dat)}", level="debug")
     if cur.rowcount == 0:
@@ -729,25 +739,6 @@ def setarea(args, player, buf, stack=False) -> None:
 def playerstatus(args, player):
     return player.status()
 
-def checkmodule(args, player, module, **kw):
-    module = f"{PACKAGENAME}.{module}"
-    return bbsengine.module.check(args, module, **kw)
-
-def runmodule(args, player, module, **kw):
-    x = "%s.%s" % (PACKAGENAME, module)
-    if args.debug is True:
-        ttyio.echo("empyre.lib.runmodule.100: x=%r" % (x), level="debug")
-
-    if bbsengine.module.check(args, x, **kw) is False:
-        ttyio.echo("empyre.lib.runmodule.120: module %r not available" % (x), level="error")
-        return False
-
-    return bbsengine.module.runmodule(args, x, player=player, **kw)
-
-def runsubmodule(args, player, submodule, **kw):
-    if args.debug is True:
-        ttyio.echo(f"runsubmodule.100: submodule={submodule!r}")
-    return runmodule(args, player, submodule, buildargs=False, **kw)
 
 def calculaterank(args:object, player:object) -> int:
     #i1=f%(1) palaces
@@ -922,13 +913,13 @@ def trade(args, player:object, attr:str, name:str, price:int, singular:str="sing
             continue
         elif ch == "B":
             # price = currentplayer.weathercondition*3+12
-            ttyio.echo("Buy{F6}The barbarians will sell their %s to you for {var:empyre.highlightcolor}%s{/all} each." % (name, bbsengine.util.pluralize(price, "coin", "coins")))
+            ttyio.echo("Buy{F6}The barbarians will sell their %s to you for {var:empyre.highlightcolor} %s{/all} each." % (name, bbsengine.util.pluralize(price, "coin", "coins", emoji=":moneybag:")))
             quantity = ttyio.inputinteger("buy how many?: ")
             if quantity is None or quantity < 1:
                 break
 
             if player.coins < quantity*price:
-                ttyio.echo("You have :moneybag: %s and you need :moneybag: %s to complete this transaction." % (bbsengine.util.pluralize(player.coins, "coin", "coins"), bbsengine.util.pluralize(abs(player.coins - quantity*price), "more coin", "more coins")))
+                ttyio.echo("You have :moneybag: %s and you need %s to complete this transaction." % (bbsengine.util.pluralize(player.coins, "coin", "coins"), bbsengine.util.pluralize(abs(player.coins - quantity*price), "more coin", "more coins", emoji=":moneybag")))
                 continue
 
             a = player.getattribute(attr) # getattr(player, attr)
@@ -942,7 +933,7 @@ def trade(args, player:object, attr:str, name:str, price:int, singular:str="sing
             ttyio.echo("Bought!")
             break
         elif ch == "S":
-            ttyio.echo("sell{F6}The barbarians will buy your %s for :moneybag: {var:empyre.highlightcolor}%s{/all} each." % (plural, bbsengine.util.pluralize(price, "coin", "coins")))
+            ttyio.echo("sell{F6}The barbarians will buy your %s for {var:empyre.highlightcolor}%s{/all} each." % (plural, bbsengine.util.pluralize(price, "coin", "coins", emoji=":moneybag:")))
             quantity = ttyio.inputinteger("sell how many?: ")
             if quantity is None or quantity < 1:
                 break
