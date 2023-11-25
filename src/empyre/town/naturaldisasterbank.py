@@ -12,6 +12,9 @@ def init(args, **kwargs):
 def access(args, op, **kwargs):
     return True
 
+def buildargs(args, **kw):
+    return None
+
 # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_town.lbl#L293
 def main(args, player, **kwargs):
     bbsengine.util.heading("natural disaster bank") # , titlecolor="{bggray}{white}", hrcolor="{darkgreen}")
@@ -22,8 +25,8 @@ def main(args, player, **kwargs):
     buf = "You have {var:empyre.highlightcolor}%s{/all} and {var:empyre.highlightcolor}%s{/all}" % (bbsengine.util.pluralize(player.coins, "coin", "coins", emoji=":moneybag:"), bbsengine.util.pluralize(credits, "credit", "credits"))
     ttyio.echo(buf)
     if credits is not None and credits > 0:
-        ttyio.echo("The exchange rate is {var:empyre.highlightcolor}%s per credit{/all}.{F6}"  % (bbsengine.util.pluralize(exchangerate, "coin", "coins")))
-        amount = ttyio.inputinteger("{cyan}Exchange how many credits?: {lightgreen}")
+        ttyio.echo("The exchange rate is {var:empyre.highlightcolor}%s per credit{/all}.{F6}"  % (bbsengine.util.pluralize(exchangerate, "coin", "coins", emoji=":moneybag:")))
+        amount = ttyio.inputinteger("{var:promptcolor}Exchange how many credits?: {var:inputcolor}")
         ttyio.echo("{/all}")
     else:
         ttyio.echo("You have no credits")
@@ -44,3 +47,5 @@ def main(args, player, **kwargs):
     bbsengine.member.setcredits(args, player.memberid, credits)
 
     ttyio.echo("You now have {var:empyre.highlightcolor}%s{/all} and {var:empyre.highlightcolor}%s{/all}" % (bbsengine.util.pluralize(player.coins, "coin", "coins", emoji=":moneybag:"), bbsengine.util.pluralize(credits, "credit", "credits")))
+    lib.setarea(args, player, "natural disaster bank")
+    return True

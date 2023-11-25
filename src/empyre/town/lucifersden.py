@@ -15,6 +15,9 @@ def init(args, **kw):
 def access(args, op, **kw):
     return True
 
+def buildargs(args, **kw):
+    return None
+
 def main(args, **kw):
     player = kw["player"] if "player" in kw else None
     if player is None:
