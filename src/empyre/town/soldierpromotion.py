@@ -12,6 +12,9 @@ def access(args, op, **kwargs):
 def init(args, **kwargs):
     return True
 
+def buildargs(args, **kw):
+    return None
+
 def main(args, player, **kwargs):
     terminalwidth = ttyio.getterminalwidth()
     

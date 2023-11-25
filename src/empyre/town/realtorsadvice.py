@@ -9,6 +9,9 @@ def init(args, **kwargs):
 def access(args, op, **kwargs):
     return True
 
+def buildargs(args, **kw):
+    return None
+
 def main(args, player, **kwargs):
     bbsengine.util.heading(": hood's real deals! :")
     lib.setarea(args, player, "town -> hood's real deals!")
