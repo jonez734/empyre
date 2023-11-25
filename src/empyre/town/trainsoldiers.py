@@ -9,6 +9,9 @@ def init(args, **kwargs):
 def access(args, op, **kwargs):
     return True
 
+def buildargs(args, **kw):
+    return None
+
 # @since 20200830
 # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_town.lbl#L244
 def main(args, player, **kwargs):
