@@ -28,9 +28,9 @@ def main(args, **kw):
     # p3=int(((rnd(1)*100)+gr/1000)*f%(3))
     p3 = int(((random.random()*100)+player.grain//1000)*player.mills)
     # p4=((rnd(1)*175)+wa)*f%(4)/(2-ff)
-    p4 = ((random.random()*175)+player.soldiers)*player.foundries//(2-player.combatvictory)
+    p4 = ((random.random()*175)+player.soldiers)*player.foundries//(2-player.combatvictorycount)
     # p5=((rnd(1)*200)+la/30)*f%(5)/(2-ff)
-    p5 = ((random.random()*200)+player.land//30)*player.shipyards//(2-player.combatvictory)
+    p5 = ((random.random()*200)+player.land//30)*player.shipyards//(2-player.combatvictorycount)
     # p4=int(p4-(p4*tr/200)):p5=int(p5-(p5*tr/150))
     p4 = p4-(p4*player.taxrate//200)
     p5 = p5-(p5*player.taxrate//150)
@@ -53,7 +53,7 @@ def main(args, **kw):
     # nn=bbs credit/coins exchange rate
     palacerent = player.taxrate*player.palaces*10
 
-    soldierpay = int((player.soldiers*(player.combatvictory+2))+(player.taxrate*player.palaces*10)//40) # py
+    soldierpay = int((player.soldiers*(player.combatvictorycount+2))+(player.taxrate*player.palaces*10)//40) # py
     payables = soldierpay+noblegifts+palacerent
     
     bbsengine.util.heading("yearly report")
