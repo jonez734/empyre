@@ -1,6 +1,6 @@
 create table if not exists empyre.__island (
     "name" text unique not null primary key,
-    "ownerid" bigint constraint fk_empyre_island_ownerid references empyre.__player(id) on update cascade on delete set null,
+    "playerid" bigint constraint fk_empyre_island_ownerid references empyre.__player(id) on update cascade on delete set null,
     "resources" jsonb
 );
 

@@ -10,8 +10,12 @@ create table if not exists empyre.__newsentry (
 
 create or replace view empyre.newsentry as
     select
-      ne.*
+      ne.*,
+      p.moniker as playermoniker,
+      m.moniker as membermoniker
     from empyre.__newsentry as ne
+    left join engine.__member m on (m.id = ne.memberid)
+    left join empyre.__player p on (p.id = ne.playerid)
 ;
 
 grant select on empyre.newsentry to :web, :bbs;

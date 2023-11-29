@@ -20,7 +20,7 @@ create or replace view empyre.player as
     select
         p.*
     from empyre.__player as p
-    left outer join engine.__member as member on (member.id = p.memberid)
+    left outer join engine.__member as m on (m.id = p.memberid)
 ;
 --create or replace view empyre.player as
 --    select

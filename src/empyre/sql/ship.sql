@@ -12,7 +12,8 @@ create table if not exists empyre.__ship (
 -- @since 20230716
 create or replace view empyre.ship as
     select
-        s.*
+        s.*,
+        owner.moniker as ownermoniker
     from empyre.__ship as s
     left join empyre.__player as owner on (owner.id = s.ownerid)
 ;
