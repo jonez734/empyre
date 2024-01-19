@@ -1,29 +1,36 @@
-import ttyio5 as ttyio
-import bbsengine5 as bbsengine
+#import ttyio6 as ttyio
+#import bbsengine6 as bbsengine
+from bbsengine6 import io, member, util, database
 
 from .. import lib
 
 def init(args, **kw):
-    ttyio.setvariable("acscolor", "{white}")
+    io.setvariable("acscolor", "{white}")
     return True
+
+def access(args, op, **kw):
+    return True
+
+def buildargs(args, **kw):
+    return None
 
 # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/Empire6.lbl#L69
 def main(args:object, player=None, **kw):
     lib.setarea(args, player, "list players")
-    terminalwidth = ttyio.getterminalwidth()
-    dbh = bbsengine.databaseconnect(args)
-    sql = "select id, memberid, name from empyre.player order by (attributes->>'land')::integer desc"
+    terminalwidth = io.getterminalwidth()
+    dbh = database.connect(args)
+    sql = "select id, memberid, moniker from empyre.player order by (resources->>'land')::integer desc"
     dat = ()
     cur = dbh.cursor()
     cur.execute(sql, dat)
     if cur.rowcount > 0:
-        ttyio.echo("{/all}{var:acscolor}{acs:ulcorner}{acs:hline:%s}{acs:urcorner}" % (terminalwidth-2), wordwrap=False)
-        ttyio.echo("{var:acscolor}{acs:vline}{gray} name %s{/all} {var:acscolor}{acs:vline}" % ("land".rjust(terminalwidth-len("land")-5)), wordwrap=False)
-        ttyio.echo("{var:acscolor}{acs:ltee}%s{var:acscolor}{acs:rtee}" % (bbsengine.hr(chars="-=", color="{var:acscolor}", width=terminalwidth-2)), wordwrap=False)
+        io.echo("{/all}{var:acscolor}{acs:ulcorner}{acs:hline:%s}{acs:urcorner}" % (terminalwidth-2), wordwrap=False)
+        io.echo("{var:acscolor}{acs:vline}{gray} name %s{/all} {var:acscolor}{acs:vline}" % ("land".rjust(terminalwidth-len("land")-5)), wordwrap=False)
+        io.echo("{var:acscolor}{acs:ltee}%s{var:acscolor}{acs:rtee}" % (util.hr(chars="-=", color="{var:acscolor}", width=terminalwidth-2, padding="")), wordwrap=False)
         player = lib.Player(args)
-        sysop = bbsengine.checkflag(args, "SYSOP")
+        sysop = member.checkflag(args, "SYSOP")
         cycle = 0
-        for rec in bbsengine.resultiter(cur):
+        for rec in database.resultiter(cur):
             if cycle == 0:
                 color = "{white}"
             else:
@@ -31,21 +38,21 @@ def main(args:object, player=None, **kw):
             playerid = rec["id"]
             player.load(playerid)
 
-            membername = bbsengine.getmembername(args, player.memberid)
+            membername = member.getcurrentmoniker(args, player.memberid)
             if sysop is True:
-                leftbuf  = "%s (%s)" % (player.name, membername) # "({:>4n}".format(player.memberid))
+                leftbuf  = f"{player.moniker} ({membername})" # "({:>4n}".format(player.memberid))
             else:
-                leftbuf  = "%s" % (player.name) # "({:>4n}".format(player.memberid))
+                leftbuf  = f"{player.moniker}" # "({:>4n}".format(player.memberid))
 
             rightbuf = "%s" % ("{:>6n}".format(player.land))
             rightbuflen = len(rightbuf)
-            buf = "{var:acscolor}{acs:vline}%s{var:empyre.highlightcolor} %s%s {/all}{var:acscolor}{acs:vline}" % (color, leftbuf.ljust(terminalwidth-rightbuflen-4), rightbuf)
-            ttyio.echo(buf, wordwrap=False)
+            buf = f"{{var:acscolor}}{{acs:vline}}%s %s%s {{/all}}{{var:acscolor}}{{acs:vline}}" % (color, leftbuf.ljust(terminalwidth-rightbuflen-4), rightbuf)
+            io.echo(buf, wordwrap=False)
 
             cycle += 1
             cycle %= 2
 
-        ttyio.echo("{var:acscolor}{acs:llcorner}%s{acs:lrcorner}" % (bbsengine.hr(chars="-=", color="{var:acscolor}", width=terminalwidth-2)))
+        io.echo(f"{{var:acscolor}}{{acs:llcorner}}%s{{acs:lrcorner}}" % (util.hr(chars="-=", color=f"{{var:acscolor}}", width=terminalwidth-2, padding="")))
     else:
-        ttyio.echo("no other rulers")
+        io.echo("no other rulers")
     return True
