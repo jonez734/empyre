@@ -1,8 +1,9 @@
-import ttyio6 as ttyio
-import bbsengine6 as bbsengine
+#import ttyio6 as ttyio
+#import bbsengine6 as bbsengine
+from bbsengine6 import io, util
 
 from .. import lib
-from .. import module
+#from .. import module
 
 def init(args, **kw):
     pass
@@ -15,10 +16,13 @@ def buildargs(args, **kw):
 
 def main(args, **kw):
     if not "player" in kw:
-        ttyio.echo("You do not exist! Go Away!", level="error")
+        io.echo("You do not exist! Go Away!", level="error")
         return False
 
     player = kw["player"]
+    if player is None:
+        io.echo("You do not exist! Go Away!", level="error")
+        return False
 
     optiontable = (
         ("C", ":bank: Cyclone's Natural Disaster Bank", "town.naturaldisasterbank"),
@@ -35,23 +39,23 @@ def main(args, **kw):
 
     def help():
         for hotkey, description, func in optiontable:
-            if callable(func) is True or module.checkmodule(args, func) is True:
-                ttyio.echo("{var:empyre.highlightcolor}[%s]{/all} {green}%s" % (hotkey, description))
+            if callable(func) is True or lib.checkmodule(args, func) is True:
+                io.echo(f"{{var:optioncolor}}[{hotkey}]{{var:labelcolor}} {description}")
     
     # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_town.lbl#L130
     # @since 20200830
     def menu():
-        bbsengine.util.heading("town menu")
+        util.heading("town menu")
 
         help()
         
-        ttyio.echo("{/all}{var:empyre.highlightcolor}[Q]{/all} :door: {green}Return to the Empyre{/all}{f6}")
+        io.echo("{/all}{var:empyre.highlightcolor}[Q]{/all} :door: {green}Return to the Empyre{/all}{f6}")
     
-    terminalwidth = ttyio.getterminalwidth()
+    terminalwidth = io.getterminalwidth()
 
     hotkeys = "Q"
     for hotkey, desc, func in optiontable:
-        if callable(func) or module.checkmodule(args, func, **kw):
+        if callable(func) or lib.checkmodule(args, func, **kw):
             # ttyio.echo("empyre.town.menu.100: adding hotkey %r" % (hotkey), level="debug")
             hotkeys += hotkey
 
@@ -61,20 +65,21 @@ def main(args, **kw):
         player.adjust()
         player.save()
         menu()
-        ch = ttyio.inputchar(f"{{var:promptcolor}}town {{var:optioncolor}}[{hotkeys}]{{var:promptcolor}}: {{var:inputcolor}}", hotkeys, "Q")
+        ch = io.inputchar(f"{{var:promptcolor}}town {{var:optioncolor}}[{hotkeys}]{{var:promptcolor}}: {{var:inputcolor}}", hotkeys, "Q")
         if ch == "Q":
-            ttyio.echo(":door: {green}Return to the Empyre{/all}")
+            io.echo(":door: {green}Return to the Empyre{/all}")
             done = True
             continue
         else:
             for key, desc, func in optiontable:
+                if func is None:
+                    continue
+
                 if ch == key:
-                    ttyio.echo(desc)
+                    io.echo(desc)
                     if callable(func):
-                        func(args, player)
-                    elif module.checkmodule(args, func, **kw) is True:
-                        module.runsubmodule(args, func, **kw)
-                    else:
-                        ttyio.echo(f"option {desc!r} is not operable", level="error")
+                        func(args, player, **kw)
+                        break
+                    lib.runmodule(args, func, **kw)
                     break
     return True
