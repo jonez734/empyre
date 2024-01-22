@@ -1,7 +1,8 @@
-import ttyio6 as ttyio
-import bbsengine6 as bbsengine
+#import ttyio6 as ttyio
+#import bbsengine6 as bbsengine
 
 from .. import lib
+from bbsengine6 import util
 
 def init(args, **kwargs):
     return True
@@ -13,7 +14,7 @@ def buildargs(args, **kw):
     return None
 
 def main(args, player, **kwargs):
-    bbsengine.util.heading(": hood's real deals! :")
+    util.heading(": hood's real deals! :")
     lib.setarea(args, player, "town -> hood's real deals!")
     
     # you have 10 shipyards, BSC

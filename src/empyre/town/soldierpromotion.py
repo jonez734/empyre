@@ -1,7 +1,8 @@
 import random
 
-import ttyio6 as ttyio
-import bbsengine6 as bbsengine
+#import ttyio6 as ttyio
+#import bbsengine6 as bbsengine
+from bbsengine6 import io, util
 
 # @since 20230106 moved to empyre.town.soldierpromotion
 # @since 20200830
@@ -16,12 +17,12 @@ def buildargs(args, **kw):
     return None
 
 def main(args, player, **kwargs):
-    terminalwidth = ttyio.getterminalwidth()
+    terminalwidth = io.getterminalwidth()
     
     player.soldierpromotioncount += 1
     if player.turncount > 2:
         if player.soldierpromotioncount > 1:
-            ttyio.echo("Nice try, but we keep our promotion records up to date, and they show that your eligible soldiers have already been promoted! Just wait until King George hears about this!")
+            io.echo("Nice try, but we keep our promotion records up to date, and they show that your eligible soldiers have already been promoted! Just wait until King George hears about this!")
             player.soldiers -= 20
             if player.soldiers < 0:
                 player.soldiers = 1
@@ -37,19 +38,19 @@ def main(args, player, **kwargs):
             player.save()
             
     if player.soldiers < 10:
-        ttyio.echo("None of your soldiers are eligible for promotion to Noble right now.{F6}")
+        io.echo("None of your soldiers are eligible for promotion to Noble right now.{F6}")
         return
         
     promotable = random.randint(0, 4)
     
-    bbsengine.util.heading(": Soldier Promotions :")
-    ttyio.echo("{F6}{yellow}Good day, I take it that you are here to see if any of your soldiers are eligible for promotion to the status of noble.{F6}")
-    ttyio.echo("{wait:5}Well, after checking all of them, I have found that %s eligible.{f6}" % (bbsengine.util.pluralize(promotable, "soldier is", "soldiers are")))
+    util.heading(": Soldier Promotions :")
+    io.echo("{F6}{var:normalcolor}Good day, I take it that you are here to see if any of your soldiers are eligible for promotion to the status of noble.{F6}")
+    io.echo("{wait:15}Well, after checking all of them, I have found that %s eligible.{f6}" % (util.pluralize(promotable, "soldier is", "soldiers are")))
     if promotable == 0:
         return
 
-    ch = ttyio.inputboolean("{var:promptcolor}Do you wish them promoted? {var:optioncolor}[yN]{var:promptcolor}: {var:inputcolor}", "N")
-    ttyio.echo("{/all}")
+    ch = io.inputboolean("{var:promptcolor}Do you wish them promoted? {var:optioncolor}[yN]{var:promptcolor}: {var:inputcolor}", "N")
+    io.echo("{/all}")
     if ch is False:
         return
 
@@ -58,7 +59,7 @@ def main(args, player, **kwargs):
 
     player.save()
 
-    ttyio.echo("{F6}OK, all have been promoted! We hope they serve you well.")
+    io.echo("{F6}OK, all have been promoted! We hope they serve you well.")
     
     # &"{f6}{yellow}Good day, I take it that you are here to{pound}$l"
     # &"see if any of your warriors are eligible for promotion{f6}"
