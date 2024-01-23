@@ -1,7 +1,8 @@
 import random
 
-import ttyio6 as ttyio
-import bbsengine6 as bbsengine
+# import ttyio6 as ttyio
+# import bbsengine6 as bbsengine
+from bbsengine6 import io, util
 
 from . import lib
 
@@ -17,11 +18,11 @@ def buildargs(args, **kw):
 def main(args, **kw):
     player = kw["player"] if "player" in kw else None
     if player is None:
-        ttyio.echo("You do not exist! Go Away!", level="error")
+        io.echo("You do not exist! Go Away!", level="error")
         return False
 
-    # tr = taxrate
-    # ff = "combat victory" flag
+    # tr = player.taxrate
+    # ff = player.combatvictorycount
     # p1 = palace percentage (up to 10 pieces)
     # p2=int(((rnd(1)*75)+sf/100)*f%(2))
     p2 = int(((random.random()*75)+player.serfs//100)*player.markets)
@@ -40,7 +41,7 @@ def main(args, **kw):
     if noblegifts < 1 and player.nobles > 67:
         a = player.nobles // 5
         player.nobles -= a
-        ttyio.echo("{blue}%s{/blue}" % (bbsengine.pluralize(a, "noble defects", "nobles defect")))
+        io.echo("{blue}%s{/blue}" % (util.pluralize(a, "noble defects", "nobles defect")))
 
     # pn=int(pn+p2+p3+p4+p5):tg=int((p2+p3+p4+p5)*tr/100):pn=pn+tg
     taxes = (p2+p3+p4+p5)*player.taxrate//100
@@ -56,7 +57,7 @@ def main(args, **kw):
     soldierpay = int((player.soldiers*(player.combatvictorycount+2))+(player.taxrate*player.palaces*10)//40) # py
     payables = soldierpay+noblegifts+palacerent
     
-    bbsengine.util.heading("yearly report")
+    util.heading("yearly report")
         # pn=pn-(py+xx-pt)
 
         # &"{f6:2}{lt. green}PAYABLES{white}"
@@ -65,43 +66,70 @@ def main(args, **kw):
 
 #    ttyio.echo("Receivables: %s" % "{:>6n}".format(receivables)) # (pluralize(receivables, "credit", "credits")))
 #    ttyio.echo("Payables:    %s" % "{:>6n}".format(payables)) # (pluralize(payables, "credit", "credits")))
+    peoplerequire = player.serfs*5+1 # pr plus_emp6_trading.lbl
+    armyrequires = player.soldiers*10+1 # ar
+    armygiven = armyrequires
+    grain = player.grain
+    givenpeople = peoplerequire # gp pr
+    gd = givenpeople//peoplerequire # no idea of a better name, yet
+    ad = givenpeople//peoplerequire # pr
+    # bb: babies born
+    # dn: died naturally
 
-    ttyio.echo(f"{{var:labelcolor}}EXPENSES - {{var:valuecolor}}{payables:>6n}{{var:normalcolor}}")
-    ttyio.echo()
-    ttyio.echo(f"{{var:labelcolor}} Soldier's Pay:  {soldierpay:>6n}") # % ("{:>6n}".format(soldierpay)))
-    ttyio.echo(f"{{var:labelcolor}} Palace Rent:    {palacerent:>6n}") # %s" % ("{:>6n}".format(palacerent)))
-    ttyio.echo(f"{{var:labelcolor}} Noble's Gifts:  {noblegifts:>6n}") # % ("{:>6n}".format(noblegifts)))
-    ttyio.echo()
+    pd = 0
 
-    ttyio.echo(f"{{var:labelcolor}}INCOME --- {{var:valuecolor}}{receivables:>6n}{{var:normalcolor}}")
-    ttyio.echo()
-    ttyio.echo(f"{{var:labelcolor}} Markets:        {{var:valuecolor}}{p2:>6n}") # % ("{:>6n}".format(p2))) # p2 markets
-    ttyio.echo(f"{{var:labelcolor}} Mills:          {{var:valuecolor}}{p3:>6n}") # % ("{:>6n}".format(p3))) # p3 mills
-    ttyio.echo(f"{{var:labelcolor}} Foundries:      {{var:valuecolor}}{p4:>6n}") # % ("{:>6n}".format(p4))) # p4 foundries
-    ttyio.echo(f"{{var:labelcolor}} Shipyards:      {{var:valuecolor}}{p5:>6n}") # % ("{:>6n}".format(p5))) # p5 shipyards
-    ttyio.echo(f"{{var:labelcolor}} Taxes:          {{var:valuecolor}}{taxes:>6n}") # % ("{:>6n}".format(taxes))) # tg/taxes
-    ttyio.echo()
+    if gd < 1:
+        pass
+
+    if player.grain < 0:
+        givenpeople = 0
+        armygiven = 0
+        # goto no_grain
+    if givenpeople > grain:
+        io.echo("You only have {} to give to your people.".format(util.pluralize(grain, "bushel", "bushels", emoji=":crop:")))
+
+
+    io.echo(f"{{var:labelcolor}}CENSUS - {util.pluralize(player.serfs, 'serf', 'serf')}")
+    io.echo(f"{{var:labelcolor}}EXPENSES - {{var:valuecolor}}{payables:>6n}{{var:normalcolor}}")
+    io.echo()
+    io.echo(f"{{var:labelcolor}} Soldier's Pay:  {soldierpay:>6n}") # % ("{:>6n}".format(soldierpay)))
+    io.echo(f"{{var:labelcolor}} Palace Rent:    {palacerent:>6n}") # %s" % ("{:>6n}".format(palacerent)))
+    io.echo(f"{{var:labelcolor}} Noble's Gifts:  {noblegifts:>6n}") # % ("{:>6n}".format(noblegifts)))
+    io.echo()
+
+    io.echo(f"{{var:labelcolor}}INCOME --- {{var:valuecolor}}{receivables:>6n}{{var:normalcolor}}")
+    io.echo()
+    io.echo(f"{{var:labelcolor}} Markets:        {{var:valuecolor}}{p2:>6n}") # % ("{:>6n}".format(p2))) # p2 markets
+    io.echo(f"{{var:labelcolor}} Mills:          {{var:valuecolor}}{p3:>6n}") # % ("{:>6n}".format(p3))) # p3 mills
+    io.echo(f"{{var:labelcolor}} Foundries:      {{var:valuecolor}}{p4:>6n}") # % ("{:>6n}".format(p4))) # p4 foundries
+    io.echo(f"{{var:labelcolor}} Shipyards:      {{var:valuecolor}}{p5:>6n}") # % ("{:>6n}".format(p5))) # p5 shipyards
+    io.echo(f"{{var:labelcolor}} Taxes:          {{var:valuecolor}}{taxes:>6n}") # % ("{:>6n}".format(taxes))) # tg/taxes
+    io.echo()
 
     if receivables == payables:
-        ttyio.echo(f"{{lightgreen}}Break Even: {payables:>6n}") #%s{/all}" % ("{:>6n}".format(payables)))
+        io.echo(f"{{lightgreen}}Break Even: {payables:>6n}") #%s{/all}" % ("{:>6n}".format(payables)))
     elif receivables > payables:
-        ttyio.echo(f"{{lightgreen}}Profit:     {receivables-payables:>6n}") # %s{/all}" % ("{:>6n}".format(receivables-payables))) # (pluralize(receivables-payables, "credit", "credits")))
+        io.echo(f"{{lightgreen}}Profit:     {receivables-payables:>6n}") # %s{/all}" % ("{:>6n}".format(receivables-payables))) # (pluralize(receivables-payables, "credit", "credits")))
     elif receivables < payables:
-        ttyio.echo(f"{{lightred}}Loss:       {payables-receivables:>6n}") # %s{/all}" % ("{:>6n}".format(payables-receivables))) # pluralize(payables-receivables, "credit", "credits")))
-    ttyio.echo("{/all}")
+        io.echo(f"{{lightred}}Loss:       {payables-receivables:>6n}") # %s{/all}" % ("{:>6n}".format(payables-receivables))) # pluralize(payables-receivables, "credit", "credits")))
+    io.echo("{/all}")
 
     player.coins += receivables
     player.coins -= payables
+
+    rank = lib.calculaterank(args, player)
+
+    if args.debug is True:
+        io.echo(f"player.rank={player.rank} rank={rank}", level="debug")
+    # check for > player.rank, < player.rank and write entry to game log
+    player.rank = rank
+
+    player.adjust()
+    player.save()
 
     #' ln=auto-reset land requirement
     #' mp=auto-reset emperor status
     #' en=bbs credit/money exchange active
     #' nn=bbs credit/money exchange rate
     # if mp=0 and la>ln then gosub {:486} ' part of sub.rank
-    rank = lib.calculaterank(args, player)
-    
-    if args.debug is True:
-        ttyio.echo(f"player.rank={player.rank} rank={rank}", level="debug")
-    # check for > player.rank, < player.rank and write entry to game log
-    player.rank = rank
     return True
