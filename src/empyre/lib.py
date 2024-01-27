@@ -1123,7 +1123,7 @@ def buildargs(args=None, **kw):
     database.buildargdatabasegroup(parser, defaults)
 
     return parser
-    
+
 def checkmodule(args, modulename, **kw):
     x = f"{PACKAGENAME}.{modulename}"
     if args.debug is True:
