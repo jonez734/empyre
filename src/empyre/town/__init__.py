@@ -6,7 +6,7 @@ from .. import lib
 #from .. import module
 
 def init(args, **kw):
-    pass
+    return True
 
 def access(args, op, **kw):
     return True
@@ -61,7 +61,7 @@ def main(args, **kw):
 
     done = False
     while not done:
-        lib.setarea(args, player, "town menu")
+        lib.setarea(args, "town menu", player=player)
         player.adjust()
         player.save()
         menu()
