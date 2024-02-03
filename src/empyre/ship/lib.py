@@ -1,3 +1,6 @@
+import copy
+from bbsengine6 import io
+
 class Ship(object):
     def __init__(self, args, player):
         self.args = args
@@ -90,8 +93,9 @@ def _edit(self, mode, ship):
                 io.echo("passenger")
                 ship.kind = "passenger"
             elif k == "M":
-                io.echo("carrier")
+                io.echo("millitary carrier")
                 ship.kind = "carrier"
+    return ship
 
 def editmanifest(self):
     # grain, serf, noble, cannon
@@ -197,3 +201,6 @@ def getship(args, name, **kw):
     ship.navigator = res["navigator"]
     
     return ship
+
+def runmodule(args, modulename, **kw):
+    return empyre.runmodule(args, f"ship.{modulename}", **kw)
