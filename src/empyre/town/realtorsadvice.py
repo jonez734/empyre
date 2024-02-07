@@ -23,10 +23,19 @@ def main(args, player, **kwargs):
     # all of these are ints
 #    lib.trade(args, player, "shipyards", "shipyards", 2500+player.shipyards//2, "shipyard", "shipyards", "a")
 #    lib.trade(args, player, "ships", "ships", 5000, "ship", "ships", "a", ":anchor:")
-    empyre.trade(args, player, "foundries", "foundries", 2000+player.foundries//2, "foundry", "foundries", "a")
-    empyre.trade(args, player, "mills", "mills", 500+player.mills//2, "mill", "mills", "a")
-    empyre.trade(args, player, "markets", "markets", 250+player.markets//2, "market", "markets", "a")
+    res = player.getresource("foundries")
+    res["price"] = 2000+player.foundries//2
+    empyre.trade(args, player, **res) # "foundries", "foundries", 2000+player.foundries//2, "foundry", "foundries", "a")
+
+    res = player.getresource("mills")
+    res["price"] = 500+player.mills//2
+    empyre.trade(args, player, "mills", **res) # "mills", 500+player.mills//2, "mill", "mills", "a")
+
+    res = player.getresource("markets")
+    res["price"] = 250+player.markets//2
+    empyre.trade(args, player, "markets", **res) # "markets", 250+player.markets//2, "market", "markets", "a")
     
+    player.adjust()
     player.save()
 
     return
