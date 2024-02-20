@@ -1,12 +1,13 @@
 -- @since 20230824
 create table if not exists empyre.__ship (
-    "name" text unique not null primary key,
-    "playerid" bigint constraint fk_empyre_ship_playerid references empyre.__player(id) on update cascade on delete set null,
+    "moniker" text unique not null primary key,
+    "playermoniker" text constraint fk_empyre_ship_playermoniker references empyre.__player(moniker) on update cascade on delete set null,
     "location" text,
     "status" text,
     "manifest" jsonb,
     "navigator" boolean,
-    "kind" text, # @ty tmovacik "cargo" first, then "passengers" (dad)
+    "kind" text, --# @ty tmovacik "cargo" first, then "passengers" (dad)
+    "datedocked" timestamptz,
     "datecreated" timestamptz,
     "createdbyid" bigint constraint fk_empyre_ship_createdbyid references engine.__member(id) on update cascade on delete set null,
     "dateupdated" timestamptz,
@@ -16,10 +17,12 @@ create table if not exists empyre.__ship (
 -- @since 20230716
 create or replace view empyre.ship as
     select
-        s.*,
-        player.moniker as playermoniker
-    from empyre.__ship as s
-    left join empyre.__player as player on (player.id = s.playerid)
+        ship.*,
+        timezone(member.tz, datedocked) as datedockedlocal
+--        player.moniker as playermoniker
+    from empyre.__ship as ship
+    left join empyre.__player as player on (player.moniker = ship.playermoniker)
+    left join engine.__member as member on (player.moniker = ship.playermoniker and player.memberid = member.id)
 ;
 
 grant select on empyre.ship to :web, :bbs;
