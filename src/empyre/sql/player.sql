@@ -13,12 +13,14 @@ create table if not exists empyre.__player (
     "combatvictorycount" bigint,
     "coins" bigint,
     "beheaded" boolean,
+    "taxrate" bigint,
     "resources" jsonb
 );
 
 create or replace view empyre.player as
     select
-        p.*
+        p.*,
+        timezone(m.tz, datelastplayed) as datelastplayedlocal
     from empyre.__player as p
     left outer join engine.__member as m on (m.id = p.memberid)
 ;
