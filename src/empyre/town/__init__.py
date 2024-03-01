@@ -3,7 +3,6 @@
 from bbsengine6 import io, util
 
 from . import lib
-#from .. import module
 
 def init(args, **kw):
     return True
