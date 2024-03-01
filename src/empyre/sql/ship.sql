@@ -9,9 +9,9 @@ create table if not exists empyre.__ship (
     "kind" text, --# @ty tmovacik "cargo" first, then "passengers" (dad)
     "datedocked" timestamptz,
     "datecreated" timestamptz,
-    "createdbyid" bigint constraint fk_empyre_ship_createdbyid references engine.__member(id) on update cascade on delete set null,
+    "createdbymoniker" bigint constraint fk_empyre_ship_createdbyid references engine.__member(moniker) on update cascade on delete set null,
     "dateupdated" timestamptz,
-    "updatedbyid" bigint constraint fk_empyre_ship_updatedbyid references engine.__member(id) on update cascade on delete set null
+    "updatedbymoniker" bigint constraint fk_empyre_ship_updatedbyid references engine.__member(moniker) on update cascade on delete set null
 );
 
 -- @since 20230716
