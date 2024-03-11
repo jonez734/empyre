@@ -14,16 +14,4 @@ create table if not exists empyre.__ship (
     "updatedbymoniker" bigint constraint fk_empyre_ship_updatedbyid references engine.__member(moniker) on update cascade on delete set null
 );
 
--- @since 20230716
-create or replace view empyre.ship as
-    select
-        ship.*,
-        timezone(member.tz, datedocked) as datedockedlocal
---        player.moniker as playermoniker
-    from empyre.__ship as ship
-    left join empyre.__player as player on (player.moniker = ship.playermoniker)
-    left join engine.__member as member on (player.moniker = ship.playermoniker and player.memberid = member.id)
-;
-
-grant select on empyre.ship to :web, :bbs;
 grant all on empyre.__ship to :bbs;
