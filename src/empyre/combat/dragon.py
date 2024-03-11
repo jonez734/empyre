@@ -1,55 +1,79 @@
+from bbsengine6 import io, util
+
 def init(args, **kw):
     return True
+
+def access(args, op, **kw):
+    return True
+
+def buildargs(args, **kw):
+    return None
 
 def main(args, **kw):
     player = kw["player"] if "player" in kw else None
     if player is None:
-        ttyio.echo("you do not exist! go away!")
+        io.echo("you do not exist! go away!")
         return False
+
+    otherplayer = kw["otherplayer"] if "otherplayer" in kw else None
+
+#    player.adjust()
+#    player.save()
 
     if player.dragons < 0:
         player.dragons = 0
         return True
 
-        ttyio.echo("You do not have any dragons.")
+    if player.dragons == 0:
+        io.echo("You do not have any dragons.")
         return True
 
-    ttyio.echo("You have %s" % (bbsengine.pluralize(player.dragons, "dragon", "dragons")))
+    dragonsres = player.getresource("dragons")
+    io.echo(f"{{var:labelcolor}}You have {{var:valuecolor}}{util.pluralize(player.dragons, **dragonres)}")
     if player.dragons > 0:
-        if ttyio.inputboolean("Unleash a dragon? [yN]: ", "N") is False:
+        if io.inputboolean("{var:promptcolor}Unleash a dragon? {var:optioncolor}[yN]{var:promptcolor}: {var:inputcolor}", "N") is False:
             return True
 
-    foo = []
+    damages = []
     n = otherplayer.grain//10
-    x = bbsengine.diceroll(n)
+    x = util.diceroll(n)
     if x > 0:
         otherplayer.grain -= x
-        foo.append(":crop: %s of grain baked" % (bbsengine.pluralize(x, "bushel", "bushels")))
+        res = player.getresource("grain")
+        damages.append("baked {} of grain".format(util.pluralize(x, **res)))
 
     n = otherplayer.serfs//10
-    x = bbsengine.diceroll(n)
+    x = util.diceroll(n)
     if x > 0:
         otherplayer.serfs -= x
-        foo.append("%s BBQ'd" % (bbsengine.pluralize(x, "serf", "serfs")))
+        res = player.getresource("serfs")
+        damages.append("BBQ'd {}".format(util.pluralize(x, **res)))
 
     n = otherplayer.horses//10
-    x = bbsengine.diceroll(n)
+    x = util.diceroll(n)
     if x > 0:
         otherplayer.horses -= x
-        foo.append(":horse: %s roasted" % (bbsengine.pluralize(x, "horse", "horses")))
+        res = player.getresource("horses")
+        damages.append("roasted {}".format(util.pluralize(x, **res)))
     n = otherplayer.acres//10
-    x = bbsengine.diceroll(n)
+    x = util.diceroll(n)
     if x > 0:
         otherplayer.acres -= x
-        foo.append("%s incinerated" % (bbsengine.pluralize(x, "acre", "acres")))
+        res = player.getresource("land")
+        damages.append("incinerated {}".format(util.pluralize(x, **res)))
 
-    if bbsengine.diceroll(40) < 21 and player.dragons > 0:
-        player.dragons -= 1
-        if player.dragons == 0:
-            foo.append("your last dragon was killed!")
-        else:
-            foo.append("a dragon was killed!")
-    ttyio.echo(bbsengine.oxfordcomma(foo))
+#    if util.diceroll(40) < 21 and player.dragons > 0:
+#        player.dragons -= 1
+#        if player.dragons == 0:
+#            io.echo("Your last dragon was killed!")
+#        else:
+#            io.echo("One of your dragons was killed!")
+
+    if len(damages) == 0:
+        io.echo(f"{{var:labelcolor}}Your dragon *did not* damage the empyre of {{var:valuecolor}}{otherplayer.moniker}{{var:normalcolor}}")
+        return True
+
+    io.echo(f"Your dragon {util.oxfordcomma(damages)}")
     player.adjust()
     player.save()
     otherplayer.adjust()

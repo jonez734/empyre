@@ -1,7 +1,6 @@
 import random
 
-import ttyio6 as ttyio
-import bbsengine6 as bbsengine
+from bbsengine6 import io, util
 
 def init(args, **kw):
     return True
@@ -9,20 +8,23 @@ def init(args, **kw):
 def access(args, op, **kw):
     return True
 
+def buildargs(args, **kw):
+    return None
+
 # @see https://github.com/Pinacolada64/ImageBBS/blob/e9f033af1f0b341d0d435ee23def7120821c3960/v1.2/games/empire6/plus_emp6_combat.lbl#L74
-def main(args, player, **kw):
-#    player = kw["player"] if "player" in kw else None
+def main(args, **kw):
+    player = kw["player"] if "player" in kw else None
     if player is None:
-        ttyio.echo("You do not exist! Go Away!")
-        return
+        io.echo("You do not exist! Go Away!")
+        return False
 
     otherplayer = kw["otherplayer"] if "otherplayer" in kw else None
     if otherplayer is None:
-        ttyio.echo("Your oponent does not exist!")
-        return True
+        io.echo("Your oponent does not exist!")
+        return False
 
     def update():
-        ttyio.echo("%s: %s %s: %s" % (player.name, bbsengine.pluralize(player.soldiers, "soldier", "soldiers"), otherplayer.name, bbsengine.pluralize(otherplayer.soldiers, "soldier", "soldiers")))
+        io.echo("%s: %s %s: %s" % (player.moniker, util.pluralize(player.soldiers, "soldier", "soldiers"), otherplayer.moniker, util.pluralize(otherplayer.soldiers, "soldier", "soldiers")))
         return
 
     ff = 1
@@ -40,25 +42,25 @@ def main(args, player, **kw):
     sr = otherplayer.soldiers
     sg = player.soldiers
 
-    loop = True
-    while loop:
+    done = False
+    while not done:
         if a == 5:
             a = 0
-            ttyio.echo("%s: %s   %s: %s" % (player.name, bbsengine.pluralize(player.soldiers, "soldier", "soldiers"), otherplayer.name, bbsengine.pluralize(otherplayer.soldiers, "soldier", "soldiers")))
-
+            res = player.getresource("soldiers")
+            io.echo("%s: %s   %s: %s" % (player.moniker, util.pluralize(player.soldiers, **res), otherplayer.moniker, util.pluralize(otherplayer.soldiers, **res)))
         a += 1
 
         if player.soldiers < 1:
             player.soldiers = 0
-            ttyio.echo("You have no soldiers!")
+            io.echo("You have no soldiers!")
             break
 
         if otherplayer.soldiers < 1:
             otherplayer.soldiers = 0
-            ttyio.echo("Your opponent has no soldiers!")
+            io.echo("Your opponent has no soldiers!")
             break
 
-        wz = int(player.soldiers * 0.08) # 8%
+        wz = int(player.soldiers * 0.08) # 8% of total
         ed = int(otherplayer.soldiers * 0.08)
         # z9 == player.training, og == otherplayer.training, and ez == otherplayer.land
         # if (rnd(1)*wz)+(rnd(1)*(300+z9*5)) > (rnd(1)*ed)+(rnd(1)*(300+og*5)) then {:combat_90} # what are "z9" and "og"?
@@ -73,7 +75,7 @@ def main(args, player, **kw):
             # at this point, either otherplayer.soldiers == 0 or b2 == 0
             bn = 1 # when > 0, shows player attributes
             if player.soldiers > random.randint(0, otherplayer.land):
-                ttyio.echo("You conquered their land!")
+                io.echo("You conquered their land!")
                 player.land += otherplayer.land
                 otherplayer.land = 0
                 break

@@ -1,51 +1,59 @@
+from bbsengine6 import io, util
+
+from .. import lib as libempyre
+
 def init(args, **kw):
     return True
 
 def access(args, op, **kw):
     return True
 
+def buildargs(args, **kw):
+    return None
+
 # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_tourney.lbl#L2
 def main(args, **kw):
     player = kw["player"] if "player" in kw else None
     otherplayer = kw["otherplayer"] if "otherplayer" in kw else None
     if player.playerid == otherplayer.playerid:
-        ttyio.echo("You cannot joust against yourself! Big mistake!")
-        loss = bbsengine.diceroll(player.land//2)
+        io.echo("You cannot joust against yourself! Big mistake!")
+        loss = util.diceroll(player.land//2)
         player.land -= loss
-        ttyio.echo("You lost %s." % (bbsengine.pluralize(loss, "acre", "acres")))
+        res = player.getresource("land")
+        io.echo("You lost %s." % (util.pluralize(loss, **res)))
         return True
 
-    lib.setarea(args, player, "joust")
+    libempyre.setarea(args, "joust", player=player)
 
-    ttyio.echo("joust.100: otherplayer=%r" % (otherplayer), level="debug")
+    io.echo(f"joust.100: {otherplayer=}", level="debug")
 
     if player.horses == 0:
-        ttyio.echo("You do not have a :horse: horse for your noble to use!")
+        io.echo("You do not have a :horse: horse for your noble to use!")
         return True
 
     if player.serfs < 900:
-        ttyio.echo("Not enough serfs attend. The joust is cancelled.")
+        io.echo("Not enough serfs attend. The joust is cancelled.")
         return True
 
     if otherplayer is None or otherplayer.nobles < 2:
-        ttyio.echo("Your opponent does not have enough nobles.")
+        io.echo("Your opponent does not have enough nobles.")
         return True
 
-    ttyio.echo("{f6:2}Your Noble mounts his mighty steed and aims his lance... ", end="")
+    io.echo("{f6:2}Your Noble mounts his mighty steed and aims his lance... ")
     # @see https://github.com/Pinacolada64/ImageBBS/blob/e9f033af1f0b341d0d435ee23def7120821c3960/v1.2/games/empire6/plus_emp6_tourney.lbl#L12
     if player.nobles > otherplayer.nobles*2:
         # player.joustwin = True # nj=1
         player.nobles += 1
         otherplayer.nobles -= 1
-        ttyio.echo("Your noble's lance knocks their opponent to the ground. They get up and swear loyalty to you!")
+        io.echo("Your noble's lance knocks their opponent to the ground. They get up and swear loyalty to you!")
         # if nj=1 then tt$="{gray1}"+d2$+"{lt. blue}"+na$+"{white} wins joust - {lt. blue}"+en$+"{white} is shamed."
-        lib.newsentry(args, player, "{lightblue}%s{white} wins joust - {lightblue}%s{white} is shamed" % (player.name, otherplayer.name))
+        libempyre.newsentry(args, f"{{lightblue}}{player.moniker}{{white}} wins joust - {{lightblue}}{otherplayer.moniker}{{white}} is shamed", player=player)
         return True
 
     lost = []
     gained = []
     x = bbsengine.diceroll(10)
-    ttyio.echo("x=%r" % (x), level="debug")
+    io.echo(f"{x=}", level="debug")
     if x == 1:
         player.land += 100
         gained.append("100 acres")
@@ -57,11 +65,11 @@ def main(args, **kw):
             lost.append("100 acres")
     elif x == 3:
         player.coins += 1000
-        gained.append(bbsengine.pluralize(1000, "coin", "coins"))
+        gained.append("1000 coins")
     elif x == 4:
         if player.coins >= 1000:
             player.coins -= 1000
-            lost.append(bbsengine.pluralize(1000, "coin", "coins"))
+            lost.append("1000 coins")
     elif x == 5:
         player.nobles += 1
         gained.append("1 noble")
@@ -75,11 +83,11 @@ def main(args, **kw):
                 lost.append("1 noble")
     elif x == 7:
         player.grain += 7000
-        gained.append(bbsengine.pluralize(7000, "bushel", "bushels"))
+        gained.append("7000 bushels")
     elif x == 8:
         if player.grain >= 7000:
             player.grain -= 7000
-            lost.append(bbsengine.pluralize(7000, "bushel", "bushels"))
+            lost.append("7000 bushels")
     elif x == 9:
         player.shipyards += 1
         gained.append("1 shipyard")
@@ -95,15 +103,17 @@ def main(args, **kw):
     
     res = []
     if len(lost) > 0:
-        res.append("lost " + bbsengine.oxfordcomma(lost))
+        res.append("lost " + util.oxfordcomma(lost))
     if len(gained) > 0:
-        res.append("gained " + bbsengine.oxfordcomma(gained))
+        res.append("gained " + util.oxfordcomma(gained))
     
     if len(res) > 0:
-        ttyio.echo("You have %s" % (bbsengine.oxfordcomma(res)))
+        io.echo("You have %s" % (util.oxfordcomma(res)))
 
+    player.adjust()
     player.save()
 
+    otherplayer.adjust()
     otherplayer.save()
     
     return True
