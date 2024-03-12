@@ -41,20 +41,21 @@ def main(args, **kw):
     #otherplayer.status()
     #otherplayer.dbh.commit()
 
-    libempyre.setarea(args, player, "combat - attack whom?")
+    libempyre.setarea(args, player, "combat: select opponent")
 
-    otherplayername = libempyre.inputplayername("Attack Whom? >> ", multiple=False, noneok=True, args=args) # , verify=verifyOpponent)
-    if otherplayername is None:
+    otherplayer = libempyre.selectplayer(args, title="select opponent", prompt="opponent: ")
+    #libempyre.inputplayername("Attack Whom? >> ", multiple=False, noneok=True, args=args) # , verify=verifyOpponent)
+    if otherplayer is None:
         io.echo("no attack.", level="info")
         return
 
-    otherplayerid = libempyre.getplayerid(args, otherplayername)
+#    otherplayerid = libempyre.getplayerid(args, otherplayername)
 
-    otherplayer = libempyre.Player(args)
-    otherplayer.load(otherplayerid)
-    if otherplayer is None:
-        io.echo("invalid player id. aborted.", level="error")
-        return False
+#    otherplayer = libempyre.Player(args)
+#    otherplayer.load(otherplayerid)
+#    if otherplayer is None:
+#        io.echo("invalid player id. aborted.", level="error")
+#        return False
 
     help()
 
