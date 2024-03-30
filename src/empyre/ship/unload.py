@@ -1,36 +1,76 @@
-from bbsengine6 import io
+from bbsengine6 import io, database
 
-def main(self):
-    if "grain" not in self.manifest:
-        io.echo("You do not have any grain on board")
-        self.manifest["grain"] = 0
-        io.echo("aborted.")
+from . import lib
+
+def init(args, **kw):
+    return True
+
+def access(args, op, **kw):
+    return True
+
+def buildargs(args=None, **kw):
+    return None
+
+def main(args, **kw):
+    player = kw["player"] if "player" in kw else None
+    ship = kw["ship"] if "ship" in kw else None
+
+    io.echo("unload")
+    if args.debug is True:
+        io.echo(f"{player=} {ship=}", level="debug")
+    op = lib.selectmanifestitem(args, **kw)
+    if args.debug is True:
+        io.echo(f"{op=}", level="debug")
+    if op.kind == "exit":
         return True
 
-    amount = io.inputinteger(f"{{var:promptcolor}}unload amount of grain: {{var:inputcolor}}", self.player.grain)
-    if amount is None:
-        io.echo("aborted.")
+    resourcename = op.listitem.pk
+    playerres = player.getresource(resourcename)
+    manifestentry = ship.getmanifestentry(resourcename)
+    if type(manifestentry) is int:
+        manifestentry = {"quantity":manifestentry}
+    manifestentryvalue = manifestentry["quantity"]
+
+    playerattr = getattr(player, resourcename)
+
+    io.echo(f"{resourcename=}", level="debug")
+    if resourcename not in ship.manifest:
+        io.echo(f"You do not have any {resourcename} on board.")
+        ship.manifest[resourcename] = {"quantity":0}
         return True
 
+    amount = io.inputinteger(f"{{promptcolor}}unload amount of {resourcename}: {{inputcolor}}", manifestentry["quantity"])
     if amount is None or amount == 0:
         io.echo("aborted.")
         return True
-        
+
     if amount < 0:
         io.echo("Must specify an amount greater than zero.")
-    elif amount > self.manifest["grain"]:
-        io.echo("You only have {} of grain on board.".format(util.pluralize(amount - self.player.grain, "bushel", "bushels", emoji=":crop:")))
+        return True
+    elif amount > manifestentryvalue:
+        io.echo("This ship has {util.pluralize(manifestentryvalue, **playerres)}")
+        return True
+
     else:
-        if self.manifest["grain"] < 0:
-            self.manifest["grain"] = 0
-        if "grain" in self.manifest:
-            self.manifest["grain"] -= amount
+        if manifestentryvalue < 0:
+            manifestentryvalue = 0
+
+        if amount > manifestentryvalue:
+            io.echo("You only have {util.pluralize(amount, **playerres)} on board.")
+            return True
+
+        if resourcename in ship.manifest:
+            manifestentry["quantity"] -= amount
         else:
-            self.manifest["grain"] = 0
+            manifestentry["quantity"] = 0
 
-        player.grain += amount
+        playerattr += amount
+        setattr(player, resourcename, playerattr)
 
-        self.player.adjust()
-        self.player.save()
-        self.adjust()
-        self.update()
+        ship.manifest[resourcename] = manifestentry
+
+    player.adjust()
+    player.save()
+    ship.adjust()
+    ship.save()
+    return True

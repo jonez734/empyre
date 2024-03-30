@@ -1,16 +1,13 @@
-from .. import lib as empyre
+from . import lib
 
-def init(args, **kw):
+def init(args, **kw:dict) -> bool:
     return True
 
-def access(args, op, **kw):
+def access(args, op:str, **kw:dict) -> bool:
     return True
 
-def buildargs(args, **kw):
+def buildargs(args, **kw:dict):
     return None
 
-def runmodule(args, modulename, **kw):
-    return empyre.runmodule(args, f"ship.{modulename}", **kw)
-
 def main(args, **kw):
-    empyre.runmodule(args, "ship.main", **kw)
+    return lib.runmodule(args, "main", **kw)
