@@ -256,7 +256,7 @@ def selectship(args, **kw):
             self.rec = rec
             self.width = width
             self.player = player
-            
+
         def help(self):
             io.echo("use KEY_ENTER to select one of your ships")
             return
