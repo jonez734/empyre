@@ -85,25 +85,36 @@ def main(args, **kw):
         givenpeople = 0
         armygiven = 0
         # goto no_grain
+
     if givenpeople > grain:
-        io.echo("You only have {} to give to your people.".format(util.pluralize(grain, "bushel", "bushels", emoji=":crop:")))
+        grnres = player.getresource("grain")
+        io.echo("You only have {} to give to your people.".format(util.pluralize(grain, **grnres)))
 
+    serfsstarved = 0 # j
+    newbornserfs  = int(random.random()*(player.serfs//12)+10) # z(3)
+    naturaldeaths = int(random.random()*(player.serfs//10)+30) # z(1)
+    immigration = int(random.random()*(player.serfs//15)+10) # z(5)=int(rnd(1)*(x(19)/15)+10)
 
-    io.echo(f"{{var:labelcolor}}CENSUS - {util.pluralize(player.serfs, 'serf', 'serf')}")
-    io.echo(f"{{var:labelcolor}}EXPENSES - {{var:valuecolor}}{payables:>6n}{{var:normalcolor}}")
+    srf = player.getresource("serfs")
+    io.echo(f"{{labelcolor}}CENSUS   - {util.pluralize(player.serfs, **srf)}")
+    io.echo(f"{{labelcolor}}  Serfs Starved  {{valuecolor}}{serfsstarved:>6n}")
+    io.echo(f"{{labelcolor}}  Newborn Serfs  {{valuecolor}}{newbornserfs:>6n}")
+    io.echo(f"{{labelcolor}}  Natural Deaths {{valuecolor}}{naturaldeaths:>6n}")
+    io.echo(f"{{labelcolor}}  Immigration    {{valuecolor}}{immigration:>6n}")
+    io.echo(f"{{labelcolor}}EXPENSES - {{valuecolor}}{payables:>6n}{{normalcolor}}")
     io.echo()
-    io.echo(f"{{var:labelcolor}} Soldier's Pay:  {soldierpay:>6n}") # % ("{:>6n}".format(soldierpay)))
-    io.echo(f"{{var:labelcolor}} Palace Rent:    {palacerent:>6n}") # %s" % ("{:>6n}".format(palacerent)))
-    io.echo(f"{{var:labelcolor}} Noble's Gifts:  {noblegifts:>6n}") # % ("{:>6n}".format(noblegifts)))
+    io.echo(f"{{labelcolor}} Soldier's Pay:  {{valuecolor}}{soldierpay:>6n}") # % ("{:>6n}".format(soldierpay)))
+    io.echo(f"{{labelcolor}} Palace Rent:    {{valuecolor}}{palacerent:>6n}") # %s" % ("{:>6n}".format(palacerent)))
+    io.echo(f"{{labelcolor}} Noble's Gifts:  {{valuecolor}}{noblegifts:>6n}") # % ("{:>6n}".format(noblegifts)))
     io.echo()
 
-    io.echo(f"{{var:labelcolor}}INCOME --- {{var:valuecolor}}{receivables:>6n}{{var:normalcolor}}")
+    io.echo(f"{{labelcolor}}INCOME --- {{valuecolor}}{receivables:>6n}{{normalcolor}}")
     io.echo()
-    io.echo(f"{{var:labelcolor}} Markets:        {{var:valuecolor}}{p2:>6n}") # % ("{:>6n}".format(p2))) # p2 markets
-    io.echo(f"{{var:labelcolor}} Mills:          {{var:valuecolor}}{p3:>6n}") # % ("{:>6n}".format(p3))) # p3 mills
-    io.echo(f"{{var:labelcolor}} Foundries:      {{var:valuecolor}}{p4:>6n}") # % ("{:>6n}".format(p4))) # p4 foundries
-    io.echo(f"{{var:labelcolor}} Shipyards:      {{var:valuecolor}}{p5:>6n}") # % ("{:>6n}".format(p5))) # p5 shipyards
-    io.echo(f"{{var:labelcolor}} Taxes:          {{var:valuecolor}}{taxes:>6n}") # % ("{:>6n}".format(taxes))) # tg/taxes
+    io.echo(f"{{labelcolor}} Markets:        {{valuecolor}}{p2:>6n}") # % ("{:>6n}".format(p2))) # p2 markets
+    io.echo(f"{{labelcolor}} Mills:          {{valuecolor}}{p3:>6n}") # % ("{:>6n}".format(p3))) # p3 mills
+    io.echo(f"{{labelcolor}} Foundries:      {{valuecolor}}{p4:>6n}") # % ("{:>6n}".format(p4))) # p4 foundries
+    io.echo(f"{{labelcolor}} Shipyards:      {{valuecolor}}{p5:>6n}") # % ("{:>6n}".format(p5))) # p5 shipyards
+    io.echo(f"{{labelcolor}} Taxes:          {{valuecolor}}{taxes:>6n}") # % ("{:>6n}".format(taxes))) # tg/taxes
     io.echo()
 
     if receivables == payables:
@@ -120,7 +131,7 @@ def main(args, **kw):
     rank = lib.calculaterank(args, player)
 
     if args.debug is True:
-        io.echo(f"player.rank={player.rank} rank={rank}", level="debug")
+        io.echo(f"{player.rank=} {rank=}", level="debug")
     # check for > player.rank, < player.rank and write entry to game log
     player.rank = rank
 
