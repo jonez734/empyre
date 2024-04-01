@@ -24,9 +24,11 @@ grant all on empyre.__colony to :bbs;
 create or replace view empyre.colony as
     select 
       c.*,
-      founder.moniker as foundermoniker
+      founder.moniker as foundermoniker,
+      timezone(currentmember.tz, c.datefounded) as datefoundedlocal
     from empyre.__colony as c
     left join empyre.__player as founder on (founder.id = c.founderid)
+    left join engine.__member as currentmember on (currentmember.loginid = current_user)
 ;
 
 grant select on empyre.colony to :bbs, :web;
