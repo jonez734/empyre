@@ -1,24 +1,19 @@
 create table if not exists empyre.__island (
     "name" text unique not null primary key,
-    "playermoniker" bigint constraint fk_empyre_island_playermoniker references empyre.__player(moniker) on update cascade on delete set null,
-    "resources" jsonb
+    "playermoniker" text constraint fk_empyre_island_playermoniker references empyre.__player(moniker) on update cascade on delete set null,
+    "resources" jsonb,
+    "datediscovered" timestamptz,
+    "discoveredbymoniker" text constraint fk_empyre_island_discoveredbymoniker references empyre.__player(moniker) on update cascade on delete set null
 );
+
+grant all on empyre.__island to :bbs;
 
 create or replace view empyre.island as
     select
-        i.*
+        i.*,
+        timezone(currentmember.tz, i.datediscovered) as datediscoveredlocal
     from empyre.__island as i
+    left join engine.__member as currentmember on (currentmember.loginid = current_user)
 ;
 
---create or replace view empyre.island as
---    select
---        b.*,
---        (attributes->>'memberid')::bigint as memberid,
---        (attributes->>'playerid')::bigint as playerid,
---        (attributes->>'timber')::bigint as timer
---    from engine.__blurb as b
---    where prg='empyre.island'
---;
-
---grant select on empyre.island to :bbs, :web;
-grant all on empyre.__island to :bbs;
+grant select on empyre.island to :bbs, :web;
