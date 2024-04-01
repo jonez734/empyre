@@ -20,9 +20,10 @@ create table if not exists empyre.__player (
 create or replace view empyre.player as
     select
         p.*,
-        timezone(m.tz, datelastplayed) as datelastplayedlocal
+        timezone(currentmember.tz, datelastplayed) as datelastplayedlocal,
+        timezone(currentmember.tz, datepromoted) as datepromotedlocal
     from empyre.__player as p
-    left outer join engine.__member as m on (m.id = p.memberid)
+    left outer join engine.__member as currentmember on (currentmember.loginid = CURRENT_USER)
 ;
 --create or replace view empyre.player as
 --    select
