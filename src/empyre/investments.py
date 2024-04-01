@@ -1,21 +1,21 @@
-import ttyio5 as ttyio
-import bbsengine5 as bbsengine
+from bbsengine6 import io, util
 
-from . import lib
+from . import lib as libempyre
 
-def init(args, **kw):
-    pass
+def buildinvestmentoptions(player):
+    if player is None:
+        io.echo("You do not exist! Go Away!", level="error")
+        return False
 
-def buildinvestmentoptions(args, player):
     investmentoptions = {}
     index = 0
-    for a in player.attributes:
+    for a in player.resources:
         if "price" in a and a["price"] > 0:
             investmentoptions[chr(65+index)] = a
             index += 1
     return investmentoptions
 
-def displayinvestmentoptions(investopts): # opts, player):
+def displayinvestmentoptions(investmentoptions): # opts, player):
     maxlen = 0
     for ch, a in investopts.items(): # player.attributes:
         name = a["name"] if "name" in a else ""
@@ -23,61 +23,74 @@ def displayinvestmentoptions(investopts): # opts, player):
             maxlen = len(name)
     
     # investopts = buildinvestopts(opts, player)
-    for ch, a in investopts.items():
+    for ch, a in investmentoptions.items():
         name = a["name"].title()
         price = a["price"]
-        buf = "{var:empyre.highlightcolor}[%s]{/all}{green} %s: %s " % (ch, name.ljust(maxlen+2, "-"), " {:>6n}".format(price)) # int(terminalwidth/4)-2)
-        ttyio.echo(buf)
+#        buf = "{var:empyre.highlightcolor}[%s]{/all}{green} %s: %s " % (ch, name.ljust(maxlen+2, "-"), " {:>6n}".format(price)) # int(terminalwidth/4)-2)
+        buf = f"{{optioncolor}}[{ch}]{{/all}}{{labelcolor}} {name.ljust(maxlen+2, '-')}: {{valuecolor}}{price:>6n} " # % (ch, name.ljust(maxlen+2, "-"), " {:>6n}".format(price))
+        io.echo(buf)
 
-    ttyio.echo("{f6}{var:empyre.highlightcolor}[Y]{/all}{green} Your stats{f6}{var:empyre.highlightcolor}[Q]{/all}{green} Quit{/all}")
+    io.echo("{f6}{optioncolor}[Y]{labelcolor} Your stats{f6}{optioncolor}[Q]{labelcolor} Quit{/all}")
 
     return
+
+def init(args, **kw):
+    return True
+
+def help(**kw:dict) -> None:
+    player = kw["player"] if "player" in kw else None
+    investmentoptions = buildinvestmentoptions(player)
+    return displayinvestmentoptions(investmentoptions)
+
+def access(args, op, **kw):
+    return True
+
+def buildargs(args, **kw):
+    return None
 
 def main(args, **kw):
     player = kw["player"] if "player" in kw else None
 
-    bbsengine.title("investments")
-    lib.setarea(args, player, "investments")
+    util.heading("investments")
 
-    terminalwidth = ttyio.getterminalwidth()
+    terminalwidth = io.getterminalwidth()
 
-    investopts = buildinvestmentoptions(args, player)
+    investmentoptions = buildinvestmentoptions(player)
 
     options = ""
-    for ch, a in investopts.items():
+    for ch, a in investmentoptions.items():
         options += ch
     options += "YQ?"
-    displayinvestmentoptions(investopts)
+
+    displayinvestmentoptions(investmentoptions)
 
     done = False
     while not done:
-        lib.setarea(args, player, "investments")
-        buf = "{cyan}:moneybag: %s{f6}" % (bbsengine.pluralize(player.coins, "coin", "coins"))
-        buf += "Investments [%s]: {lightgreen}" % (options)
-        ch = ttyio.inputchar(buf, options, "Q")
+        prompt = "{{promptcolor}}{util.pluralize(player.coins, 'coin', 'coins', emoji=':moneybag:')}{{f6}}Investments {{optioncolor}}[{options}]{{promptcolor}}: {{inputcolor}}"
+        ch = io.inputchar(prompt, options, "Q", help=help, args=args, player=player)
         if ch == "Q":
-            ttyio.echo("{lightgreen}Q{cyan} -- Quit")
+            io.echo(f"{{optioncolor}}Q{{labelcolor}} -- Quit")
             done = True
             continue
-        elif ch == "?":
-            ttyio.echo("{lightgreen}? -- {cyan}Help")
-            displayinvestmentoptions(investopts) # opts, player)
-            continue
+#        elif ch == "?":
+#            ttyio.echo("{lightgreen}? -- {cyan}Help")
+#            displayinvestmentoptions(investopts) # opts, player)
+#            continue
         elif ch == "Y":
-            ttyio.echo("{lightgreen}Y -- {cyan}Your Stats")
+            io.echo(f"{{optioncolor}}Y{{labelcolor}} -- Your Stats")
             player.status()
         else:
-            for opt, a in investopts.items():
+            for opt, r in investopts.items():
                 if ch == opt:
-                    name = a["name"]
-                    price = a["price"]
-                    attr = a["name"]
-                    singular = a["singular"] if "singular" in a else "singular"
-                    plural = a["plural"] if "plural" in a else "plural"
-                    ttyio.echo("{lightgreen}%s{green} -- {cyan}%s{/all} :moneybag: %s each" % (ch, name.title(), bbsengine.pluralize(price, "coin", "coins")))
+                    name = r["name"]
+                    price = r["price"]
+                    attr = r["name"]
+                    singular = r["singular"] if "singular" in r else "singular"
+                    plural = r["plural"] if "plural" in r else "plural"
+                    io.echo(f"{{optioncolor}}{ch}{{labelcolor}} -- {name.title()} {util.pluralize(price, 'coin', 'coins', emoji=':moneybag:')} each")
                     trade(args, player, attr, name, price, singular, plural)
                     break
             else:
-                ttyio.echo("{lightgreen}%r -- {cyan}not implemented yet" % (ch))
+                io.echo("{optioncolor}%r{labelcolor} -- not implemented yet" % (ch))
                 continue
     return True
