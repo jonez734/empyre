@@ -1146,17 +1146,17 @@ def selectresource(args, title, resources, kind=None, **kw):
     class EmpyreResourceListboxItem(listbox.ListboxItem):
         def __init__(self, name:str, resource:dict, width:int, height:int=1, **kw:dict):
             super().__init__(self, resource, width)
-            self.pk = name
-            self.height = height
-            self.width = width
-            self.resource = resource
+            self.pk:str = name
+            self.height:int = height
+            self.width:int = width
+            self.resource:dict = resource
             value = resource["value"] if "value" in resource else None
-            left = f"{self.pk}"
+            left:str = f"{self.pk}"
 #            io.echo(f"{self.res=}", level="debug")
-            right = f"{value:>6n}" # {util.pluralize(value, **self.res)}"
-            rightlen = len(right)
-            self.label = f"{left.ljust(self.width-rightlen-10)}{right}" # %s%s {{/all}}{{var:acscolor}}{{acs:vline}}" % (left.ljust(width-rightlen-4), right)
-            
+            right:str = f"{value:>6n}" # {util.pluralize(value, **self.res)}"
+            rightlen:int = len(right)
+            self.label:str = f"{left.ljust(self.width-rightlen-10)}{right}" # %s%s {{/all}}{{var:acscolor}}{{acs:vline}}" % (left.ljust(width-rightlen-4), right)
+
         def display(self):
             io.echo(f"{{/all}}{{cha}} {{engine.menu.cursorcolor}}{{engine.menu.color}} {{engine.menu.boxcharcolor}}{{acs:vline}}{{cic}} {self.label.ljust(self.width-9, ' ')} {{/all}}{{engine.menu.boxcharcolor}}{{acs:vline}}{{engine.menu.shadowcolor}} {{engine.menu.color}} {{/all}}{{cha}}", end="", flush=True)
             return None
@@ -1167,9 +1167,9 @@ def selectresource(args, title, resources, kind=None, **kw):
             self.ship = kw["ship"] if "ship" in kw else None
             # self.itemclass = kw["itemclass"] if "itemclass" in kw else None
             self.pagesize = 10
-            self.terminalwidth = io.getterminalwidth()
-            self.title = title
-            self.resources = resources
+            self.terminalwidth:str = io.getterminalwidth()
+            self.title:str = title
+            self.resources:dict = resources
             self.filter = None
 
             self.data = []
@@ -1210,18 +1210,18 @@ def buildargs(args=None, **kw):
     parser.add_argument("--debug", action="store_true", dest="debug")
 
     defaults = {"databasename": "zoid6", "databasehost":"localhost", "databaseuser": None, "databaseport":5432, "databasepassword":None}
-    database.buildargdatabasegroup(parser, defaults)
+    database.buildargs(parser, defaults)
 
     return parser
 
 def checkmodule(args, modulename, **kw):
-    x = f"{PACKAGENAME}.{modulename}"
+    x:str = f"{PACKAGENAME}.{modulename}"
 #    if args.debug is True:
 #    io.echo(f"empyre.lib.checkmodule.100: {x=}", level="debug")
     return module.check(args, x, **kw)
 
-def runmodule(args, modulename, **kw):
-    x = f"{PACKAGENAME}.{modulename}"
+def runmodule(args, modulename:str, **kw:dict):
+    x:str = f"{PACKAGENAME}.{modulename}"
 
 #    io.echo(f"empyre.lib.runmodule.120: {x=} {modulename=}", level="debug")
 
@@ -1233,8 +1233,8 @@ def runmodule(args, modulename, **kw):
 
 # @since 20240414
 def countships(args, playermoniker:str=None):
-    sql = "select count(moniker) from empyre.ship where playermoniker=%s"
-    dat = (playermoniker,)
+    sql:str = "select count(moniker) from empyre.ship where playermoniker=%s"
+    dat:tuple = (playermoniker,)
     dbh = database.connect(args)
     cur = dbh.cursor()
     cur.execute(sql, dat)
