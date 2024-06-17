@@ -33,6 +33,7 @@ MAXFOUNDRIES:int = 400
 MAXMARKETS:int = 500
 MAXMILLS:int = 500
 MAXCOINS:int = 1000000
+MAXSHIPYARDS:int = 10
 
 class Weather(Enum):
     POOR:int = 1
@@ -73,18 +74,18 @@ class Player(object):
         self.moniker:str = None # member moniker by default
         self.memberid:int = member.getcurrentid(args)
         self.args = args
-        self.rank = 0
-        self.previousrank = 0
-        self.turncount = 0
-        self.soldierpromotioncount = 0
+        self.rank:int = 0
+        self.previousrank:int = 0
+        self.turncount:int = 0
+        self.soldierpromotioncount:int = 0
         self.datepromoted = None
-        self.combatvictorycount = 0
-        self.weatherconditions = 0
+        self.combatvictorycount:int = 0
+        self.weatherconditions:int = 0
         self.beheaded:bool = False
         self.datelastplayed = "now()"
-        self.coins = COINS
-        self.taxrate = TAXRATE
-        self.training = 1 # z9
+        self.coins:int = COINS
+        self.taxrate:int = TAXRATE
+        self.training:int = 1 # z9
         #self.acres = 5000 # la
         #self.soldiers = 20 # wa
 #        self.serfs = 2000+random.randint(0, 200) # sf
@@ -192,8 +193,8 @@ class Player(object):
         if self.args.debug is True:
             io.echo("player.load.100: playerid=%r" % (playerid), level="debug")
         dbh = database.connect(self.args)
-        sql = "select * from empyre.player where id=%s"
-        dat = (playerid,)
+        sql:str = "select * from empyre.player where id=%s"
+        dat:tuple = (playerid,)
         cur = dbh.cursor()
         cur.execute(sql, dat)
         rec = cur.fetchone()
@@ -215,17 +216,9 @@ class Player(object):
             if self.args.debug is True:
                 io.echo(f"{name=} {data=}")
             res = self.getresource(name)
-#            default = res["default"] if "default" in res else None
-            value = res["value"] if "value" in res else res["default"]
-#            if "value" in res:
-#                value = res["value"]
-#            else:
-#                value = default
+            default = res["default"] if "default" in res else None
+            value = res["value"] if "value" in res else default
             setattr(self, name, value)
-            # io.echo(f"{getattr(self, name)=}", level="debug")
-
-        # newsentry(self.args, self, f"player {self.moniker} loaded.")
-
         return True
 
     def update(self):
@@ -519,7 +512,7 @@ class Player(object):
         shipyardsres = self.getresource("shipyards")
         shipres = self.getresource("ship")
 
-        if self.shipyards > 10: # > 400
+        if self.shipyards > MAXSHIPYARDS: # > 400
             a = int(self.shipyards / 1.1)
             io.echo(f"{{labelcolor}}Your kingdom cannot support {{valuecolor}}{util.pluralize(self.shipyards, **shipres)}{labelcolor}! {{valuecolor}}{util.pluralize(self.shipyards, 'shipyard is', 'shipyards are', **shipyardsres)}{{labelcolor}} closed.{{/all}}")
             self.shipyards -= a
@@ -574,7 +567,7 @@ class Player(object):
             if a == 1:
                 io.echo(f"{{normalcolor}}The mill is overworked! {util.pluralize(a, 'The mill has a broken millstone and is closed', '', quantity=False, **millres)}")
             else:
-                io.echo(f"{{normalcolor}}The mills are overworked! {util.pluralize(a, '', 'mills have broken millstones and are closed', **millres)}
+                io.echo(f"{{normalcolor}}The mills are overworked! {util.pluralize(a, '', 'mills have broken millstones and are closed', **millres)}")
 #            io.echo("{green}The mills are overworked! {util.pluralize(a, 'mill has a broken millstone and is closed', 'mills have broken millstones and are closed', **millres)} and are closed.{/all}")
 
         if self.coins < 0:
@@ -605,6 +598,7 @@ class Player(object):
         if len(lost) > 0:
             io.echo(f"You have lost {util.oxfordcomma(lost)}")
 
+        self.previousrank = self.rank
         self.rank = calculaterank(self.args, self)
         # player.save()
 
@@ -665,8 +659,8 @@ class completePlayerName(object):
         dbh = database.connect(self.args)
 
         vocab = []
-        sql = "select name from empyre.player"
-        dat = ()
+        sql:str = "select name from empyre.player"
+        dat:tuple = ()
         cur = dbh.cursor()
         cur.execute(sql, dat)
         for rec in database.resultiter(cur):
@@ -674,27 +668,27 @@ class completePlayerName(object):
         results = [x for x in vocab if x.startswith(text)] + [None]
         return results[state]
 
-def verifyPlayerNameFound(name:str, **kwargs) -> bool:
+def verifyPlayerNameFound(name:str, **kwargs:dict) -> bool:
     args = kwargs["args"] if "args" in kwargs else Namespace()
 
     dbh = database.connect(args)
 
     cur = dbh.cursor()
-    sql = "select 1 from empyre.player where moniker=%s"
-    dat = (name,)
+    sql:str = "select 1 from empyre.player where moniker=%s"
+    dat:tuple = (name,)
     cur.execute(sql, dat)
     if cur.rowcount == 0:
         return False
     return True
 
-def verifyPlayerNameNotFound(moniker:str, **kwargs) -> bool:
+def verifyPlayerNameNotFound(moniker:str, **kwargs:dict) -> bool:
     args = kwargs["args"] if "args" in kwargs else Namespace()
 
     io.echo(f"verifyPlayerNameNotFound.120: {args=} {moniker=}", level="debug")
     dbh = database.connect(args)
     cur = dbh.cursor()
-    sql = "select 1 from empyre.player where moniker=%s"
-    dat = (moniker,)
+    sql:str = "select 1 from empyre.player where moniker=%s"
+    dat:tuple = (moniker,)
     cur.execute(sql, dat)
     io.echo(f"verifyPlayerNameNotFound.100: mogrify={cur.mogrify(sql, dat)}", level="debug")
     if cur.rowcount == 0:
@@ -707,19 +701,19 @@ def getplayerid(args:object, name:str) -> int:
 
     dbh = database.connect(args)
     cur = dbh.cursor()
-    sql = "select id from empyre.player where moniker=%s"
-    dat = (name,)
-    print("getplayerid.100: mogrify=%r" % (cur.mogrify(sql, dat)))
+    sql:str = "select id from empyre.player where moniker=%s"
+    dat:tuple = (name,)
+    io.echo("getplayerid.100: {cur.mogrify(sql, dat)=}")
     cur.execute(sql, dat)
     res = cur.fetchone()
     if cur.rowcount == 0:
         return None
     return res["id"]
 
-def inputplayername(prompt:str="player name: ", oldvalue:str="", **kw):
-    multiple = kw["multiple"] if "multiple" in kw else False
+def inputplayername(prompt:str="player name: ", oldvalue:str="", **kwargs:dict):
+    multiple:bool = kw["multiple"] if "multiple" in kw else False
     args = kw["args"] if "args" in kw else argparse.Namespace()
-    noneok = kw["noneok"] if "noneok" in kw else True
+    noneok:bool = kw["noneok"] if "noneok" in kw else True
     if "verify" in kw:
         verify = kw["verify"]
         del kw["verify"]
@@ -727,7 +721,7 @@ def inputplayername(prompt:str="player name: ", oldvalue:str="", **kw):
         verify = verifyPlayerNameFound
 
     name = io.inputstring(prompt, oldvalue, verify=verify, completer=completePlayerName(args), completerdelims="", **kw)
-    io.echo("inputplayername.160: name=%r" % (name), level="debug")
+    io.echo("inputplayername.160: {name=}", level="debug")
     return name
 #    playerid = getplayerid(args, name)
 #    ttyio.echo("inputplayername.140: name=%r, playerid=%r" % (name, playerid), level="debug")
@@ -1010,8 +1004,8 @@ def trade(args, player:object, attr:str, **kw:dict):
     return
 
 def getplayercount(args, memberid:int) -> int:
-    sql = "select count(moniker) from empyre.player where memberid=%s"
-    dat = (memberid,)
+    sql:str = "select count(moniker) from empyre.player where memberid=%s"
+    dat:tuple = (memberid,)
     dbh = database.connect(args)
     cur = dbh.cursor()
     cur.execute(sql, dat)
@@ -1026,21 +1020,21 @@ def selectplayer(args, title:str="select player", prompt:str="player: ", memberi
             super().__init__(self, width, height, **kw)
             self.player = Player(args)
             self.player.load(rec["id"])
-            self.height = 1
+            self.height:int = 1
 
             res = self.player.getresource("land")
             if "emoji" in res:
                 res["emoji"] = ""
-            left = f"{self.player.moniker}"
+            left:str = f"{self.player.moniker}"
             lastplayed = util.datestamp(self.player.datelastplayedlocal, format="%m/%d @ %I%M%P")
-            right = f"{util.pluralize(res['value'], **res)} {lastplayed}"
-            rightlen = len(right)
-            self.label = f"{left.ljust(width-rightlen-10)}{right}" # %s%s {{/all}}{{var:acscolor}}{{acs:vline}}" % (left.ljust(width-rightlen-4), right)
+            right:str = f"{util.pluralize(res['value'], **res)} {lastplayed}"
+            rightlen:int = len(right)
+            self.label:str = f"{left.ljust(width-rightlen-10)}{right}" # %s%s {{/all}}{{var:acscolor}}{{acs:vline}}" % (left.ljust(width-rightlen-4), right)
 
             self.status = ""
-            self.pk = self.player.moniker
-            self.rec = rec
-            self.width = width
+            self.pk:str = self.player.moniker
+            self.rec:dict = rec
+            self.width:int = width
         def help(self):
             io.echo("use KEY_ENTER to select one of your players")
             return
@@ -1068,8 +1062,8 @@ def selectplayer(args, title:str="select player", prompt:str="player: ", memberi
 
     if memberid is None:
         memberid = member.getcurrentid(args)
-    sql = "select id from empyre.player where memberid=%s order by datelastplayed desc"
-    dat = (memberid,)
+    sql:str = "select id from empyre.player where memberid=%s order by datelastplayed desc"
+    dat:tuple = (memberid,)
     dbh = database.connect(args)
     cur = dbh.cursor()
     if args.debug is True:
@@ -1089,8 +1083,8 @@ def selectplayer(args, title:str="select player", prompt:str="player: ", memberi
 
 def getplayer(args, memberid:int):
     io.echo(f"getplayer.100: {memberid=}", level="debug")
-    sql = "select * from empyre.player where memberid=%s"
-    dat = (memberid,)
+    sql:str = "select * from empyre.player where memberid=%s"
+    dat:tuple = (memberid,)
     dbh = database.connect(args)
     cur = dbh.cursor()
     cur.execute(sql, dat)
@@ -1166,7 +1160,7 @@ def selectresource(args, title, resources, kind=None, **kw):
             self.player = kw["player"] if "player" in kw else None
             self.ship = kw["ship"] if "ship" in kw else None
             # self.itemclass = kw["itemclass"] if "itemclass" in kw else None
-            self.pagesize = 10
+            self.pagesize:int = 10
             self.terminalwidth:str = io.getterminalwidth()
             self.title:str = title
             self.resources:dict = resources
@@ -1185,14 +1179,14 @@ def selectresource(args, title, resources, kind=None, **kw):
             super().__init__(args, title=self.title, data=self.data, pagesize=self.pagesize, itemclass=EmpyreResourceListboxItem, totalitems=len(self.data))
 
         def fetchpage(self):
-            self.items = []
-            n = self.page*self.pagesize
-            upper = self.pagesize+n
+            self.items:list = []
+            n:int = self.page*self.pagesize
+            upper:int = self.pagesize+n
             if upper > self.totalitems:
-                upper = self.totalitems
+                upper:int = self.totalitems
             for x in range(n, upper):
                 self.items.append(self.data[x])
-            self.numitems = len(self.items) # number of items on the page in case it doesn't equal pagesize
+            self.numitems:int = len(self.items) # number of items on the page in case it doesn't equal pagesize
             return self.items
 
     player = kw["player"] if "player" in kw else None
@@ -1204,7 +1198,7 @@ def init(args, **kw):
     io.setvar("empyre.highlightcolor", "{highlightcolor}")
     return True
 
-def buildargs(args=None, **kw):
+def buildargs(args=None, **kw:dict):
     parser = argparse.ArgumentParser("empyre")
     parser.add_argument("--verbose", action="store_true", dest="verbose")
     parser.add_argument("--debug", action="store_true", dest="debug")
@@ -1214,7 +1208,7 @@ def buildargs(args=None, **kw):
 
     return parser
 
-def checkmodule(args, modulename, **kw):
+def checkmodule(args, modulename:str, **kw:dict):
     x:str = f"{PACKAGENAME}.{modulename}"
 #    if args.debug is True:
 #    io.echo(f"empyre.lib.checkmodule.100: {x=}", level="debug")
