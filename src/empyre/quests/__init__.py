@@ -1,7 +1,6 @@
-import ttyio6 as ttyio
-import bbsengine6 as bbsengine
+from bbsengine6 import io
 
-from . import module
+from .. import lib as libempyre
 
 def init(args, **kw):
     return True
@@ -13,4 +12,4 @@ def buildargs(args, **kw):
     return None
 
 def main(args, **kw):
-    return module.runsubmodule(args, "main", **kw)
+    return libempyre.runmodule(args, "main", **kw)
