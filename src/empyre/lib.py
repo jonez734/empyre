@@ -105,7 +105,7 @@ class Player(object):
         # @see https://github.com/Pinacolada64/ImageBBS/blob/e9f033af1f0b341d0d435ee23def7120821c3960/v1.2/games/empire6/mdl.emp.delx2.txt#L25
         currentmoniker = member.getcurrentmoniker(args)
         self.resources = {
-            "coins":      {"type": "int",  "default":COINS, "price":0, "singular": "coin", "plural":"coins", "emoji":":moneybag:", "ship":None},
+            "coins":      {"type": "int",  "default":COINS, "price":1, "singular": "coin", "plural":"coins", "emoji":":moneybag:", "ship":None},
             "serfs":      {"type": "int",  "default":SERFS+random.randint(0, 200), "singular": "serf", "plural": "serfs", "ship":"passenger", "emoji":":person:"}, # sf x(19)
             "land":       {"type": "int",  "default":LAND, "singular":"acre", "plural":"acres", "determiner":"an", "ship":None, "emoji":":farmer:"}, # la x(2)
             "grain":      {"type": "int",  "default":GRAIN, "singular": "bushel", "plural": "bushels", "emoji":":crop:", "ship":"cargo"}, # gr
@@ -123,13 +123,14 @@ class Player(object):
             "colonies":   {"type": "int",  "default":0, "ship":None, "singular": "colony", "plural":"colonies"}, # i8
 #            "warriors":   {"type": "int",  "default":0, "singular":"warrior", "plural":"warriors", "ship":"millitary passenger"}, # wa soldier -> warrior or noble?
             "spices":     {"type": "int",  "default":0, "singular":"ton", "plural":"tons", "ship":"cargo"}, # x(25)
-            "cannons":    {"type": "int",  "default":0, "singular":"cannon", "plural":"cannons","ship":"millitary"}, # x(14)
+            "cannons":    {"type": "int",  "default":0, "singular":"cannon", "plural":"cannons","ship":"any"}, # x(14)
             "forts":      {"type": "int",  "default":0, "singular":"fort", "plural":"forts", "ship":None}, # x(13)
             "dragons":    {"type": "int",  "default":0, "singular":"dragon", "plural":"dragons", "emoji":":dragon:"},
             "horses":     {"type": "int",  "default":50,"emoji":":horse:", "ship":"cargo", "singular":"horse", "plural":"horses"}, # x(23)
             "timber":     {"type": "int",  "default":0, "singular":"log", "plural":"logs", "emoji":":wood:", "ship":"cargo"}, # x(16)
             "rebels":     {"type": "int",  "default":0, "singular":"rebel", "plural":"rebels", "ship":None},
             "exports":    {"type": "int",  "default":0, "singular":"ton", "plural":"tons","emoji": ":package:"},
+            "islands":    {"type": "int",  "default":0, "singular":"island", "plural":"islands", "emoji":"palmtree"},
         }
         for name, data in self.resources.items():
             setattr(self, name, data["default"])
@@ -139,22 +140,35 @@ class Player(object):
         if debug:
             io.echo(f"getattribute.100: {name=}")
         if name in self.resources:
-            r = self.resources[name]
+            _r = self.resources[name]
+            r = copy.copy(_r)
             v = getattr(self, name)
             if r["type"] == "int":
-                v = int(v)
+                if v is None:
+                    v = 0
+                else:
+                    v = int(v)
             r["value"] = v
             if "emoji" not in r or r["emoji"] is None:
                 r["emoji"] = ""
+            elif "emoji" in kw:
+                r["emoji"] = kw["emoji"]
             if "singular" in kw:
                 r["singular"] = kw["singular"]
             if "plural" in kw:
                 r["plural"] = kw["plural"]
+            #if "value" in r:
+            #    del r["value"]
             if debug:
                 io.echo(f"{r=}", level="debug")
             return r
         return None
-
+    # @since 20240706 new
+    def setresourcevalue(self, name:str, value) -> bool:
+        if name in self.resources:
+            self.resources[name]["value"] = value
+            return True
+        return False
     # @since 20200901
     # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_maint.lbl#L22
     def edit(self):
@@ -191,34 +205,40 @@ class Player(object):
 
     def load(self, playerid:int):
         if self.args.debug is True:
-            io.echo("player.load.100: playerid=%r" % (playerid), level="debug")
+            io.echo(f"player.load.100: {playerid=}", level="debug")
+
+        self.playerid = playerid
+
         dbh = database.connect(self.args)
         sql:str = "select * from empyre.player where id=%s"
         dat:tuple = (playerid,)
         cur = dbh.cursor()
         cur.execute(sql, dat)
-        rec = cur.fetchone()
+        player = cur.fetchone()
 
         if self.args.debug is True:
             io.echo(f"player.load.120: {rec=}", level="debug") # strip=True, interpret=False)
 
-        if rec is None:
+        if player is None:
+            io.echo("player.load.140: player is None", level="debug")
             return False
 
         if self.args.debug is True:
-            io.echo(f"{rec['resources']=}", level="debug")
+            io.echo(f"{player['resources']=}", level="debug")
 
         for attr in ("id", "moniker", "memberid", "rank", "previousrank", "turncount", "soldierpromotioncount", "datepromoted", "combatvictorycount", "weatherconditions", "beheaded", "datelastplayed", "taxrate", "training", "datelastplayedlocal"):
-            if attr in rec:
-                setattr(self, attr, rec[attr])
-        self.playerid = playerid
-        for name, data in rec["resources"].items():
-            if self.args.debug is True:
-                io.echo(f"{name=} {data=}")
-            res = self.getresource(name)
-            default = res["default"] if "default" in res else None
-            value = res["value"] if "value" in res else default
-            setattr(self, name, value)
+            if attr in player:
+                setattr(self, attr, player[attr])
+
+        for name in self.resources.keys():
+            if name not in player["resources"]:
+                v = self.resources[name]["default"]
+            else:
+                v = player["resources"][name]["value"]
+                if v is None:
+                    v = self.resources[name]["default"]
+                    io.echo(f"{v=}", level="debug")
+            setattr(self, name, v)
         return True
 
     def update(self):
@@ -226,37 +246,15 @@ class Player(object):
             io.echo("invalid playerid passed to Player.update.", level="error")
             return False
 
-        resources = {}
-        for name, data in self.resources.items():
-            res = self.getresource(name)
-            if res is None:
-                io.echo(f"invalid resource {name=}", level="warning")
-                continue
-            resources[name] = res
+        for name in self.resources.keys():
+            v = getattr(self, name)
+            self.setresourcevalue(name, v)
+            io.echo(f"syncresvalues.100: {name=} {v=}", level="debug")
 
         player = {}
-        player["resources"] = resources
-
-        # hack for new column
-
-        # training?
-        for attr in ("id", "moniker", "memberid", "rank", "previousrank", "turncount", "soldierpromotioncount", "datepromoted", "combatvictorycount", "weatherconditions", "beheaded", "datelastplayed", "coins", "taxrate"):
-#            if attr in res:
+        for attr in ("id", "moniker", "memberid", "rank", "previousrank", "turncount", "soldierpromotioncount", "datepromoted", "combatvictorycount", "weatherconditions", "beheaded", "datelastplayed", "coins", "taxrate", "resources"):
             player[attr] = getattr(self, attr)
-#        player["playerid"] = self.playerid
-
-#        player["datelastplayed"] = self.datelastplayed
-#        player["rank"] = self.rank
-#        player["previousrank"] = self.previousrank
-#        player["turncount"] = self.turncount
-#        player["weatherconditions"] = self.weatherconditions
-#        player["soldierpromotioncount"] = self.soldierpromotioncount
-#        player["combatvictorycount"] = self.combatvictorycount
-#        player["datepromoted"] = self.datepromoted
-#        player["coins"] = self.coins
-
         return database.update(self.args, "empyre.__player", self.playerid, player)
-#        return bbsengine.blurb.updateattributes(self.args, self.playerid, attributes)
 
     def isdirty(self):
         def getattrval(name):
@@ -265,7 +263,7 @@ class Player(object):
                 return r["value"] if "value" in r else r["default"]
             return None
 
-        for name, data in self.resources.items():
+        for name in self.resources.keys():
             curval = getattr(self, name)
             oldval = getattrval(name)
             if self.args.debug is True:
@@ -294,7 +292,7 @@ class Player(object):
             return
 
         if self.isdirty() is False:
-            io.echo("%s: clean. no save." % (self.moniker))
+            io.echo(f"{self.moniker}: clean. no save.")
             return
         io.echo(f"{self.moniker}: dirty. saving.")
 
@@ -307,7 +305,7 @@ class Player(object):
         resources = {}
         for name, data in self.resources.items():
             attr = self.getresource(name)
-            value = attr["value"]
+            value = attr["default"] if "default" in attr else None
             io.echo(f"player.insert.100: resources {name=} {value=}", level="debug")
             resources[name] = value
 
@@ -353,21 +351,15 @@ class Player(object):
             if len(label) > maxlabellen:
                 maxlabellen = len(label)
             attr = self.getresource(name)
-            # v = attr["value"] if "value" in attr else None
             v = getattr(self, name)
             if v is not None:
                 t = data["type"] if "type" in data else "int"
-                # ttyio.echo("player.status.140: t=%r" % (t), level="debug")
                 if t == "int":
-                    # ttyio.echo("player.status.100: n=%r t=int v=%r" % (n, v), level="debug")
                     v = f"{v:>6n}"
-                    # ttyio.echo("player.status.120: new v=%r" % (v), level="debug")
                 elif t == "datetime":
-#                    io.echo(f"---> player.status.120: {v=} {type(v)=}", level="debug")
                     if label == "datelastplayed":
                         v = attr["datelastplayedlocal"]
                     v = util.datestamp(v, format="%m/%d@%H%M%P%Z")
-#                    io.echo(f"{v=}", level="debug")
 
             buf = f"{label.ljust(maxlabellen)}: {v}"
             buflen = len(io.tostr(buf))
@@ -375,7 +367,7 @@ class Player(object):
                 maxwidth = buflen
 #                io.echo(f"player.status.160: {maxwidth=} {buflen=}", level="debug")
 #        ttyio.echo(f"terminalwidth={terminalwidth} maxwidth={maxwidth}", level="debug")
-        columns = math.floor(terminalwidth / maxwidth)
+        columns = math.floor(terminalwidth / maxwidth) - 3
         if columns < 1:
             columns = 1
 #        ttyio.echo("columns=%d" % (columns), level="debug")
@@ -510,25 +502,23 @@ class Player(object):
             io.echo("You have no land!")
 
         shipyardsres = self.getresource("shipyards")
-        shipres = self.getresource("ship")
+        shipres = self.getresource("ships")
+        shipsisare = self.getresource("ships", singular="ship is", plural="ships are")
 
         if self.shipyards > MAXSHIPYARDS: # > 400
             a = int(self.shipyards / 1.1)
-            io.echo(f"{{labelcolor}}Your kingdom cannot support {{valuecolor}}{util.pluralize(self.shipyards, **shipres)}{labelcolor}! {{valuecolor}}{util.pluralize(self.shipyards, 'shipyard is', 'shipyards are', **shipyardsres)}{{labelcolor}} closed.{{/all}}")
+            io.echo(f"{{labelcolor}}Your kingdom cannot support {{valuecolor}}{util.pluralize(self.shipyards, **shipyardsres)}{labelcolor}! {{valuecolor}}{util.pluralize(self.shipyards, singular='shipyard is', plural='shipyards are', **shipyardsres)}{{labelcolor}} closed.{{/all}}")
             self.shipyards -= a
 
         if self.shipyards == 0:
             if self.ships > 0:
-                io.echo(f"{{normalcolor}}You do not have enough shipyards! {{valuecolor}}{util.pluralize(self.ships, "ship is", "ships are", **shipres)}{{normalcolor}} scrapped.")
+                io.echo(f"{{normalcolor}}You do not have enough shipyards! {{valuecolor}}{util.pluralize(self.ships, **shipsisare)}{{normalcolor}} scrapped.")
                 diff = self.ships - self.shipyards*SHIPSPERSHIPYARD
                 self.ships -= diff
         # take away the ship if there isn't enough shipyard capacity
         if self.ships > self.shipyards*SHIPSPERSHIPYARD:
             a = self.ships - self.shipyards*SHIPSPERSHIPYARD
-            buf =  f"{{normalcolor}}Your {{valuecolor}}{util.pluralize(self.shipyards, **shipyardsres)}"
-            buf += f"{{normalcolor}} cannot support {{valuecolor}}{util.pluralize(self.ships, **shipres)}{{normalcolor}}, "
-            buf += f"{{normalcolor}} {{valuecolor}}{util.pluralize(a, 'ship is', 'ships are', **shipyes)} {{normalcolor}} scrapped."
-            io.echo(buf)
+            io.echo(f"{{normalcolor}}Your {{valuecolor}}{util.pluralize(self.shipyards, **shipyardsres)}{{normalcolor}} cannot support {{valuecolor}}{util.pluralize(self.ships, **shipres)}{{normalcolor}}, {{normalcolor}} {{valuecolor}}{util.pluralize(a, **shipsisare)} {{normalcolor}} scrapped.")
             self.ships -= a
 
         coinsres = self.getresource("coins")
@@ -555,10 +545,11 @@ class Player(object):
             self.foundries -= a
             io.echo(f"{{green}}{{empyre.highlightcolor}} MAJOR EXPLOSION! {{/all}}{{valuecolor}}{util.pluralize(a, 'foundry is', 'foundries are', **foundryres)} destroyed.")
 
+        marketres = self.getresource("markets", singular="market is", plural="markets are")
         if self.markets > MAXMARKETS:
             a = self.markets // 5
             self.markets -= a
-            io.echo(f"{{red}}Some market owners retire; {util.pluralize(a, 'market is', 'markets are')} closed.")
+            io.echo(f"{{red}}Some market owners retire; {util.pluralize(a, **marketres)} closed.")
 
         if self.mills > MAXMILLS:
             a = self.mills // 4
@@ -571,7 +562,7 @@ class Player(object):
 #            io.echo("{green}The mills are overworked! {util.pluralize(a, 'mill has a broken millstone and is closed', 'mills have broken millstones and are closed', **millres)} and are closed.{/all}")
 
         if self.coins < 0:
-            io.echo(f"{lightred}You are overdrawn by {util.pluralize(abs(self.coins), **coinres))
+            io.echo(f"{lightred}You are overdrawn by {util.pluralize(abs(self.coins), **coinres)}")
             self.coins = 1
 
         horseres = self.getresource("horses")
@@ -590,7 +581,8 @@ class Player(object):
             attr = self.getresource(name) # getattr(player, name)
             singular = data["singular"] if "singular" in data else "singular"
             plural = data["plural"] if "plural" in data else "plural"
-            val = data["value"] if "value" in data else a["default"]
+            default = data["default"] if "default" in data else 0
+            val = data["value"] if "value" in data and data["value"] is not None else default
             if val < 0:
                 lost.append(util.pluralize(abs(val), singular, plural))
                 setattr(player, name, 0)
@@ -746,16 +738,19 @@ def setarea(args, buf, stack=False, **kw) -> None:
                 player.turncount = TURNSPERDAY
 
             turnremain = TURNSPERDAY - player.turncount
-            
+
             debug = " | debug" if args is not None and args.debug is True else ""
-            return "empyre {black}|{engine.areacolor} %s {black}|{engine.areacolor} %s%s {black}|{engine.areacolor} %s%s" % (util.pluralize(turnremain, "turn remains", "turns remain"), isdirty, player.moniker, util.pluralize(player.coins, "coin", "coins"), debug)
+
+            coinres = player.getresource("coins", emoji="")
+            coinres["emoji"] = ""
+            return f"empyre {{black}}|{{engine.areacolor}} {util.pluralize(turnremain, 'turn remains', 'turns remain')} {{black}}|{{engine.areacolor}} {isdirty}{player.moniker} {{black}}|{{engine.areacolor}} {util.pluralize(player.coins, **coinres)}{debug}"
         else:
             if debug is True:
                 return "debug"
             else:
                 return ""
 
-    screen.setarea(buf, rightside, stack)
+    screen.setbottombar(buf, rightside, stack)
     if args.debug is True:
         io.echo(f"empyre.setarea.100: {buf=} {stack=} {screen.areastack=}", level="debug")
     return
@@ -902,9 +897,9 @@ def newsentry(args:object, message:str, player:object=None, otherplayer:object=N
     blurb.commit(args)
     return
 
-def trade(args, player:object, attr:str, **kw:dict):
+def trade(args, player:object, name:str, **kw:dict):
     price = kw["price"] if "price" in kw else None
-    name = kw["name"] if "name" in kw else None
+    # name = kw["name"] if "name" in kw else None
     emoji = kw["emoji"] if "emoji" in kw else None
     singular = kw["singular"] if "singular" in kw else None
     plural = kw["plural"] if "plural" in kw else None
@@ -913,14 +908,17 @@ def trade(args, player:object, attr:str, **kw:dict):
         io.echo("this item is not for sale.")
         return None
 
-    coinres = player.getresource(args, "coins")
+    morecoinsres = player.getresource("coins", singular="more coin", plural="more coins")
+
+    coinres = player.getresource("coins")
     if price > player.coins:
-        io.echo(f"{{labelcolor}}You need {{valuecolor}}{util.pluralize(price - player.coins, "more coin", "more coins", **coinres)}{{labelcolor}} to purchase {{{valuecolor}}{plural}{{/all}}")
+        io.echo(f"{{labelcolor}}You need {{valuecolor}}{util.pluralize(price - player.coins, **morecoinsres)}{{labelcolor}} to purchase {{valuecolor}}{plural}{{/all}}")
 
     # ttyio.echo("trade.100: admin=%r" % (bbsengine.checkflag(opts, "ADMIN")), level="debug")
 
     done = False
     while not done:
+        player.adjust()
         player.save()
         setarea(args, f"trade: {plural}", stack=False, player=player)
 
@@ -928,7 +926,7 @@ def trade(args, player:object, attr:str, **kw:dict):
         # prompt = "You have {reverse}%s{/reverse} and {reverse}%s{/reverse}{F6}" % (pluralize(currentvalue, singular, plural), pluralize(player.coins, "coin", "coins"))
         # ttyio.echo(prompt)
 
-        resource = player.getresource(attr)
+        resource = player.getresource(name)
         if resource is None:
             io.echo(f"resource {name} not found.", level="error")
             return
@@ -953,8 +951,8 @@ def trade(args, player:object, attr:str, **kw:dict):
             io.echo("{/all}")
             if newvalue < 0:
                 newvalue = 0
-            setattr(player, attr, newvalue)
-            io.echo(f"player.{attr}={newvalue}{{/all}}", level="debug")
+            setattr(player, name, newvalue)
+            io.echo(f"player.{name}={newvalue}{{/all}}", level="debug")
         elif ch == "C":
             io.echo("Continue")
             done = True
@@ -965,38 +963,37 @@ def trade(args, player:object, attr:str, **kw:dict):
             continue
         elif ch == "B":
             # price = currentplayer.weathercondition*3+12
-            io.echo("Buy{F6}The barbarians will sell their %s to you for {empyre.highlightcolor} %s{/all} each." % (name, util.pluralize(price, "coin", "coins", emoji=":moneybag:")))
+            io.echo("Buy{F6}The barbarians will sell their %s to you for {empyre.highlightcolor} %s{/all} each." % (name, util.pluralize(price, **coinres)))
             quantity = io.inputinteger("buy how many?: ")
             if quantity is None or quantity < 1:
                 break
 
             if player.coins < quantity*price:
-                io.echo("You have :moneybag: %s and you need %s to complete this transaction." % (util.pluralize(player.coins, "coin", "coins"), util.pluralize(abs(player.coins - quantity*price), "more coin", "more coins", emoji=":moneybag")))
+                io.echo("You have :moneybag: %s and you need %s to complete this transaction." % (util.pluralize(player.coins, **coinres), util.pluralize(abs(player.coins - quantity*price), "more coin", "more coins", **coinres)))
                 continue
 
-            a = player.getresource(attr) # getattr(player, attr)
+            a = player.getresource(name) # getattr(player, attr)
             value = a["value"]
             value += quantity
             if args.debug is True:
                 io.echo("value=%r" % (value), level="debug")
 
-            setattr(player, attr, int(value))
+            setattr(player, name, int(value))
             player.coins -= quantity*price
             io.echo("Bought!")
             break
         elif ch == "S":
-            io.echo(f"sell{{F6}}{{labelcolor}}The barbarians will buy your {plural} for {{valuecolor}}{util.pluralize(price, "coin", "coins", emoji=":moneybag:")}{{labelcolor}} each." % ()
+            io.echo(f"sell{{F6}}{{labelcolor}}The barbarians will buy your {plural} for {{valuecolor}}{util.pluralize(price, **coinres)}{{labelcolor}} each.")
             quantity = io.inputinteger("{{promptcolor}}sell how many?: {{inputcolor}}")
             if quantity is None or quantity < 1:
                 break
 
-            attr = player.getresource(attr) # getattr(player, attr)
-            value = attr["value"]
+            res = player.getresource(name) # getattr(player, attr)
+            value = res["value"]
             value -= quantity
-            setattr(player, attr, value)
+            setattr(player, name, value)
             player.coins += quantity*price
             io.echo("Sold!", level="success")
-
             break
 
     player.adjust()
@@ -1022,12 +1019,16 @@ def selectplayer(args, title:str="select player", prompt:str="player: ", memberi
             self.player.load(rec["id"])
             self.height:int = 1
 
-            res = self.player.getresource("land")
-            if "emoji" in res:
-                res["emoji"] = ""
+            landres = self.player.getresource("land")
+            if "emoji" in landres:
+                landres["emoji"] = ""
+
+
+            acres = landres["value"] if "value" in landres else 0
+
             left:str = f"{self.player.moniker}"
-            lastplayed = util.datestamp(self.player.datelastplayedlocal, format="%m/%d @ %I%M%P")
-            right:str = f"{util.pluralize(res['value'], **res)} {lastplayed}"
+            lastplayed:str = util.datestamp(self.player.datelastplayedlocal, format="%m/%d @ %I%M%P")
+            right:str = f"{util.pluralize(acres, **landres)} {lastplayed}"
             rightlen:int = len(right)
             self.label:str = f"{left.ljust(width-rightlen-10)}{right}" # %s%s {{/all}}{{var:acscolor}}{{acs:vline}}" % (left.ljust(width-rightlen-4), right)
 
@@ -1144,10 +1145,14 @@ def selectresource(args, title, resources, kind=None, **kw):
             self.height:int = height
             self.width:int = width
             self.resource:dict = resource
-            value = resource["value"] if "value" in resource else None
+            value = resource["value"] if "value" in resource else 0
+            io.echo(f"{value=}")
             left:str = f"{self.pk}"
 #            io.echo(f"{self.res=}", level="debug")
-            right:str = f"{value:>6n}" # {util.pluralize(value, **self.res)}"
+            if resource["type"] == "int":
+                right:str = f"{value:>6n}" # {util.pluralize(value, **self.res)}"
+            else:
+                right:str = f"{value:>6s}"
             rightlen:int = len(right)
             self.label:str = f"{left.ljust(self.width-rightlen-10)}{right}" # %s%s {{/all}}{{var:acscolor}}{{acs:vline}}" % (left.ljust(width-rightlen-4), right)
 
