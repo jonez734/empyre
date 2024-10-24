@@ -4,6 +4,7 @@
 #import ttyio6 as ttyio
 #import bbsengine6 as bbsengine
 from bbsengine6 import io, util
+from . import lib as libempyre
 
 def init(args, **kw):
     return True
@@ -11,8 +12,14 @@ def init(args, **kw):
 def access(args, op, **kw):
     return True
 
+def buildargs(args=None, **kw):
+    return None
+
 def main(args, **kwargs):
     player = kwargs["player"] if "player" in kwargs else None
+    if player is None:
+        io.echo("You do not exist, go away!", level="error")
+        return False
 
     # if you are a KING, you only get average weather and below
     if player.rank == 2:
@@ -21,17 +28,17 @@ def main(args, **kwargs):
         weathercondition = util.diceroll(6) # random.randint(1, 6)
 
     io.echo("{cyan}")
-    if weathercondition == 1:
+    if weathercondition == libempyre.Weather.POOR:
         io.echo(":desert: Poor Weather. No Rain. Locusts Migrate")
-    elif weathercondition == 2:
+    elif weathercondition == libempyre.Weather.ARID:
         io.echo(":cactus: Early Frosts. Arid Conditions")
-    elif weathercondition == 3:
+    elif weathercondition == libempyre.Weather.RAIN:
         io.echo(":thunder-cloud-and-rain: Flash Floods. Too Much Rain")
-    elif weathercondition == 4:
+    elif weathercondition == libempyre.Weather.AVERAGE:
         io.echo("Average Weather. Good Year")
-    elif weathercondition == 5:
+    elif weathercondition == libempyre.Weather.LONGSUMMER:
         io.echo("Fine Weather. Long Summer")
-    elif weathercondition == 6:
+    elif weathercondition == libempyre.Weather.FANTASTIC:
         io.echo(":sun: Fantastic Weather! Great Year!")
         
     io.echo("{/all}")
