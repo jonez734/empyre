@@ -1,78 +1,87 @@
 import random
 
-import ttyio5 as ttyio
-import bbsengine5 as bbsengine
+from bbsengine6 import io, util
 
 from . import lib
 
 def init(args, **kw):
-    pass
+    return True
 
 def access(args, op, **kw):
     return True
 
+def buildargs(args, **kw):
+    return None
+
 def main(args, **kw):
     player = kw["player"] if "player" in kw else None
 
-    lib.setarea(args, player, "harvest")
-    x = int((player.land*player.weathercondition+(random.random()*player.serfs)+player.grain*player.weathercondition)/3)
+    grainres = player.getresource("grain")
+
+    lib.setarea(args, "harvest", **kw)
+    x = int((player.land*player.weatherconditions+(random.random()*player.serfs)+player.grain*player.weatherconditions)/3)
     x = min(x, player.land+player.serfs*4)
     #if x > (player.land+player.serfs)*4:
     #    x = (player.land+player.serfs)*4
-    ttyio.echo("{f6}{lightblue}This year's harvest is :crop: {var:empyre.highlightcolor}%s{/all}{f6}" % (bbsengine.pluralize(x, "bushel", "bushels")))
+    io.echo(f"{{f6}}{{normalcolor}}This year's harvest is {{valuecolor}}{util.pluralize(x, **grainres)}{{f6}}")
 
     # https://github.com/Pinacolada64/ImageBBS/blob/cb68d111c2527470218aedb94b93e7f4b432c345/v1.2/web-page/imageprg-chap5.html#L69
     player.grain += x # "pl=1"? <-- has to do with imagebbs input routines accepting upper/lower case vs only upper
 
     serfsrequire = player.serfs*5+1
-    ttyio.echo("{cyan}Your people require :crop: {var:empyre.highlightcolor}%s{/all} of grain this year{/all}" % (bbsengine.pluralize(serfsrequire, "bushel", "bushels")))
-    ttyio.echo()
+
+    io.echo(f"{{normalcolor}}Your people require {{valuecolor}}{util.pluralize(serfsrequire, **grainres)}{{normalcolor}} of grain this year{{/all}}{{f6}}")
     price = player.weatherconditions*3+12
     price = int(price/(int(player.land/875)+1))
-    lib.trade(args, player, "grain", "grain", price, "bushel", "bushels", emoji=":crop:")
+    lib.trade(args, player, "grain", **grainres)
     howmany = serfsrequire if player.grain >= serfsrequire else player.grain
-    serfsgiven = ttyio.inputinteger("{cyan}Give them how many? {lightgreen}", howmany)
-    ttyio.echo("{/all}")
+    serfsgiven = io.inputinteger("{promptcolor}Give them how many?: {inputcolor}", howmany)
+    io.echo("{/all}")
     if serfsgiven < 1:
-        ttyio.echo("(Giving :crop: {var:empyre.highlightcolor}%s{/all} of grain)" % (bbsengine.pluralize(howmany, "bushel", "bushels")))
+        io.echo(f"{{(normalcolor}}Giving {{valuecolor}}{util.pluralize(howmany, **grainres)}{{normalcolor}} of grain)")
         serfsgiven = 0
     if serfsgiven > player.grain:
         serfsgiven = player.grain
     player.grain -= serfsgiven
     if args.debug is True:
-        ttyio.echo("player.grain=%r" % (player.grain), level="debug")
+        io.echo(f"{player.grain=}", level="debug")
     if player.grain < 1:
         player.grain = 0
         
-    armyrequires = player.soldiers*10+1
+    player.armyrequires = player.soldiers*10+1
     done = False
-    ttyio.echo("Your army requires :crop: {var:empyre.highlightcolor}%s{/all} this year and you have :crop: {var:empyre.highlightcolor}%s{/all}." % (bbsengine.pluralize(armyrequires, "bushel", "bushels"), bbsengine.pluralize(int(player.grain), "bushel", "bushels")))
+    io.echo(f"{{normalcolor}}Your army requires {util.pluralize(player.armyrequires, **grainres)}{{normalcolor}} this year and you have {{valuecolor}}{util.pluralize(player.grain, **grainres)}")
     price = int(6//player.weathercondition)
     price = int(price/(player.land/875)+1)
-    lib.trade(args, player, "grain", "bushel", price, "bushel", "bushels", emoji=":crop:")
+    grainres["price"] = price
+    lib.trade(args, player, "grain", **grainres) # "bushel", price, "bushel", "bushels", emoji=":crop:")
 
-    ttyio.echo("armyrequires=%r player.grain=%r" % (armyrequires, player.grain), level="debug")
+    io.echo(f"{player.armyrequires=} {player.grain=}", level="debug")
 
-    if armyrequires > player.grain:
-        armyrequires = player.grain
-    armygiven = ttyio.inputinteger("{cyan}Give them how many? {/all}{lightgreen}", armyrequires)
-    if armygiven > player.grain:
-        ttyio.echo("You do not have enough grain!")
-        armygiven = player.grain
-    ttyio.echo("{/all}")
-    if armygiven < 1:
-        armygiven = 0
-    player.grain -= armygiven
+    if player.armyrequires > player.grain:
+        player.armyrequires = player.grain
+    player.armygiven = io.inputinteger("{promptcolor}Give them how many?: {/all}{inputcolor}", player.armyrequires)
+    if player.armygiven > player.grain:
+        io.echo("You do not have enough grain! Your army has been given {util.pluralize(player.grain, **grainres)}")
+        player.armygiven = player.grain
+    io.echo("{/all}")
+    if player.armygiven < 1:
+        player.armygiven = 0
+    player.grain -= player.armygiven
+    io.echo(f"You gave your army {util.pluralize(player.armygiven, **grainres)}")
 
+    horsesres = player.getresource("horses", singular="horse requires", plural="horses require")
     if player.horses > 0:
-        horsesrequire = random.randint(2, 7)*player.horses
-        ttyio.echo("Your :horse: %s :crop: %s" % (bbsengine.pluralize(player.horses, "horse requires", "horses require", quantity=False), bbsengine.pluralize(horsesrequire, "bushel", "bushels")))
-        horsesgiven = ttyio.inputinteger("{cyan}Give them how many? {/all}{lightgreen}", horsesrequire)
+        horsesrequire = random.randint(2, 7)*player.horses*10
+        io.echo("Your {util.pluralize(player.horses, quantity=False, **horsesres)} {util.pluralize(horsesrequire, **grainres)}")
+        horsesgiven = io.inputinteger("{promptcolor}Give them how many?: {/all}{inputcolor}", horsesrequire)
         if horsesgiven < 0:
             horsesgiven = 0
         elif horsesgiven > player.grain:
             horsesgiven = player.grain
         player.grain -= horsesgiven
+        player.horsesgiven = horsesgiven
 
+    player.adjust()
     player.save()
     return True
