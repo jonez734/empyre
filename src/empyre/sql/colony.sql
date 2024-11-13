@@ -1,6 +1,6 @@
 create table if not exists empyre.__colony (
     name text unique not null primary key,
-    founderid bigint not null constraint fk_empyre_colony_founderid references empyre.__player(id) on update cascade on delete set null,
+    foundermoniker text not null constraint fk_empyre_colony_founderid references empyre.__player(moniker) on update cascade on delete set null,
     islandname text not null constraint fk_empyre_colony_islandname references empyre.__island(name) on update cascade on delete set null,
     resources jsonb,
     datefounded timestamptz,
@@ -19,7 +19,7 @@ create table if not exists empyre.__colony (
 --    where prg='empyre.colony'
 --;
 
-grant all on empyre.__colony to :bbs;
+--grant all on empyre.__colony to :bbs;
 
 create or replace view empyre.colony as
     select 
@@ -27,8 +27,9 @@ create or replace view empyre.colony as
       founder.moniker as foundermoniker,
       timezone(currentmember.tz, c.datefounded) as datefoundedlocal
     from empyre.__colony as c
-    left join empyre.__player as founder on (founder.id = c.founderid)
+    left join empyre.__player as founder on (founder.moniker = c.foundermoniker)
     left join engine.__member as currentmember on (currentmember.loginid = current_user)
 ;
 
-grant select on empyre.colony to :bbs, :web;
+grant select on empyre.colony to term, web, sysop;
+grant all on empyre.__colony to term, sysop;

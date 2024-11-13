@@ -4,8 +4,8 @@ create table if not exists empyre.__newsentry (
     "message" text,
     "status" text,
     "datecreated" timestamptz,
-    "playerid" bigint references empyre.__player(id) on update cascade on delete set null,
-    "memberid" bigint references engine.__member(id) on update cascade on delete set null
+    "playermoniker" text references empyre.__player(moniker) on update cascade on delete set null,
+    "membermoniker" text references engine.__member(moniker) on update cascade on delete set null
 );
 
 create or replace view empyre.newsentry as
@@ -14,9 +14,10 @@ create or replace view empyre.newsentry as
       p.moniker as playermoniker,
       m.moniker as membermoniker
     from empyre.__newsentry as ne
-    left join engine.__member m on (m.id = ne.memberid)
-    left join empyre.__player p on (p.id = ne.playerid)
+    left join engine.__member m on (m.moniker = ne.membermoniker)
+    left join empyre.__player p on (p.moniker = ne.playermoniker)
 ;
 
-grant select on empyre.newsentry to :web, :bbs;
-grant all on empyre.__newsentry to :bbs;
+grant select on empyre.newsentry to web, term, sysop;
+--grant select on empyre.__newsentry to web;
+grant all on empyre.__newsentry to term, sysop;

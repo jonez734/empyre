@@ -14,4 +14,5 @@ create table if not exists empyre.__ship (
     "updatedbymoniker" text constraint fk_empyre_ship_updatedbyid references engine.__member(moniker) on update cascade on delete set null
 );
 
-grant all on empyre.__ship to :bbs;
+grant all on empyre.__ship to term, sysop;
+grant select on empyre.__ship to web;

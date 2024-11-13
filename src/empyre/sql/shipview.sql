@@ -12,4 +12,4 @@ create or replace view empyre.ship as
     left join engine.__member as currentmember on (currentmember.loginid = current_user)
 ;
 
-grant select on empyre.ship to :web, :bbs;
+grant select on empyre.ship to web, term, sysop;
