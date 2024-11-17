@@ -1,9 +1,13 @@
+import copy
+
+from bbsengine6 import database, io
+
 MODULENAME = "colony"
 
 def getcolony(args, name):
     sql = "select * from empyre.__colony where name=%s"
     dat = (name,)
-    dbh = bbsengine.database.connect(args)
+    dbh = database.connect(args)
     cur = dbh.cursor()
     cur.execute(sql, dat)
     if cur.rowcount == 0:
@@ -16,21 +20,20 @@ def getcolony(args, name):
     return colony
 
 def insert(args, colony):
-    return bbsengine.database.insert(args, "empyre.__colony", colony, returnid=True, primarykey="name")
+    return database.insert(args, "empyre.__colony", colony, returnid=True, primarykey="name")
 
 def update(args, name, colony):
-    return bbsengine.database.update(args, "empyre.__colony", name, colony, primarykey="name")
+    return database.update(args, "empyre.__colony", name, colony, primarykey="name")
 
 def edit(args, colony):
     _colony = copy.deepcopy(colony)
-    ttyio.echo(f"{{var:optioncolor}}[N]{{var:labelcolor}}ame: {{var:valuecolor}}{colony['name']}", end="")
+    io.echo(f"{{var:optioncolor}}[N]{{var:labelcolor}}ame: {{var:valuecolor}}{colony['name']}", end="")
     if colony["name"] != _colony["name"}:
-        ttyio.echo(f" {{var:labelcolor}}(was {{var:valuecolor}}{_colony['name']}{{var:labelcolor}})")
+        io.echo(f" {{var:labelcolor}}(was {{var:valuecolor}}{_colony['name']}{{var:labelcolor}})")
     else:
-        ttyio.echo()
-    ttyio.echo(f"{{var:optioncolor}}[I]{{var:labelcolor}}sland ame: {{var:valuecolor}}{colony['islandname']}", end="")
+        io.echo()
+    io.echo(f"{{var:optioncolor}}[I]{{var:labelcolor}}sland ame: {{var:valuecolor}}{colony['islandname']}", end="")
     if colony["islandname"] != _colony["islandname"}:
-        ttyio.echo(f" {{var:labelcolor}}(was {{var:valuecolor}}{_colony['islandname']}{{var:labelcolor}})")
+        io.echo(f" {{var:labelcolor}}(was {{var:valuecolor}}{_colony['islandname']}{{var:labelcolor}})")
     else:
-        ttyio.echo()
-    
+        io.echo()
