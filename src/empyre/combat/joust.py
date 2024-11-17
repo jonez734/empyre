@@ -14,6 +14,9 @@ def buildargs(args, **kw):
 # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_tourney.lbl#L2
 def main(args, **kw):
     player = kw["player"] if "player" in kw else None
+    if player is None:
+        io.echo("You do not exist! Go Away!")
+        return False
     otherplayer = kw["otherplayer"] if "otherplayer" in kw else None
     if player.playerid == otherplayer.playerid:
         io.echo("You cannot joust against yourself! Big mistake!")
