@@ -30,12 +30,12 @@ def main(args, **kw):
         return True
 
     lib.setarea(args, player, "town: lucifer's den")
-    
+
     util.heading("LUCIFER'S DEN - Where Gamblin's no Sin!") # , hrcolor="{orange}", titlecolor="{bgred}{yellow}")
     io.echo("{yellow}I will let you play for the price of a few souls!")
-    ch = io.inputboolean("{var:promptcolor}Will you agree to this? [yN]: {var:inputcolor}", "N")
+    ch = io.inputboolean("{promptcolor}Will you agree to this? [yN]: {inputcolor}", "N")
     if ch is False:
-        io.echo("{var:normalcolor}Some other time, then.")
+        io.echo("{normalcolor}Some other time, then.")
         return True
     # always win, but it costs 10 serfs, 50 serfs if you guess correctly
     # og=int(3*rnd(0)+2)
@@ -45,29 +45,29 @@ def main(args, **kw):
     done = False
     while not done:
         odds = random.randint(2, 4)
-        io.echo("{var:normalcolor}Odds: {var:valuecolor}%s to 1{var:normalcolor}" % (odds))
+        io.echo("{normalcolor}Odds: {valuecolor}%s to 1{normalcolor}" % (odds))
         if player.serfs < 1000:
-            io.echo("{var:normalcolor}You must have at least {var:valuecolor}%s{var:normalcolor} to gamble here!" % util.pluralize(1000, "serf", "serfs"))
+            io.echo("{normalcolor}You must have at least {valuecolor}%s{normalcolor} to gamble here!" % util.pluralize(1000, "serf", "serfs"))
             done = True
             break
-        io.echo("{F6}{var:normalcolor}You have :moneybag: {var:valuecolor}%s{/all} and {var:valuecolor}%s{var:normalcolor}" % (bbsengine.pluralize(player.coins, "coin", "coins"), bbsengine.pluralize(player.serfs, "serf", "serfs")))
-        bet = io.inputinteger("{var:promptcolor}Bet how many coins? (No Limit): {var:inputcolor} ")
-        io.echo("{var:normalcolor}")
+        io.echo("{F6}{normalcolor}You have :moneybag: {valuecolor}%s{/all} and {valuecolor}%s{normalcolor}" % (util.pluralize(player.coins, "coin", "coins"), util.pluralize(player.serfs, "serf", "serfs")))
+        bet = io.inputinteger("{promptcolor}Bet how many coins? (No Limit): {inputcolor} ")
+        io.echo("{normalcolor}")
         if bet is None or bet < 1 or bet > player.coins:
             io.echo("Exiting Lucifer's Den")
             done = True
             break
         
-        pick = io.inputinteger("{var:promptcolor}Pick a number from 1 to 6: {var:inputcolor}")
+        pick = io.inputinteger("{promptcolor}Pick a number from 1 to 6: {inputcolor}")
         if pick is None or pick < 1:
             io.echo("invalid value")
             done = True
             return
         
-        dice = bbsengine.diceroll(6)
+        dice = util.diceroll(6)
 
         if args.debug is True:
-            io.echo("dice=%s" % (dice), level="debug")
+            io.echo(f"{dice=}", level="debug")
 
         if dice == pick:
             io.echo("{green}MATCH!{/all}{F6}")

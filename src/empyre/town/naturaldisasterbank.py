@@ -22,12 +22,12 @@ def main(args, player, **kwargs):
     lib.setarea(args, player, "natural disaster bank") # "{bggray}{white}%s{/all}" % ("bank".ljust(terminalwidth)))
     io.echo()
     exchangerate = 3 #:1 -- 3 coins per credit
-    credits = member.getcredits(args)
-    buf = "You have {var:empyre.highlightcolor}%s{/all} and {var:empyre.highlightcolor}%s{/all}" % (util.pluralize(player.coins, "coin", "coins", emoji=":moneybag:"), util.pluralize(credits, "credit", "credits"))
+    cr = member.getcredits(args)
+    buf = "You have {empyre.highlightcolor}%s{/all} and {empyre.highlightcolor}%s{/all}" % (util.pluralize(player.coins, "coin", "coins", emoji=":moneybag:"), util.pluralize(credits, "credit", "credits"))
     io.echo(buf)
-    if credits is not None and credits > 0:
-        io.echo("The exchange rate is {var:empyre.highlightcolor}%s per credit{/all}.{F6}"  % (util.pluralize(exchangerate, "coin", "coins", emoji=":moneybag:")))
-        amount = io.inputinteger("{var:promptcolor}Exchange how many credits?: {var:inputcolor}")
+    if cr is not None and credits > 0:
+        io.echo("The exchange rate is {empyre.highlightcolor}%s per credit{/all}.{F6}"  % (util.pluralize(exchangerate, "coin", "coins", emoji=":moneybag:")))
+        amount = io.inputinteger("{promptcolor}Exchange how many credits?: {inputcolor}")
         io.echo("{/all}")
     else:
         io.echo("You have no credits")
@@ -39,14 +39,14 @@ def main(args, player, **kwargs):
         io.echo(f"empyre.town.bank.100: {credits=}", level="debug")
 
     if amount > credits:
-        io.echo("Get REAL! You only have {var:empyre.highlightcolor} %s {/all}!" % (util.pluralize(credits, "credit", "credits")))
+        io.echo("Get REAL! You only have {empyre.highlightcolor} %s {/all}!" % (util.pluralize(credits, "credit", "credits")))
         return
 
-    credits -= amount
+    cr -= amount
     player.coins += amount*exchangerate
 
-    member.setcredits(args, player.memberid, credits)
+    member.setcredits(args, player.memberid, cr)
 
-    io.echo("You now have {var:empyre.highlightcolor}%s{/all} and {var:empyre.highlightcolor}%s{/all}" % (util.pluralize(player.coins, "coin", "coins", emoji=":moneybag:"), util.pluralize(credits, "credit", "credits")))
+    io.echo("{normalcolor}You now have {valuecolor}%s{normalcolor} and {valuecolor}{empyre.highlightcolor}%s{normalcolor}" % (util.pluralize(player.coins, "coin", "coins", emoji=":moneybag:"), util.pluralize(credits, "credit", "credits")))
     lib.setarea(args, player, "natural disaster bank")
     return True

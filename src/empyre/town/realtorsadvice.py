@@ -1,6 +1,3 @@
-#import ttyio6 as ttyio
-#import bbsengine6 as bbsengine
-
 from .. import lib as empyre
 from bbsengine6 import util
 
@@ -15,7 +12,7 @@ def buildargs(args, **kw):
 
 def main(args, player, **kwargs):
     util.heading(": hood's real deals! :")
-    empyre.setarea(args, "town -> hood's real deals!", **kwargs)
+    libempyre.setarea(args, "town -> hood's real deals!", **kwargs)
     
     # you have 10 shipyards, BSC
     # you have 10 acres of land
@@ -25,15 +22,15 @@ def main(args, player, **kwargs):
 #    lib.trade(args, player, "ships", "ships", 5000, "ship", "ships", "a", ":anchor:")
     res = player.getresource("foundries")
     res["price"] = 2000+player.foundries//2
-    empyre.trade(args, player, **res) # "foundries", "foundries", 2000+player.foundries//2, "foundry", "foundries", "a")
+    libempyre.trade(args, player, **res) # "foundries", "foundries", 2000+player.foundries//2, "foundry", "foundries", "a")
 
     res = player.getresource("mills")
     res["price"] = 500+player.mills//2
-    empyre.trade(args, player, "mills", **res) # "mills", 500+player.mills//2, "mill", "mills", "a")
+    libempyre.trade(args, player, "mills", **res) # "mills", 500+player.mills//2, "mill", "mills", "a")
 
     res = player.getresource("markets")
     res["price"] = 250+player.markets//2
-    empyre.trade(args, player, "markets", **res) # "markets", 250+player.markets//2, "market", "markets", "a")
+    libempyre.trade(args, player, "markets", **res) # "markets", 250+player.markets//2, "market", "markets", "a")
     
     player.adjust()
     player.save()
