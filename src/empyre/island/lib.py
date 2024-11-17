@@ -1,4 +1,4 @@
-from bbsengine6 import io
+# from bbsengine6 import io
 from .. import lib as libempyre
 
 def checkmodule(args, modulename, **kw):
