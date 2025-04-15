@@ -22,6 +22,7 @@ def main(args, **kw):
         ("L", "Lucifer's Den :fire:", "lucifersden"), # lucifersden),
         ("P", "Soldier Promotion to Noble :prince:", "soldierpromotion"),
         ("R", "Realtor's Advice :house:", "realtorsadvice"),
+        ("J", "Juicebar", "juicebar"),
 #        ("S", "   Slave Market", None),
         ("T", "Change Tax Rate :receipt:", "changetaxrate"),
 #        ("U", "   Utopia's Auction", None),
