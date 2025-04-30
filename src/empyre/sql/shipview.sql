@@ -1,3 +1,4 @@
+\echo shipview
 -- @since 20230716
 create or replace view empyre.ship as
     select
@@ -8,7 +9,7 @@ create or replace view empyre.ship as
 --        player.moniker as playermoniker
     from empyre.__ship as s
     left join empyre.__player as player on (player.moniker = s.playermoniker)
-    left join engine.__member as member on (player.moniker = s.playermoniker and player.memberid = member.id)
+    left join engine.__member as member on (player.moniker = s.playermoniker and player.membermoniker = member.moniker)
     left join engine.__member as currentmember on (currentmember.loginid = current_user)
 ;
 
