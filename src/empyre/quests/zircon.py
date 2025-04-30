@@ -1,5 +1,4 @@
-import ttyio6 as ttyio
-import bbsengine6 as bbsengine
+from bbsengine6 import io, util
 
 from .. import lib
 
@@ -15,94 +14,107 @@ from .. import lib
 
 def zircon1(player):
     gifts = []
-    x = bbsengine.util.diceroll(40) # random.randint(1, 40)
+    x = util.diceroll(40) # random.randint(1, 40)
     if x >= 19:
         return gifts
-    ttyio.echo("{purple}Zircon says he must consult the bones...{wait:5}")
-    x = bbsengine.util.diceroll(5) # random.randint(1, 5)
+    io.echo("{purple}Zircon says he must consult the bones...")
+    x = util.diceroll(5) # random.randint(1, 5)
     if x == 1:
-        gifts.append(bbsengine.util.pluralize(8000, "acre", "acres"))
+        landres = player.getresource("land")
+        gifts.append(util.pluralize(8000, **landres))
         player.land += 8000 # x(2)
     elif x == 2:
-        gifts.append(bbsengine.util.pluralize(30000, "coin", "coins"))
+        coinres = player.getresource("coins")
+        gifts.append(util.pluralize(30000, **coinres))
         player.coins += 30000 # x(3)
     elif x == 3:
-        gifts.append(bbsengine.util.pluralize(5, "noble", "nobles"))
+        nobleres = player.getresource("nobles")
+        gifts.append(util.pluralize(5, **nobleres))
         player.nobles += 5 # x(6) nobles
     elif x == 4:
-        gifts.append(bbsengine.util.pluralize(40000, "bushel", "bushels"))
+        bushelres = player.getresource("grain")
+        gifts.append(util.pluralize(40000, **bushelres))
         player.grain += 40000 # x(17)
     return gifts
 
 def zircon2(player):
     gifts = []
-    x = bbsengine.util.diceroll(5) # random.randint(1, 5)
+    x = util.diceroll(5) # random.randint(1, 5)
     if x == 1:
-        gifts.append(bbsengine.util.pluralize(1000, "serf", "serfs"))
+        serfsres = player.getresource("serfs")
+        gifts.append(util.pluralize(1000, **serfsres))
         player.serfs += 1000 # x(19)
     elif x == 2:
-        gifts.append(bbsengine.util.pluralize(4, "shipyard", "shipyards"))
+        shipyardres = player.getresource("shipyards")
+        gifts.append(util.pluralize(4, **shipyardres))
         player.shipyards += 4 # x(10)
     elif x == 3:
-        gifts.append(bbsengine.util.pluralize(2, "fort", "forts"))
+        fortres = player.getresource("forts")
+        cannonres = player.getresource("cannons")
+        gifts.append(util.pluralize(2, **fortres))
         player.forts += 2
-        gifts.append(bbsengine.util.pluralize(8, "cannon", "cannons"))
+        gifts.append(util.pluralize(8, **cannonres))
         player.cannons += 8
     elif x == 4:
-        gifts.append(bbsengine.util.pluralize(50, "horse", "horses"))
+        horseres = player.getresource("horses")
+        gifts.append(util.pluralize(50, **horseres))
         player.horses += 50
     return gifts
 
 def zircon3(player):
     gifts = []
-    x = bbsengine.util.diceroll(5) # random.randint(1, 5)
+    x = util.diceroll(5) # random.randint(1, 5)
     if x == 1:
+        foundryres = player.getresource("foundries")
         player.foundries += 4 # x(9)
-        gifts.append(bbsengine.util.pluralize(4, "foundry", "foundries"))
+        gifts.append(util.pluralize(4, **foundryres))
     elif x == 2:
+        marketres = player.getresource("markets")
         player.markets += 10 # x(7)
-        gifts.append(bbsengine.util.pluralize(10, "market", "markets"))
+        gifts.append(util.pluralize(10, **marketres))
     elif x == 3:
+        millsres = player.getresource("mills")
         player.mills += 10 # x(8)
-        gifts.append(bbsengine.util.pluralize(10, "mill", "mills"))
+        gifts.append(util.pluralize(10, **millres))
     elif x == 4:
         player.spices += 10 # x(25) spices
     elif x == 5:
+        shipres = player.getresource("ships")
         player.ships += 4 # x(12)
-        gifts.append(bbsengine.util.pluralize(4, "ship", "ships", emoji=":anchor:"))
+        gifts.append(util.pluralize(4, **shipres))
     return gifts
 
 def zircon4(player):
     gifts = []
-    if bbsengine.util.diceroll(20) < 5:
+    if util.diceroll(20) < 5:
         gifts.append("10 tons of spices")
         player.spices += 10 # x(25)
     return gifts
 
 def zircon5(player):
     gifts = []
-    if bbsengine.util.diceroll(20) < 4:
+    if util.diceroll(20) < 4:
         gifts.append("a dragon")
         player.dragons += 1
     return gifts
 
 def zircon6(player):
     gifts = []
-    if bbsengine.util.diceroll(20) < 6:
+    if util.diceroll(20) < 6:
         gifts.append("20 tons of spices")
         player.spices += 20
     return gifts
 
 def zircon7(player):
     gifts = []
-    if bbsengine.util.diceroll(20) < 5:
+    if util.diceroll(20) < 5:
         gifts.append("4 nobles") # x(6)
         player.nobles += 4
     return gifts
 
 def zircon8(player):
     gifts = []
-    if bbsengine.util.diceroll(20) < 5:
+    if util.diceroll(20) < 5:
         gifts.append("6 cannons")
         player.cannons += 6
     return gifts
@@ -121,11 +133,11 @@ def main(args, **kw):
 #    ttyio.echo("filepath=%r" % (filepath), level="debug")
 #    bbsengine.filedisplay(args, filepath)
     
-    ttyio.echo("player=%r" % (player), level="debug")
+    io.echo(f"{player=}", level="debug")
 
-    if ttyio.inputboolean("{var:promptcolor}complete zircon? {var:optioncolor}[Yn]{var:promptcolor}: {var:inputcolor}", "Y") is False:
+    if io.inputboolean("{var:promptcolor}complete zircon? {var:optioncolor}[Yn]{var:promptcolor}: {var:inputcolor}", "Y") is False:
         land = 2000 if player.land >= 2000 else player.land
-        ttyio.echo("land=%d player.land=%d" % (land, player.land), level="debug")
+        io.echo(f"{land=} {player.land=}", level="debug")
         nobles = 4 if player.nobles >= 4 else player.nobles
         coins = 9000 if player.coins >= 9000 else player.coins
         serfs = 600 if player.serfs >= 600 else player.serfs
@@ -135,22 +147,26 @@ def main(args, **kw):
         player.coins -= coins
         player.serfs -= serfs
 
-        ttyio.echo(f"{player.land=}", level="debug")
+        io.echo(f"{player.land=}", level="debug")
 
-        ttyio.setvariable("land", bbsengine.util.pluralize(land, "acre", "acres"))
-        ttyio.setvariable("serfs", bbsengine.util.pluralize(serfs, "serf", "serfs"))
-        if nobles > 0:
-            ttyio.setvariable("nobles", bbsengine.util.pluralize(nobles, "noble", "nobles"))
-        else:
-            ttyio.setvariable("nobles", "")
-        ttyio.setvariable("coins", bbsengine.util.pluralize(coins, "coin", "coins", emoji=":moneybag:"))
+        landres = player.getresource("land")
+        serfsres= player.getresource("serfs")
+        coinsres= player.getresource("coins")
+        nobleres= player.getresource("nobles")
+        #io.setvariable("land", util.pluralize(land, **landres))
+        #io.setvariable("serfs", util.pluralize(serfs, **serfsres))
+        #if nobles > 0:
+        #    io.setvariable("nobles", util.pluralize(nobles, **nobleres))
+        #else:
+        #    io.setvariable("nobles", "")
+        #io.setvariable("coins", util.pluralize(coins, **coinres))
 
         player.adjust()
         player.save()
         return True
 
     gifts = []
-    dice = bbsengine.util.diceroll(1, 10)
+    dice = util.diceroll(1, 10)
     if dice == 1:
         gifts += zircon1(player)
     elif dice == 2:
@@ -169,6 +185,6 @@ def main(args, **kw):
         gifts += zircon8(player)
 
     if len(gifts) > 0:
-        ttyio.echo("You are gifted %s by Arch-Mage Zircon." % (bbsengine.util.oxfordcomma(gifts)))
+        io.echo(f"You are gifted {util.oxfordcomma(gifts)} by Arch-Mage Zircon.")
         lib.newsentry(args, player, "You have completed the Zircon Quest")
     return True

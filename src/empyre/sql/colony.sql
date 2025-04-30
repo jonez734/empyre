@@ -1,3 +1,4 @@
+\echo colony
 create table if not exists empyre.__colony (
     name text unique not null primary key,
     foundermoniker text not null constraint fk_empyre_colony_founderid references empyre.__player(moniker) on update cascade on delete set null,
@@ -24,7 +25,7 @@ create table if not exists empyre.__colony (
 create or replace view empyre.colony as
     select 
       c.*,
-      founder.moniker as foundermoniker,
+--      founder.moniker as foundermoniker,
       timezone(currentmember.tz, c.datefounded) as datefoundedlocal
     from empyre.__colony as c
     left join empyre.__player as founder on (founder.moniker = c.foundermoniker)
