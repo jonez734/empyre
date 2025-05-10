@@ -1,8 +1,8 @@
-\echo colony
+--\echo colony
 create table if not exists empyre.__colony (
     name text unique not null primary key,
-    foundermoniker text not null constraint fk_empyre_colony_founderid references empyre.__player(moniker) on update cascade on delete set null,
-    islandname text not null constraint fk_empyre_colony_islandname references empyre.__island(name) on update cascade on delete set null,
+    foundermoniker citext not null constraint fk_empyre_colony_founderid references empyre.__player(moniker) on update cascade on delete set null,
+    islandname citext not null constraint fk_empyre_colony_islandname references empyre.__island(name) on update cascade on delete set null,
     resources jsonb,
     datefounded timestamptz,
     status text
