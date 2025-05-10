@@ -52,7 +52,8 @@ def z(args, **kwargs):
     io.echo(f"{{var:valuecolor}}{util.pluralize(totalmercs, 'mercenary team', 'mercenary teams')}{{var:labelcolor}} in the game.")
 
 
-def juicebarhelp(args, **kwargs):
+def juicebarhelp(**kwargs):
+    args = kwargs.get("args", None)
     io.echo("[H] Hire Mercs")
     if member.checkflag(args, "sysop", **kwargs) is True:
         io.echo("[Z] Maint")
