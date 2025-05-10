@@ -1,4 +1,4 @@
-\echo ship
+--\echo ship
 -- @since 20230824
 create table if not exists empyre.__ship (
     "moniker" citext unique not null primary key,

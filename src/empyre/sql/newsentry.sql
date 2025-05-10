@@ -1,4 +1,4 @@
-\echo newsentry
+--\echo newsentry
 create table if not exists empyre.__newsentry (
     "id" bigserial not null unique primary key,
     "message" text,

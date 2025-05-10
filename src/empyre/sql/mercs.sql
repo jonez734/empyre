@@ -1,4 +1,4 @@
-\echo mercs
+--\echo mercs
 create table empyre.__mercs (
     teammoniker text unique not null primary key,
     hiredbymoniker text constraint fk_mercs_hiredbymoniker references empyre.__player(moniker) on update cascade on delete set null,

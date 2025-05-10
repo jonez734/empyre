@@ -1,4 +1,4 @@
-\echo shipview
+--\echo shipview
 -- @since 20230716
 create or replace view empyre.ship as
     select
