@@ -1,11 +1,11 @@
-\echo island
+--\echo island
 create table if not exists empyre.__island (
-    "name" text unique not null primary key,
-    "playermoniker" text constraint fk_empyre_island_playermoniker references empyre.__player(moniker) on update cascade on delete set null,
+    "name" citext unique not null primary key,
+    "playermoniker" citext constraint fk_empyre_island_playermoniker references empyre.__player(moniker) on update cascade on delete set null,
     "resources" jsonb,
     "status" text,
     "datediscovered" timestamptz,
-    "discoveredbymoniker" text constraint fk_empyre_island_discoveredbymoniker references empyre.__player(moniker) on update cascade on delete set null
+    "discoveredbymoniker" citext constraint fk_empyre_island_discoveredbymoniker references empyre.__player(moniker) on update cascade on delete set null
 );
 
 grant all on empyre.__island to term, sysop;
