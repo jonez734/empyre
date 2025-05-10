@@ -1,8 +1,8 @@
-\echo player
+--\echo player
 create table if not exists empyre.__player (
 --    "id" bigserial unique primary key not null,
     "membermoniker" citext constraint fk_empyre_player_membermoniker references engine.__member(moniker) on update cascade on delete set null,
-    "moniker" text unique,
+    "moniker" citext unique,
     "datelastplayed" timestamptz,
     "datecreated" timestamptz,
     "rank" bigint,
@@ -12,7 +12,7 @@ create table if not exists empyre.__player (
     "weatherconditions" bigint,
     "soldierpromotioncount" bigint,
     "combatvictorycount" bigint,
-    "coins" bigint,
+--    "coins" bigint,
     "beheaded" boolean,
     "taxrate" bigint,
     "resources" jsonb
