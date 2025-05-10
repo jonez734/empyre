@@ -1,4 +1,4 @@
-from .. import lib as empyre
+from .. import lib as libempyre
 from bbsengine6 import util
 
 def init(args, **kwargs):
@@ -13,7 +13,7 @@ def buildargs(args, **kw):
 def main(args, player, **kwargs):
     util.heading(": hood's real deals! :")
     libempyre.setarea(args, "town -> hood's real deals!", **kwargs)
-    
+
     # you have 10 shipyards, BSC
     # you have 10 acres of land
     # prompt = "You have {reverse}%s{/reverse} and {reverse}%s{/reverse}" % (pluralize(player.shipyards, "shipyard", "shipyards"), pluralize(player.credits, "credit", "credits"))
@@ -31,7 +31,7 @@ def main(args, player, **kwargs):
     res = player.getresource("markets")
     res["price"] = 250+player.markets//2
     libempyre.trade(args, player, "markets", **res) # "markets", 250+player.markets//2, "market", "markets", "a")
-    
+
     player.adjust()
     player.save()
 
