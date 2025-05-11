@@ -17,7 +17,7 @@ def buildargs(args, **kw):
 # @since 20200803
 # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_town.lbl#L90
 def main(args, player, **kwargs):
-    io.echo("current tax rate: %s" % (player.taxrate))
+    io.echo(f"{{var:labelcolor}}current tax rate: {{var:labelcolor}}{player.taxrate}")
     x = io.inputinteger("{var:promptcolor}tax rate: {var:inputcolor}", player.taxrate)
     io.echo("{/all}")
     if x is None or x < 1:
