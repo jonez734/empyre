@@ -21,11 +21,11 @@ def main(args, player, **kwargs):
     coinres = player.getresource("coins")
     io.echo()
     exchangerate = 3 #:1 -- 3 coins per credit
-    cr = member.getcredits(args)
-    io.echo(f"{{var:labelcolor}}You have {{var:valuecolor}}{util.pluralize(player.coins, **coinres)}{{var:labelcolor}} and {{var:valuecolor}}{util.pluralize(credits, 'credit', 'credits', emoji=':moneybag:')}{{/all}}")
+    cr = member.getcredits(args, **kwargs)
+    io.echo(f"{{var:labelcolor}}You have {{var:valuecolor}}{util.pluralize(player.coins, **coinres)}{{var:labelcolor}} and {{var:valuecolor}}{util.pluralize(cr, 'credit', 'credits', emoji=':moneybag:')}{{/all}}")
     if cr is not None and cr > 0:
         io.echo(f"{{var:labelcolor}}The exchange rate is {{var:valuecolor}}{util.pluralize(exchangerate, **coinres)} per credit{{/all}}.{{F6}}")
-        amount = io.inputinteger(f"{var:promptcolor}Exchange how many credits?: {var:inputcolor}")
+        amount = io.inputinteger(f"{{var:promptcolor}}Exchange how many credits?: {{var:inputcolor}}")
         io.echo("{/all}")
     else:
         io.echo("You have no credits")
@@ -45,6 +45,8 @@ def main(args, player, **kwargs):
     cr -= amount
     member.setcredits(args, player.moniker, cr, **kwargs)
 
-    io.echo(f"{{var:normalcolor}}You now have {{var:valuecolor}}{util.pluralize(player.coins, **coinres)}{{var:normalcolor}} and {{var:valuecolor}}{util.pluralize(credits, 'credit', 'credits', emoji=':moneybag:')}{{var:normalcolor}}")
+    player.save()
+
+    io.echo(f"{{var:normalcolor}}You now have {{var:valuecolor}}{util.pluralize(player.coins, **coinres)}{{var:normalcolor}} and {{var:valuecolor}}{util.pluralize(cr, 'credit', 'credits', emoji=':moneybag:')}{{var:normalcolor}}")
     lib.setarea(args, "natural disaster bank", player=player)
     return True
