@@ -11,8 +11,8 @@ def access(args, op, **kw):
 def buildargs(args, **kw):
     return None
 
-def main(args, **kw):
-    player = kw["player"] if "player" in kw else None
+def main(args, **kwargs):
+    player = kwargs.get("player", None)
     if player is None:
         io.echo("You do not exist! Go Away!", level="error")
         return False
@@ -47,9 +47,9 @@ def main(args, **kw):
     
     terminalwidth = io.getterminalwidth()
 
-    hotkeys = "QX"
+    hotkeys = "Q"
     for hotkey, desc, func in optiontable:
-        if callable(func) or lib.checkmodule(args, func, **kw):
+        if callable(func) or lib.checkmodule(args, func, **kwargs):
             # ttyio.echo("empyre.town.menu.100: adding hotkey %r" % (hotkey), level="debug")
             hotkeys += hotkey
 
@@ -60,7 +60,7 @@ def main(args, **kw):
         player.save()
         menu()
         ch = io.inputchar(f"{{promptcolor}}town {{optioncolor}}[{hotkeys}]{{promptcolor}}: {{inputcolor}}", hotkeys, "Q", help=help)
-        if ch == "Q" or ch == "X":
+        if ch == "Q":
             io.echo(":door: {green}Return to the Empyre{/all}")
             done = True
             continue
@@ -72,8 +72,8 @@ def main(args, **kw):
                 if ch == key:
                     io.echo(desc)
                     if callable(func):
-                        func(args, **kw)
+                        func(args, **kwargs)
                     else:
-                        lib.runmodule(args, func, **kw)
+                        lib.runmodule(args, func, **kwargs)
                     break
     return True
