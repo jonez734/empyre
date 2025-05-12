@@ -1,26 +1,566 @@
 # @since 20250226
-from . import lib
+import copy
+import random
+
 from bbsengine6 import database, io, listbox, member, util
 
-def build(args, rec, **kwargs):
-    p = lib.Player(args, **kwargs)
-    for attr in ("moniker", "membermoniker", "rank", "previousrank", "turncount", "soldierpromotioncount", "datepromoted", "combatvictorycount", "weatherconditions", "beheaded", "datelastplayed", "taxrate", "training", "datelastplayedlocal"):
-        if attr in rec:
-            setattr(p, attr, rec[attr])
+TURNSPERDAY:int = 10
+SHIPSPERSHIPYARD:int = 10
+HORSESPERSTABLE:int = 50
+SOLDIERSPERNOBLE:int = 20
+SOLDIERS:int = 40
+TAXRATE:int = 15
+COINS:int = 250000
+LAND:int = 5000
+MAXLAND:int = 2500000
+SERFS:int = 2000
+GRAIN:int = 20000
+MAXFOUNDRIES:int = 400
+MAXMARKETS:int = 500
+MAXMILLS:int = 500
+MAXCOINS:int = 1000000
+MAXSHIPYARDS:int = 10
 
-    for name in p.resources.keys():
-        res = p.resources[name]
-        if name not in rec["resources"]:
-            setattr(p, name, res.get("default"))
+RESOURCES = {
+    "coins":      {"type": "int",  "default":COINS, "price":1, "singular": "coin", "plural":"coins", "emoji":":moneybag:", "ship":None},
+    "serfs":      {"type": "int",  "default":SERFS+random.randint(0, 200), "singular": "serf", "plural": "serfs", "ship":"passenger", "emoji":":person:"}, # sf x(19)
+    "land":       {"type": "int",  "default":LAND, "singular":"acre", "plural":"acres", "determiner":"an", "ship":None, "emoji":":farmer:"}, # la x(2)
+    "grain":      {"type": "int",  "default":GRAIN, "singular": "bushel", "plural": "bushels", "emoji":":crop:", "ship":"cargo"}, # gr
+    "soldiers":   {"type": "int",  "default":SOLDIERS, "price":20, "singular":"soldier", "plural":"soldiers", "ship":"millitary passenger"},
+    "nobles":     {"type": "int",  "default":3, "price":25000, "singular":"noble", "plural":"nobles", "ship":"passenger"}, # x(6)
+    "palaces":    {"type": "int",  "default":1, "price":20, "singular":"palace", "plural":"palaces", "ship":None}, # f%(1)
+    "markets":    {"type": "int",  "default":1, "price":1000, "singular":"market", "plural":"markets", "ship":None}, # f%(2) x(7)
+    "mills":      {"type": "int",  "default":1, "price":2000, "singular":"mill", "plural":"mills", "ship":None}, # f%(3) x(8)
+    "foundries":  {"type": "int",  "default":2, "price":7000, "singular":"foundry", "plural":"foundries", "ship":None}, # f%(4) x(9)
+    "shipyards":  {"type": "int",  "default":0, "price":8000, "singular":"shipyard", "plural":"shipyards", "ship":None}, # yc or f%(5)? x(10)
+    "diplomats":  {"type": "int",  "default":0, "price":50000, "singular":"diplomat", "plural":"diplomats", "ship":"passenger millitary"}, # f%(6) 0
+    "ships":      {"type": "int",  "default":0, "price":5000, "singular":"ship", "plural":"ships", "emoji":":anchor:", "ship":None}, # 5000 each, yc? x(12)
+    "navigators": {"type": "int",  "default":0, "price":500, "singular": "navigator", "plural": "navigators", "emoji":":compass:"}, # @since 20220907
+    "stables":    {"type": "int",  "default":1, "price":10000, "singular": "stable", "plural":"stables", "ship":None}, # x(11)
+    "colonies":   {"type": "int",  "default":0, "ship":None, "singular": "colony", "plural":"colonies"}, # i8
+    #            "warriors":   {"type": "int",  "default":0, "singular":"warrior", "plural":"warriors", "ship":"millitary passenger"}, # wa soldier -> warrior or noble?
+    "spices":     {"type": "int",  "default":0, "singular":"ton", "plural":"tons", "ship":"cargo"}, # x(25)
+    "cannons":    {"type": "int",  "default":0, "singular":"cannon", "plural":"cannons","ship":"any"}, # x(14)
+    "forts":      {"type": "int",  "default":0, "singular":"fort", "plural":"forts", "ship":None}, # x(13)
+    "dragons":    {"type": "int",  "default":0, "singular":"dragon", "plural":"dragons", "emoji":":dragon:"},
+    "horses":     {"type": "int",  "default":50,"emoji":":horse:", "ship":"cargo", "singular":"horse", "plural":"horses"}, # x(23)
+    "timber":     {"type": "int",  "default":0, "singular":"log", "plural":"logs", "emoji":":wood:", "ship":"cargo"}, # x(16)
+    "rebels":     {"type": "int",  "default":0, "singular":"rebel", "plural":"rebels", "ship":None},
+    "exports":    {"type": "int",  "default":0, "singular":"ton", "plural":"tons","emoji": ":package:"},
+    "islands":    {"type": "int",  "default":0, "singular":"island", "plural":"islands", "emoji":":palmtree:"},
+}
+
+ATTRIBUTES = {
+    "moniker":               {"default": None },
+    "membermoniker":         {"default": None},
+    "rank":                  {"default": 0 },
+    "previousrank":          {"default": 0 },
+    "turncount":             {"default": 0},
+    "soldierpromotioncount": {"default": 0 },
+    "datepromoted":          {"default": None},
+    "combatvictorycount":    {"default": 0},
+    "weatherconditions":     {"default": 0},
+    "beheaded":              {"default": False},
+    "datelastplayed":        {"default": None},
+    "datelastplayedlocal":   {"default": None},
+    #"coins":                {"default":COINS},
+    "taxrate":               {"default": TAXRATE},
+    #"training":              {"default": 1},
+}
+
+class Player(object):
+    def __init__(self, args, **kwargs):
+        self.args = args
+
+        self.pool = kwargs.get("pool", None)
+        if self.pool is None:
+            self.pool = database.getpool(args, dbname=args.databasename)
+
+        self.conn = kwargs.get("conn", None)
+        if self.conn is None:
+            self.conn = database.connect(args, pool=self.pool)
+
+        currentmoniker = member.getcurrentmoniker(args, conn=self.conn)
+
+        # @see https://github.com/Pinacolada64/ImageBBS/blob/e9f033af1f0b341d0d435ee23def7120821c3960/v1.2/games/empire6/mdl.emp.delx2.txt#L25
+        self.resources = copy.copy(RESOURCES)
+        for name, data in self.resources.items():
+            val = data["default"]
+            # io.echo(f"resource {name=} {val=}", level="debug")
+            setattr(self, name, val)
+            res = self.resources[name]
+            res["value"] = val
+            # io.echo(f"Player.__init__.100: {name=} {res=} {getattr(self, name)=}", level="debug")
+
+        self.attributes = copy.copy(ATTRIBUTES)
+        for name, data in self.attributes.items():
+            # io.echo(f"attribute {name} {data['default']=}", level="debug")
+            setattr(self, name, data["default"])
+            attr = self.attributes[name]
+
+        self.debug = args.debug
+
+#        tz=0:i1=self.palaces:i2=self.markets:i3=self.mills:i4=self.foundries:i5=self.shipyards:i6=self.diplomats
+    def sync(self):
+        io.echo(f"Player.sync()", level="debug")
+        for name in self.resources.keys():
+            self.setresourcevalue(name, getattr(self, name))
+        for name in self.attributes.keys():
+            self.setattributevalue(name, getattr(self, name))
+        return True
+
+    def getresource(self, name, **kwargs):
+        if self.debug:
+            io.echo(f"getresource.100: {name=}")
+        if name in self.resources:
+            _r = self.resources.get(name)
+            r = copy.copy(_r)
+            v = getattr(self, name)
+            if r["type"] == "int":
+                if v is None:
+                    v = 0
+                else:
+                    v = int(v)
+            r["value"] = v
+            if "emoji" not in r or r["emoji"] is None:
+                r["emoji"] = ""
+            elif "emoji" in kwargs:
+                r["emoji"] = kwargs["emoji"]
+            if "singular" in kwargs:
+                r["singular"] = kwargs["singular"]
+            if "plural" in kwargs:
+                r["plural"] = kwargs["plural"]
+            if self.debug:
+                io.echo(f"{r=}", level="debug")
+            return r
+        return None
+
+    # @since 20240706 new
+    def setresourcevalue(self, name:str, value) -> bool:
+        if name in self.resources:
+            self.resources[name]["value"] = value
+            return True
+        return False
+
+    def setattributevalue(self, name:str, value) -> bool:
+        if name in self.attributes:
+            self.attributes[name]["value"] = value
+            return True
+        return False
+
+    # @since 20200901
+    # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_maint.lbl#L22
+    def edit(self):
+        done = False
+        while not done:
+            setarea(self.args, f"edit player resources for {self.moniker}", player=self)
+            op = selectresource(self.args, "select player resource", self.resources)
+            io.echo(f"{op=}", level="debug")
+            if op.kind == "exit" or op.kind == "noitems":
+                break
+
+            r = op.listitem.resource
+            n = op.listitem.pk
+            t = r["type"] if "type" in r else "int"
+            v = r["value"] if "value" in r else None
+            if t == "datetime":
+                x = input.date(f"{n} (date): ", v)
+            elif t == "int":
+                x = io.inputinteger(f"{n} (int): ", v)
+            elif t == "bool":
+                if v is True:
+                    default = "Y"
+                    prompt = "{promptcolor}{n} (bool)? {optioncolor}[{currentoptioncolor}Y{optioncolor}n]{promptcolor}: {inputcolor}"
+                elif v is False:
+                    default = "N"
+                    prompt = f"{promptcolor}{n} (bool)? {optioncolor}[y{{currentoptioncolor}}N]{promptcolor}: {inputcolor}"
+                x = io.inputboolean(prompt, default)
+            else:
+                io.echo(f"invalid resource type for {n=} {t=}", level="error")
+                return
+            setattr(self, n, x)
+            r["value"] = x
+        return
+
+    def buildrec(self, **kwargs):
+        rec = {}
+        for name, data in self.attributes.items():
+            if name not in ("datelastplayedlocal",):
+                rec[name] = data.get("value", data["default"])
+
+        rec["resources"] = database.Jsonb(self.resources)
+        return rec
+
+    def update(self):
+        def _work(cur):
+            rec = self.buildrec()
+            return database.update(self.args, "empyre.__player", self.moniker, rec, primarykey="moniker", conn=self.conn)
+
+        if self.conn is None:
+            if self.pool is None:
+                io.echo("empyre.Player.update.140: no pool!", level="error")
+                return False
+            with database.connect(args, self.pool) as conn:
+                return _work(conn)
+        return _work(self.conn)
+
+    def isdirty(self):
+        def getresval(name):
+            if name in self.resources:
+                r = self.resources[name]
+                return r["value"] if "value" in r else r["default"]
+            return None
+
+        def getattrval(name):
+            if name in self.attributes.keys():
+                attr = self.attributes[name]
+                return attr["value"] if "value" in attr else attr["default"]
+            return None
+
+        for name in self.resources.keys():
+            curval = getattr(self, name)
+            oldval = getresval(name)
+            if self.debug is True:
+                io.echo(f"{name=} {curval=} {oldval=}", level="debug")
+            if curval != oldval:
+                io.echo(f"player.isdirty.100: {name=} {oldval=} {curval=}", level="debug")
+                return True
+
+        for name in self.attributes.keys():
+            curval = getattr(self, name)
+            oldval = getattrval(name)
+            if self.debug is True:
+                io.echo(f"{name=} {curval=} {oldval=}", level="debug")
+            if curval != oldval:
+                if self.debug is True:
+                    io.echo(f"player.isdirty.100: {name=} {oldval=} {curval=}", level="debug")
+                return True
+
+        return False
+
+    def save(self, force=False, commit=True):
+        if self.args.debug is True:
+            io.echo(f"player.save.100: {self.playerid=}", level="debug")
+        if self.moniker is None:
+            io.echo(f"player moniker is not set. save aborted.", level="error")
+            return None
+        if self.membermoniker is None:
+            io.echo("empyre.lib.save.120: You do not exist! Go away!", level="error")
+            return None
+
+        if force is True:
+            self.sync()
+            self.update()
+            if commit is True:
+                self.conn.commit()
+            io.echo(f"{self.moniker} force saved.")
+            return True
+
+        if self.isdirty() is False:
+            io.echo(f"{self.moniker}: clean. no save.")
+            return False
+        io.echo(f"{self.moniker}: dirty. saving.")
+
+        self.sync()
+        self.update()
+        if commit is True:
+            self.conn.commit()
+        return True
+
+    def status(self):
+        import math
+
+        if self.args.debug is True:
+            io.echo(f"{member.getcurrentid()=}", level="debug")
+            io.echo(f"{player.playerid=}, {player.membermoniker=}, {player.moniker=}", level="debug")
+
+        util.heading(f"player status for {self.moniker}")
+
+        terminalwidth = io.getterminalwidth()-2
+
+        maxwidth = 0
+        maxlabellen = 0
+        for name, data in self.resources.items():
+            label = name
+            label = label[:12] + (label[12:] and '..')
+            if len(label) > maxlabellen:
+                maxlabellen = len(label)
+            attr = self.getresource(name)
+            v = getattr(self, name)
+            if v is not None:
+                t = data["type"] if "type" in data else "int"
+                if t == "int":
+                    v = f"{v:>6n}"
+                elif t == "datetime":
+                    if label == "datelastplayed":
+                        v = attr["datelastplayedlocal"]
+                    v = util.datestamp(v, format="%m/%d@%H%M%P%Z")
+
+            buf = f"{label.ljust(maxlabellen)}: {v}"
+            buflen = len(io.tostr(buf))
+            if buflen > maxwidth:
+                maxwidth = buflen
+        columns = math.floor(terminalwidth / maxwidth) - 3
+        if columns < 1:
+            columns = 1
+
+        currentcolumn = 0
+        for name, data in self.resources.items():
+            n = name
+            # https://stackoverflow.com/questions/2872512/python-truncate-a-long-string
+            n = n[:12] + (n[12:] and '..')
+
+            res  = self.getresource(name) # getattr(self, a["name"])
+            v = getattr(self, name)
+            if v is not None:
+                t = data["type"] if "type" in data else "int"
+                if t == "int":
+                    v = f"{int(v):>6n}"
+                elif t == "datetime":
+                    v = util.datestamp(v, format="%m/%d@%I%M%P%Z")
+
+            if name == "soldiers" and self.nobles*SOLDIERSPERNOBLE < self.soldiers:
+                buf = f"{{labelcolor}}{n.ljust(maxlabellen)}: {{highlightcolor}}{v}{{normalcolor}}" # % (n.ljust(maxlabellen), v)
+            elif name == "horses" and self.stables*HORSESPERSTABLE < self.horses:
+                buf = f"{{labelcolor}}{n.ljust(maxlabellen)}: {{highlightcolor}}{v}{{normalcolor}}" # % (n.ljust(maxlabellen), v)
+            else:
+                buf = f"{{labelcolor}}{n.ljust(maxlabellen)}: {{valuecolor}}{v}{{normalcolor}}" # % (n.ljust(maxlabellen), v)
+
+            buflen = len(io.tostr(buf, exclude=("COLOR",), strip=True)) # ttyio.interpret(buf, strip=True, wordwrap=False))
+            if currentcolumn == columns-1:
+                io.echo(f"{buf}")
+            else:
+                io.echo(f" {buf}{' '*(maxwidth-buflen)} ", end="")
+
+            currentcolumn += 1
+            currentcolumn = currentcolumn % columns
+        io.echo()
+        return
+
+    def adjust(self):
+#        if self.taxrate is None or self.taxrate == "":
+#            io.echo("updated taxrate", level="debug")
+#            self.taxrate = 15
+#            self.save(force=True)
+
+        io.echo(f"empyre.Player.adjust.100: {self.grain=} {self.land=}", level="debug")
+        if self.grain < 0:
+            io.echo("less than zero bushels of grain. glitch corrected.")
+            self.grain = 0
+
+        soldierpay = (self.soldiers*(self.combatvictorycount+2))+(self.taxrate*self.palaces*10)//40 # py
+
+        a = 0
+        if soldierpay < 1 and soldiers >= 500:
+            io.echo("soldierpay < 1, soldiers >= 500", level="debug")
+            a += soldiers//5
+            io.echo("adjust.100: a=%d soldiers=%d" % (a, soldiers), level="debug")
+#        io.echo("adjust.160: a=%d" % (a), level="debug")
+
+        if self.nobles < 1:
+            io.echo("You have no nobles!")
+            self.nobles = 0
+            a += self.soldiers
+            self.soldiers = 0
+
+        if self.soldiers < 1:
+            self.soldiers = 0
+            io.echo("You have no soldiers!")
+
+        soldierres = self.getresource("soldiers")
+        if self.soldiers > (self.nobles*SOLDIERSPERNOBLE)+1:
+            a +=  abs(self.nobles*SOLDIERSPERNOBLE - self.soldiers)
+            io.echo(f"Not enough nobles for your {util.pluralize(soldiers, **soldierres)}!") # "soldier", "soldiers", emoji=":military-helmet:")))
+        self.soldiers -= a
+#        ttyio.echo("adjust.180: a=%d" % (a), level="debug")
+
+        if a > 0:
+            io.echo("{valuecolor}{util.pluralize(a, 'soldier deserts', 'soldiers desert', **soldierres)}{/all}{labelcolor} your army")
+
+        if self.land < 0:
+            landres = player.getresource("land")
+            io.echo(f"You lost {util.pluralize(abs(self.land), **landres)}.")
+            self.land = 0
+
+        if self.land == 0:
+            io.echo("You have no land!")
+
+        shipyardsres = self.getresource("shipyards")
+        shipres = self.getresource("ships")
+        shipsisare = self.getresource("ships", singular="ship is", plural="ships are")
+
+        if self.shipyards > MAXSHIPYARDS: # > 400
+            a = int(self.shipyards / 1.1)
+            io.echo(f"{{labelcolor}}Your kingdom cannot support {{valuecolor}}{util.pluralize(self.shipyards, **shipyardsres)}{{labelcolor}}! {{valuecolor}}{util.pluralize(self.shipyards, singular='shipyard is', plural='shipyards are', **shipyardsres)}{{labelcolor}} closed.{{/all}}")
+            self.shipyards -= a
+
+        if self.shipyards == 0:
+            if self.ships > 0:
+                io.echo(f"{{normalcolor}}You do not have enough shipyards! {{valuecolor}}{util.pluralize(self.ships, **shipsisare)}{{normalcolor}} scrapped.")
+                diff = self.ships - self.shipyards*SHIPSPERSHIPYARD
+                self.ships -= diff
+        # take away the ship if there isn't enough shipyard capacity
+        if self.ships > self.shipyards*SHIPSPERSHIPYARD:
+            a = self.ships - self.shipyards*SHIPSPERSHIPYARD
+            io.echo(f"{{normalcolor}}Your {{valuecolor}}{util.pluralize(self.shipyards, **shipyardsres)}{{normalcolor}} cannot support {{valuecolor}}{util.pluralize(self.ships, **shipres)}{{normalcolor}}, {{normalcolor}} {{valuecolor}}{util.pluralize(a, **shipsisare)} {{normalcolor}} scrapped.")
+            self.ships -= a
+
+        coinsres = self.getresource("coins")
+
+        # if pn>1e6 then a%=pn/1.5:pn=pn-a%:&"{f6}{lt. blue}You pay {lt. green}${pound}%f {lt. blue}to the monks for this{f6}year's provisions for your subjects' survival.{f6}"
+
+        io.echo(f"{self.resources['coins']['value']=} {self.coins=}", level="debug")
+        if self.coins > MAXCOINS:
+            a = int(self.coins / 1.5)
+            self.coins -= a
+            io.echo(f"{{normalcolor}}You donate {{valuecolor}}{util.pluralize(a, **coinsres)}{{normalcolor}} to the monks.")
+
+        if self.coins < 0:
+            io.echo(f"{{normalcolor}}You lost your last {{valuecolor}}{util.pluralize(abs(self.coins), **coinsres)}{{normalcolor}}.")
+            self.coins = 0
+
+        landres = self.getresource("land")
+        if self.land > MAXLAND:
+            a = int(self.land / 2.5)
+            self.land -= a
+            io.echo(f"{{normalcolor}}You donate {{valuecolor}}{util.pluralize(a, **landres)}{{normalcolor}} to the monks.")
+
+        if self.foundries > MAXFOUNDRIES:
+            a = self.foundries // 3
+            self.foundries -= a
+            io.echo(f"{{green}}{{empyre.highlightcolor}} MAJOR EXPLOSION! {{/all}}{{valuecolor}}{util.pluralize(a, 'foundry is', 'foundries are', **foundryres)} destroyed.")
+
+        marketres = self.getresource("markets", singular="market is", plural="markets are")
+        if self.markets > MAXMARKETS:
+            a = self.markets // 5
+            self.markets -= a
+            io.echo(f"{{red}}Some market owners retire; {util.pluralize(a, **marketres)} closed.")
+
+        if self.mills > MAXMILLS:
+            a = self.mills // 4
+            self.mills -= a
+            millres = player.getresource("mills")
+            if a == 1:
+                io.echo(f"{{normalcolor}}The mill is overworked! {util.pluralize(a, 'The mill has a broken millstone and is closed', '', quantity=False, **millres)}")
+            else:
+                io.echo(f"{{normalcolor}}The mills are overworked! {util.pluralize(a, '', 'mills have broken millstones and are closed', **millres)}")
+#            io.echo("{green}The mills are overworked! {util.pluralize(a, 'mill has a broken millstone and is closed', 'mills have broken millstones and are closed', **millres)} and are closed.{/all}")
+
+        if self.coins < 0:
+            io.echo(f"{lightred}You are overdrawn by {util.pluralize(abs(self.coins), **coinres)}")
+            self.coins = 1
+
+        horseres = self.getresource("horses")
+        stableres = self.getresource("stables")
+        if self.horses > self.stables*HORSESPERSTABLE:
+            a = self.horses - self.stables*HORSESPERSTABLE
+            io.echo(f"{{valuecolor}}{util.pluralize(self.stables, **stableres)}{{labelcolor}} is not enough for {{valuecolor}}{util.pluralize(self.horses, **horseres)}{{labelcolor}}, {{valuecolor}}{util.pluralize(a, **horseres)}{{labelcolor}} set free.")
+            self.horses -= a
+
+        lost = []
+        for name, data in self.resources.items():
+            type = data["type"] if "type" in data else "int"
+            if type != "int":
+                continue
+            # ttyio.echo("player.adjust.100: name=%r" % (name), level="debug")
+            attr = self.getresource(name) # getattr(player, name)
+            singular = data["singular"] if "singular" in data else "singular"
+            plural = data["plural"] if "plural" in data else "plural"
+            default = data["default"] if "default" in data else 0
+            val = data["value"] if "value" in data and data["value"] is not None else default
+            if val < 0:
+                lost.append(util.pluralize(abs(val), singular, plural))
+                setattr(player, name, 0)
+
+        if len(lost) > 0:
+            io.echo(f"You have lost {util.oxfordcomma(lost)}")
+
+        self.previousrank = self.rank
+        self.rank = calculaterank(self.args, self)
+        # player.save()
+
+        return
+
+    def revert(self):
+        pass
+
+class completePlayerName(object):
+    def __init__(self, args):
+        self.args = args
+        self.matches = []
+        self.debug = args.debug if "debug" in args else False
+
+    def complete(self:object, text:str, state:int):
+        dbh = database.connect(self.args)
+
+        vocab = []
+        sql:str = "select name from empyre.player"
+        dat:tuple = ()
+        cur = dbh.cursor()
+        cur.execute(sql, dat)
+        for rec in database.resultiter(cur):
+            vocab.append(rec["name"])
+        results = [x for x in vocab if x.startswith(text)] + [None]
+        return results[state]
+
+def verifyPlayerNameFound(name:str, **kwargs:dict) -> bool:
+    import argparse
+    args = kwargs["args"] if "args" in kwargs else Namespace()
+
+    dbh = database.connect(args)
+
+    cur = dbh.cursor()
+    sql:str = "select 1 from empyre.player where moniker=%s"
+    dat:tuple = (name,)
+    cur.execute(sql, dat)
+    if cur.rowcount == 0:
+        return False
+    return True
+
+def verifyPlayerNameNotFound(moniker:str, **kwargs:dict) -> bool:
+    import argparse
+    args = kwargs.get("args", argparse.Namespace())
+    def _work(cur):
+        sql:str = "select 1 from empyre.player where moniker=%s"
+        dat:tuple = (moniker,)
+        cur.execute(sql, dat)
+        io.echo(f"verifyPlayerNameNotFound.100: mogrify={database.sqlmogrify(cur, sql, dat)}", level="debug")
+        if cur.rowcount == 0:
+            return True
+        return False
+
+    io.echo(f"verifyPlayerNameNotFound.120: {args=} {moniker=}", level="debug")
+    try:
+        if cur is None:
+            with database.connect(args) as conn:
+                with database.cursor(conn) as cur:
+                    return _work(cur)
         else:
-            setattr(p, name, res.get("value", res.get("default")))
+            return _work(cur)
+    except Exception as e:
+        io.echo(f"verifyPlayerNameNotFound.140: exception {e}", level="error")
 
-#    io.echo(f"empyre.player.build.200: {p=}", level="debug")
+def build(args, rec:dict, **kwargs) -> Player:
+    p = Player(args, **kwargs) # Player(args, **kwargs)
+    # io.echo(f"build.100: {getattr(p, 'coins')=}", level="debug")
+    for name, data in p.attributes.items():
+        v = rec.get(name, data["default"])
+        if v is None:
+            v = data["default"]
+        # io.echo(f"empyre.player.build.120: {name=} {v=}", level="debug")
+        setattr(p, name, v)
+
+    for name, data in p.resources.items():
+        v = rec.get(name, data["default"])
+        if v is None:
+            v = data["default"]
+
+        # io.echo(f"empyre.player.build.140: {name=} {v=}", level="debug")
+        setattr(p, name, v)
+        p.setresourcevalue(name, v)
+
+    # io.echo(f"build.160: {p.resources['coins']['value']=} {getattr(p, 'coins')=}", level="debug")
     return p
-
-def buildrec(args, player, **kwargs):
-    rec = {}
-    return rec
 
 def load(args, moniker, **kwargs):
     def _work(conn):
@@ -34,23 +574,13 @@ def load(args, moniker, **kwargs):
                 return None
 
             rec = cur.fetchone()
-            player = build(args, rec, **kwargs)
-#            io.echo(f"empyre.player.load.320: {player=} {rec=}", level="debug")
-
-#            for attr in ("moniker", "membermoniker", "rank", "previousrank", "turncount", "soldierpromotioncount", "datepromoted", "combatvictorycount", "weatherconditions", "beheaded", "datelastplayed", "taxrate", "training", "datelastplayedlocal"):
-#                if attr in player:
-#                    setattr(player, attr, player[attr])
-#
-#            for name in self.resources.keys():
-#                if name not in player["resources"]:
-#                    v = self.resources[name]["default"]
-#                else:
-#                    v = player["resources"][name]["value"]
-#                    if v is None:
-#                        v = self.resources[name]["default"]
-#                        io.echo(f"{v=}", level="debug")
-#                setattr(self, name, v)
-            return player
+            io.echo(f"empyre.player.load.500: {rec['coins']=}", level="debug")
+#            rec["resources"] = database.Jsonb(rec["resources"])
+            p = build(args, rec)
+            # io.echo(f"empyre.player.load.400: {p.coins=}", level="debug")
+            p.sync()
+            # io.echo(f"empyre.player.load.422: {p.coins=}", level="debug")
+            return p
         
     conn = kwargs.get("conn", None)
     if conn is None:
@@ -59,50 +589,46 @@ def load(args, moniker, **kwargs):
             io.echo(f"empyre.player.load.200: {pool=}", level="error")
             return None
         with database.connect(pool=pool) as conn:
-            p = _work(conn)
-    else:
-        p = _work(conn)
-#    io.echo(f"empyre.player.load.220: {p=}", level="debug")
-    return p
-
-def update(self, moniker, player, **kwargs):
-    def _work(conn):
-        for name in self.resources.keys():
-            v = getattr(self, name)
-            player.setresourcevalue(name, v)
-#            io.echo(f"syncresvalues.100: {name=} {v=}", level="debug")
-
-        p = {}
-        for attr in ("moniker", "membermoniker", "rank", "previousrank", "turncount", "soldierpromotioncount", "datepromoted", "combatvictorycount", "weatherconditions", "beheaded", "datelastplayed", "coins", "taxrate", "resources"):
-            p[attr] = getattr(player, attr)
-
-        return database.update(self.args, "empyre.__player", moniker, p, primarykey="moniker", conn=conn)
-    
-    conn = kwargs.get("conn", None)
-    if conn is None:
-        pool = kwargs.get("pool", None)
-        if pool is None:
-            io.echo(f"empyre.player.update.200: {pool=}", level="error")
-            return False
-        with database.connect(pool=pool) as conn:
             return _work(conn)
-    else:
-        return _work(conn)
+
+    return _work(conn)
+
+#def update(self, moniker, player, **kwargs):
+#    def _work(conn):
+#        for name in self.resources.keys():
+#            v = getattr(self, name)
+#            player.setresourcevalue(name, v)
+#
+#        p = {}
+#        for attr in ("moniker", "membermoniker", "rank", "previousrank", "turncount", "soldierpromotioncount", "datepromoted", "combatvictorycount", "weatherconditions", "beheaded", "datelastplayed", "coins", "taxrate", "resources"):
+#            p[attr] = getattr(player, attr)
+#
+#        return database.update(self.args, "empyre.__player", moniker, p, primarykey="moniker", conn=conn)
+#
+#    conn = kwargs.get("conn", None)
+#    if conn is None:
+#        pool = kwargs.get("pool", None)
+#        if pool is None:
+#            io.echo(f"empyre.player.update.200: {pool=}", level="error")
+#            return False
+#        with database.connect(pool=pool) as conn:
+#            return _work(conn)
+#    else:
+#        return _work(conn)
 
 def select(args, title:str="select player", prompt:str="player: ", membermoniker:str=None, **kwargs):
     class EmpyrePlayerListboxItem(listbox.ListboxItem):
         def __init__(self, rec:dict, width:int, height:int=1, **kwargs):
-            io.echo(f"empyre.lib.EmpyreListboxItem.200: {kwargs=}", level="debug")
+            # io.echo(f"empyre.lib.EmpyreListboxItem.200: {kwargs=}", level="debug")
             super().__init__(self, width, height, **kwargs)
             self.player = load(args, rec["moniker"], **kwargs)
             if self.player is None:
-#                io.echo(f"empyre.player.select.240: {self.player=}", level="error")
+                io.echo(f"empyre.player.select.240: {self.player=}", level="error")
                 return
+
             self.pool = kwargs.get("pool", None)
             self.conn = kwargs.get("conn", None)
             
-#            io.echo(f"empyre.player.select.200: {self.pool=} {self.conn=}", level="debug")
-
             landres = self.player.getresource("land")
             if "emoji" in landres:
                 landres["emoji"] = ""
@@ -200,3 +726,121 @@ def count(args, membermoniker:str, **kwargs) -> int:
             return _work(conn)
     else:
         return _work(conn)
+
+def inputplayername(prompt:str="player name: ", oldvalue:str="", **kwargs:dict):
+    multiple:bool = kwargs.get("multiple", False)
+    args = kwargs["args"] if "args" in kwargs else argparse.Namespace()
+    noneok:bool = kwargs.get("noneok", True)
+    verify = kwargs.pop("verify", verifyPlayerNameFound)
+    name = io.inputstring(prompt, oldvalue, verify=verify, completer=completePlayerName(args), completerdelims="", **kwargs)
+    io.echo(f"inputplayername.160: {name=}", level="debug")
+    return name
+
+def create(args, **kwargs):
+    def _work(conn, playermoniker, membermoniker) -> str:
+        p = Player(args)
+        rec = p.buildrec()
+        rec["moniker"] = playermoniker
+        rec["membermoniker"] = membermoniker
+        rec["datecreated"] = "now()"
+        io.echo(f"{rec=}", level="debug")
+
+        database.insert(args, "empyre.__player", rec, primarykey="moniker", mogrify=True, conn=conn)
+
+        return p
+
+#    io.echo(f"player.new.100: {currentmembermoniker=}", level="debug")
+
+    currentmembermoniker = member.getcurrentmoniker(args, **kwargs)
+    playermoniker = inputplayername("new player moniker: ", currentmembermoniker, verify=verifyPlayerNameNotFound, multiple=False, args=args, returnseq=False)
+    if playermoniker == "":
+        io.echo("aborted.")
+        return None
+
+#    player = Player(args, **kwargs)
+#    player.datecreated = "now()"
+
+#    io.echo(f"empyre.lib.Player.insert.100: {player=}", level="debug")
+    try:
+        conn = kwargs.get("conn", None)
+        if conn is None:
+            pool = kwargs.get("pool", None)
+            if pool is None:
+                io.echo(f"empyre.lib.insert.140: {pool=}", level="error")
+                return False
+            conn = database.connect(args, pool=pool)
+            with conn:
+                return _work(conn, playermoniker, currentmembermoniker)
+        else:
+            return _work(conn, playermoniker, currentmembermoniker)
+    except Exception as e:
+        io.echo(f"empyre.lib.insert.100: exception {e}", level="error")
+        raise
+
+    io.echo(f"player.insert.100: {self.moniker=}", level="debug")
+    return p
+
+def generate(self, rank=0):
+    # http://donjon.bin.sh/fantasy/name/#type=me;me=english_male -- ty ryan
+    #        namelist = ("Richye", "Gerey", "Andrew", "Ryany", "Mathye Burne", "Enryn", "Andes", "Piersym Jordye", "Vyncis", "Gery Aryn", "Hone Sharcey", "Kater", "Erix", "Abell", "Wene Noke", "Jane Folcey", "Abel", "Bilia", "Cilia", "Joycie")
+    self.moniker = generatename(self.args) # namelist[random.randint(0, len(namelist)-1)]
+    if rank == 1:
+        self.markets = random.randint(10, 15)
+        self.mills = random.randint(6, 9)
+        self.diplomats = random.randint(1, 2)
+        # self.serfs = random.randint()
+    return
+
+def getranktitle(args, rank:int):
+    if args.debug is True:
+        io.echo("getranktitle.100: rank=%r" % (rank), level="debug")
+    if rank == 0:
+        return "lord"
+    elif rank == 1:
+        return "prince"
+    elif rank == 2:
+        return "king"
+    elif rank == 3:
+        return "emperor"
+    return "rank-error"
+
+def calculaterank(args:object, player:Player) -> int:
+    #i1=f%(1) palaces
+    #i2=f%(2) markets
+    #i3=f%(3) mills
+    #i4=f%(4) foundries
+    #i5=f%(5) shipyards
+    #i6=f%(6) diplomats
+
+    rank = 0
+
+    if (player.markets > 23 and
+        player.mills >= 10 and
+        player.foundries > 13 and
+        player.shipyards > 11 and
+        player.palaces > 9 and
+        (player.land / player.serfs) > 23.4 and
+        player.serfs >= 2500): # b? > 62
+            rank = 3 # emperor
+    elif (player.markets > 15 and
+        player.mills >= 10 and
+        player.diplomats > 2 and
+        player.foundries > 6 and
+        player.shipyards > 4 and
+        player.palaces > 6 and
+        (player.land / player.serfs > 10.5) and
+        player.serfs > 3500 and
+        player.nobles > 30):
+            rank = 2 # king
+    elif (player.markets >= 10 and
+        player.diplomats > 0 and
+        player.mills > 5 and
+        player.foundries > 1 and
+        player.shipyards > 1 and
+        player.palaces > 2 and
+        (player.land/player.serfs > 5.1) and
+        player.nobles > 15 and
+        player.serfs > 3000):
+            rank = 1 # prince
+
+    return rank
