@@ -22,7 +22,7 @@ def main(args, player, **kwargs):
 #    lib.trade(args, player, "ships", "ships", 5000, "ship", "ships", "a", ":anchor:")
     res = player.getresource("foundries")
     res["price"] = 2000+player.foundries//2
-    libempyre.trade(args, player, **res) # "foundries", "foundries", 2000+player.foundries//2, "foundry", "foundries", "a")
+    libempyre.trade(args, player, "foundries", **res) # "foundries", "foundries", 2000+player.foundries//2, "foundry", "foundries", "a")
 
     res = player.getresource("mills")
     res["price"] = 500+player.mills//2
