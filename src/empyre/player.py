@@ -4,8 +4,9 @@ import random
 
 from bbsengine6 import database, io, listbox, member, util
 
-TURNSPERDAY:int = 10
-SHIPSPERSHIPYARD:int = 10
+from .ship import lib as libship
+
+TURNSPERDAY:int = 99
 HORSESPERSTABLE:int = 50
 SOLDIERSPERNOBLE:int = 20
 SOLDIERS:int = 40
@@ -19,7 +20,8 @@ MAXFOUNDRIES:int = 400
 MAXMARKETS:int = 500
 MAXMILLS:int = 500
 MAXCOINS:int = 1000000
-MAXSHIPYARDS:int = 10
+# MAXSHIPYARDS:int = 10
+# SHIPSPERSHIPYARD:int = 10
 
 RESOURCES = {
     "coins":      {"type": "int",  "default":COINS, "price":1, "singular": "coin", "plural":"coins", "emoji":":moneybag:", "ship":None},
@@ -65,7 +67,7 @@ ATTRIBUTES = {
     "datelastplayedlocal":   {"default": None},
     #"coins":                {"default":COINS},
     "taxrate":               {"default": TAXRATE},
-    #"training":              {"default": 1},
+    "training":              {"default": 1},
 }
 
 class Player(object):
@@ -76,11 +78,12 @@ class Player(object):
         if self.pool is None:
             self.pool = database.getpool(args, dbname=args.databasename)
 
-        self.conn = kwargs.get("conn", None)
-        if self.conn is None:
-            self.conn = database.connect(args, pool=self.pool)
+#        self.conn = kwargs.get("conn", None)
+#        if self.conn is None:
+#            self.conn = database.connect(args, pool=self.pool)
 
-        currentmoniker = member.getcurrentmoniker(args, conn=self.conn)
+        with database.connect(args, pool=self.pool) as conn:
+            currentmoniker = member.getcurrentmoniker(args, conn=conn)
 
         # @see https://github.com/Pinacolada64/ImageBBS/blob/e9f033af1f0b341d0d435ee23def7120821c3960/v1.2/games/empire6/mdl.emp.delx2.txt#L25
         self.resources = copy.copy(RESOURCES)
@@ -102,7 +105,7 @@ class Player(object):
 
 #        tz=0:i1=self.palaces:i2=self.markets:i3=self.mills:i4=self.foundries:i5=self.shipyards:i6=self.diplomats
     def sync(self):
-        io.echo(f"Player.sync()", level="debug")
+        # io.echo(f"Player.sync()", level="debug")
         for name in self.resources.keys():
             self.setresourcevalue(name, getattr(self, name))
         for name in self.attributes.keys():
@@ -153,8 +156,8 @@ class Player(object):
     def edit(self):
         done = False
         while not done:
-            setarea(self.args, f"edit player resources for {self.moniker}", player=self)
-            op = selectresource(self.args, "select player resource", self.resources)
+            libempyre.setarea(self.args, f"edit player resources for {self.moniker}", player=self)
+            op = libempyre.selectresource(self.args, "select player resource", self.resources)
             io.echo(f"{op=}", level="debug")
             if op.kind == "exit" or op.kind == "noitems":
                 break
@@ -191,18 +194,16 @@ class Player(object):
         rec["resources"] = database.Jsonb(self.resources)
         return rec
 
-    def update(self):
-        def _work(cur):
+    def update(self, conn):
+        def _work(conn):
             rec = self.buildrec()
-            return database.update(self.args, "empyre.__player", self.moniker, rec, primarykey="moniker", conn=self.conn)
+            database.update(self.args, "empyre.__player", self.moniker, rec, primarykey="moniker", conn=conn)
+            return True
 
-        if self.conn is None:
-            if self.pool is None:
-                io.echo("empyre.Player.update.140: no pool!", level="error")
-                return False
-            with database.connect(args, self.pool) as conn:
-                return _work(conn)
-        return _work(self.conn)
+        if self.pool is None:
+            io.echo(f"empyre.Player.update.160: {pool=}", level="error")
+            return False
+        return _work(conn)
 
     def isdirty(self):
         def getresval(name):
@@ -248,24 +249,15 @@ class Player(object):
             io.echo("empyre.lib.save.120: You do not exist! Go away!", level="error")
             return None
 
-        if force is True:
-            self.sync()
-            self.update()
-            if commit is True:
-                self.conn.commit()
-            io.echo(f"{self.moniker} force saved.")
+        if force is True or self.isdirty() is True:
+            io.echo(f"{{var:labelcolor}}saving {{var:valuecolor}}{self.moniker}{{var:labelcolor}}: ", end="")
+            with database.connect(self.args, pool=self.pool) as conn:
+                self.sync()
+                self.update(conn)
+                if commit is True:
+                    conn.commit()
+            io.echo(" ok ", level="ok")
             return True
-
-        if self.isdirty() is False:
-            io.echo(f"{self.moniker}: clean. no save.")
-            return False
-        io.echo(f"{self.moniker}: dirty. saving.")
-
-        self.sync()
-        self.update()
-        if commit is True:
-            self.conn.commit()
-        return True
 
     def status(self):
         import math
@@ -343,7 +335,7 @@ class Player(object):
 #            self.taxrate = 15
 #            self.save(force=True)
 
-        io.echo(f"empyre.Player.adjust.100: {self.grain=} {self.land=}", level="debug")
+        # io.echo(f"empyre.Player.adjust.100: {self.grain=} {self.land=}", level="debug")
         if self.grain < 0:
             io.echo("less than zero bushels of grain. glitch corrected.")
             self.grain = 0
@@ -389,7 +381,7 @@ class Player(object):
         shipres = self.getresource("ships")
         shipsisare = self.getresource("ships", singular="ship is", plural="ships are")
 
-        if self.shipyards > MAXSHIPYARDS: # > 400
+        if self.shipyards > libship.MAXSHIPYARDS: # > 400
             a = int(self.shipyards / 1.1)
             io.echo(f"{{labelcolor}}Your kingdom cannot support {{valuecolor}}{util.pluralize(self.shipyards, **shipyardsres)}{{labelcolor}}! {{valuecolor}}{util.pluralize(self.shipyards, singular='shipyard is', plural='shipyards are', **shipyardsres)}{{labelcolor}} closed.{{/all}}")
             self.shipyards -= a
@@ -397,11 +389,11 @@ class Player(object):
         if self.shipyards == 0:
             if self.ships > 0:
                 io.echo(f"{{normalcolor}}You do not have enough shipyards! {{valuecolor}}{util.pluralize(self.ships, **shipsisare)}{{normalcolor}} scrapped.")
-                diff = self.ships - self.shipyards*SHIPSPERSHIPYARD
+                diff = self.ships - self.shipyards*libship.SHIPSPERSHIPYARD
                 self.ships -= diff
         # take away the ship if there isn't enough shipyard capacity
-        if self.ships > self.shipyards*SHIPSPERSHIPYARD:
-            a = self.ships - self.shipyards*SHIPSPERSHIPYARD
+        if self.ships > self.shipyards*libship.SHIPSPERSHIPYARD:
+            a = self.ships - self.shipyards*libship.SHIPSPERSHIPYARD
             io.echo(f"{{normalcolor}}Your {{valuecolor}}{util.pluralize(self.shipyards, **shipyardsres)}{{normalcolor}} cannot support {{valuecolor}}{util.pluralize(self.ships, **shipres)}{{normalcolor}}, {{normalcolor}} {{valuecolor}}{util.pluralize(a, **shipsisare)} {{normalcolor}} scrapped.")
             self.ships -= a
 
@@ -517,28 +509,50 @@ def verifyPlayerNameFound(name:str, **kwargs:dict) -> bool:
         return False
     return True
 
+
+def verifyPlayerNameFound(moniker:str, **kwargs:dict) -> bool:
+    import argparse
+    args = kwargs.get("args", argparse.Namespace())
+    def _work(conn):
+        sql:str = "select 1 from empyre.player where moniker=%s"
+        dat:tuple = (moniker,)
+        with database.cursor(conn) as cur:
+            cur.execute(sql, dat)
+            io.echo(f"verifyPlayerNameNotFound.100: mogrify={database.mogrifysql(cur, sql, dat)}", level="debug")
+            if cur.rowcount == 0:
+                return False
+            return True
+
+    io.echo(f"verifyPlayerNameNotFound.120: {args=} {moniker=}", level="debug")
+    pool = kwargs.get("pool", None)
+    if pool is None:
+        io.echo(f"empyre.player.verifyPlayerNameNotFound.160: {pool=}", level="error")
+        return False
+
+    with database.connect(args, pool=pool) as conn:
+        return _work(conn)
+
 def verifyPlayerNameNotFound(moniker:str, **kwargs:dict) -> bool:
     import argparse
     args = kwargs.get("args", argparse.Namespace())
-    def _work(cur):
+    def _work(conn):
         sql:str = "select 1 from empyre.player where moniker=%s"
         dat:tuple = (moniker,)
-        cur.execute(sql, dat)
-        io.echo(f"verifyPlayerNameNotFound.100: mogrify={database.sqlmogrify(cur, sql, dat)}", level="debug")
-        if cur.rowcount == 0:
-            return True
-        return False
+        with database.cursor(conn) as cur:
+            cur.execute(sql, dat)
+            io.echo(f"verifyPlayerNameNotFound.100: mogrify={database.mogrifysql(cur, sql, dat)}", level="debug")
+            if cur.rowcount == 0:
+                return True
+            return False
 
     io.echo(f"verifyPlayerNameNotFound.120: {args=} {moniker=}", level="debug")
-    try:
-        if cur is None:
-            with database.connect(args) as conn:
-                with database.cursor(conn) as cur:
-                    return _work(cur)
-        else:
-            return _work(cur)
-    except Exception as e:
-        io.echo(f"verifyPlayerNameNotFound.140: exception {e}", level="error")
+    pool = kwargs.get("pool", None)
+    if pool is None:
+        io.echo(f"empyre.player.verifyPlayerNameNotFound.160: {pool=}", level="error")
+        return False
+
+    with database.connect(args, pool=pool) as conn:
+        return _work(conn)
 
 def build(args, rec:dict, **kwargs) -> Player:
     p = Player(args, **kwargs) # Player(args, **kwargs)
@@ -550,16 +564,18 @@ def build(args, rec:dict, **kwargs) -> Player:
         # io.echo(f"empyre.player.build.120: {name=} {v=}", level="debug")
         setattr(p, name, v)
 
+    io.echo(f"empyre.player.build.200: {rec=}", level="debug")
+
     for name, data in p.resources.items():
         v = rec.get(name, data["default"])
         if v is None:
             v = data["default"]
+        io.echo(f"empyre.player.build.220: {name=} {v=}", level="debug")
 
-        # io.echo(f"empyre.player.build.140: {name=} {v=}", level="debug")
         setattr(p, name, v)
-        p.setresourcevalue(name, v)
+        # p.setresourcevalue(name, v)
 
-    # io.echo(f"build.160: {p.resources['coins']['value']=} {getattr(p, 'coins')=}", level="debug")
+    io.echo(f"empyre.player.build.200: {rec=}", level="debug")
     return p
 
 def load(args, moniker, **kwargs):
@@ -574,24 +590,20 @@ def load(args, moniker, **kwargs):
                 return None
 
             rec = cur.fetchone()
-            io.echo(f"empyre.player.load.500: {rec['coins']=}", level="debug")
-#            rec["resources"] = database.Jsonb(rec["resources"])
+            io.echo(f"empyre.player.load.320: {type(rec['resources'])=}", level="debug")
             p = build(args, rec)
             # io.echo(f"empyre.player.load.400: {p.coins=}", level="debug")
             p.sync()
             # io.echo(f"empyre.player.load.422: {p.coins=}", level="debug")
             return p
         
-    conn = kwargs.get("conn", None)
-    if conn is None:
-        pool = kwargs.get("pool", None)
-        if pool is None:
-            io.echo(f"empyre.player.load.200: {pool=}", level="error")
-            return None
-        with database.connect(pool=pool) as conn:
-            return _work(conn)
+    pool = kwargs.get("pool", None)
+    if pool is None:
+        io.echo(f"empyre.player.load.500: {pool=}", level="error")
+        return False
 
-    return _work(conn)
+    with database.connect(args, pool=pool) as conn:
+        return _work(conn)
 
 #def update(self, moniker, player, **kwargs):
 #    def _work(conn):
@@ -617,18 +629,41 @@ def load(args, moniker, **kwargs):
 #        return _work(conn)
 
 def select(args, title:str="select player", prompt:str="player: ", membermoniker:str=None, **kwargs):
+    pool = kwargs.get("pool", None)
+    if pool is None:
+        io.echo(f"empyre.player.select.300: {pool=}", level="error")
+
+    class EmpyrePlayerListbox(listbox.Listbox):
+        def __init__(self, args, **kwargs):
+            self.cur = kwargs.get("cur", None)
+            self.pool = kwargs.get("pool", None)
+            io.echo(f"player.EmpyrePlayerListbox.100: {self.cur=} {self.pool=}", level="debug")
+            super().__init__(args, **kwargs)
+
+        def fetchpage(self):
+            if self.cur is None:
+                io.echo(f"bbsengine.listbox.Listbox.fetchpage.200: {cur=}", level="error")
+                return None
+            self.cur.scroll(self.page*self.pagesize, mode="absolute")
+            self.items = []
+            for rec in self.cur.fetchmany(self.pagesize):
+                self.items.append(EmpyrePlayerListboxItem(rec, pool=self.pool))
+            self.numitems = len(self.items)
+            return self.items
+
     class EmpyrePlayerListboxItem(listbox.ListboxItem):
-        def __init__(self, rec:dict, width:int, height:int=1, **kwargs):
-            # io.echo(f"empyre.lib.EmpyreListboxItem.200: {kwargs=}", level="debug")
+        def __init__(self, rec:dict, **kwargs):
+            self.pool = kwargs.get("pool", None)
+            io.echo(f"empyre.lib.EmpyreListboxItem.200: {kwargs=}", level="debug")
+            width = kwargs.get("width", io.terminal.width())
+            height = 1
             super().__init__(self, width, height, **kwargs)
+            io.echo(f"empyre.player.EmpyrePlayerListboxItem.300: {rec=}", level="debug")
             self.player = load(args, rec["moniker"], **kwargs)
             if self.player is None:
                 io.echo(f"empyre.player.select.240: {self.player=}", level="error")
                 return
 
-            self.pool = kwargs.get("pool", None)
-            self.conn = kwargs.get("conn", None)
-            
             landres = self.player.getresource("land")
             if "emoji" in landres:
                 landres["emoji"] = ""
@@ -666,39 +701,32 @@ def select(args, title:str="select player", prompt:str="player: ", membermoniker
             io.echo("{restorecursor}add player")
             return False
 
-    conn = kwargs.get("conn", None)
-    if conn is None:
-        pool = kwargs.get("pool", None)
-        if pool is None:
-            io.echo(f"empyre.lib.selectplayer.200: {pool=}", level="error")
-            return False
-        conn = database.connect(args, pool=pool)
+    with database.connect(args, pool=pool) as conn:
+        io.echo(f"selectplayer.100: {conn=} {membermoniker=}", level="debug")
 
-    io.echo(f"selectplayer.100: {conn=} {membermoniker=}", level="debug")
+        if membermoniker is None:
+            membermoniker = member.getcurrentmoniker(args, conn=conn)
+        io.echo(f"empyre.player.select.220: {membermoniker=}", level="debug")
 
-    if membermoniker is None:
-        membermoniker = member.getcurrentmoniker(args, conn=conn)
-    io.echo(f"empyre.lib.selectplayer.220: {membermoniker=}", level="debug")
+        sql:str = "select moniker from empyre.player where membermoniker=%s order by datelastplayed desc"
+        dat:tuple = (membermoniker,)
 
-    sql:str = "select moniker from empyre.player where membermoniker=%s order by datelastplayed desc"
-    dat:tuple = (membermoniker,)
+        totalitems = count(args, membermoniker, conn=conn)
+        with database.cursor(conn) as cur:
+            if args.debug is True:
+                io.echo(f"getplayer.110: {cur.mogrify(sql, dat)=}", level="debug")
+            cur.execute(sql, dat)
+            if cur.rowcount == 0:
+                io.echo("no player record.")
+                return None
 
-    totalitems = count(args, membermoniker, conn=conn)
-    with database.cursor(conn) as cur:
-        if args.debug is True:
-            io.echo(f"getplayer.110: {cur.mogrify(sql, dat)=}", level="debug")
-        cur.execute(sql, dat)
-        if cur.rowcount == 0:
-            io.echo("no player record.")
-            return None
-
-        lb = listbox.Listbox(args, title=title, keyhandler=None, totalitems=totalitems, itemclass=EmpyrePlayerListboxItem, cur=cur, conn=conn, **kwargs)
-        op = lb.run(prompt) # "player: ")
-        if op.kind == "select":
-            io.echo(f"{op.listitem.player.moniker}")
-            return op.listitem.player
-        elif op.kind == "exit":
-            return None
+            lb = EmpyrePlayerListbox(args, title=title, keyhandler=None, totalitems=totalitems, cur=cur, **kwargs)
+            op = lb.run(prompt)
+            if op.kind == "select":
+                io.echo(f"{op.listitem.player.moniker}")
+                return op.listitem.player
+            elif op.kind == "exit":
+                return None
 
 def count(args, membermoniker:str, **kwargs) -> int:
     def _work(conn):
@@ -739,6 +767,10 @@ def inputplayername(prompt:str="player name: ", oldvalue:str="", **kwargs:dict):
 def create(args, **kwargs):
     def _work(conn, playermoniker, membermoniker) -> str:
         p = Player(args)
+        p.moniker = playermoniker
+        p.membermoniker = membermoniker
+        p.datecreated = "now()"
+
         rec = p.buildrec()
         rec["moniker"] = playermoniker
         rec["membermoniker"] = membermoniker
@@ -746,13 +778,12 @@ def create(args, **kwargs):
         io.echo(f"{rec=}", level="debug")
 
         database.insert(args, "empyre.__player", rec, primarykey="moniker", mogrify=True, conn=conn)
-
         return p
 
 #    io.echo(f"player.new.100: {currentmembermoniker=}", level="debug")
 
     currentmembermoniker = member.getcurrentmoniker(args, **kwargs)
-    playermoniker = inputplayername("new player moniker: ", currentmembermoniker, verify=verifyPlayerNameNotFound, multiple=False, args=args, returnseq=False)
+    playermoniker = inputplayername("new player moniker: ", currentmembermoniker, verify=verifyPlayerNameNotFound, multiple=False, args=args, returnseq=False, **kwargs)
     if playermoniker == "":
         io.echo("aborted.")
         return None
@@ -768,8 +799,7 @@ def create(args, **kwargs):
             if pool is None:
                 io.echo(f"empyre.lib.insert.140: {pool=}", level="error")
                 return False
-            conn = database.connect(args, pool=pool)
-            with conn:
+            with database.connect(args, pool=pool) as conn:
                 return _work(conn, playermoniker, currentmembermoniker)
         else:
             return _work(conn, playermoniker, currentmembermoniker)
@@ -844,3 +874,4 @@ def calculaterank(args:object, player:Player) -> int:
             rank = 1 # prince
 
     return rank
+
