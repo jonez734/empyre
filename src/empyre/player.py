@@ -1,10 +1,12 @@
 # @since 20250226
 import copy
 import random
+from datetime import datetime
 
 from bbsengine6 import database, io, listbox, member, util
 
 from .ship import lib as libship
+from . import lib as libempyre
 
 TURNSPERDAY:int = 99
 HORSESPERSTABLE:int = 50
@@ -24,32 +26,32 @@ MAXCOINS:int = 1000000
 # SHIPSPERSHIPYARD:int = 10
 
 RESOURCES = {
-    "coins":      {"type": "int",  "default":COINS, "price":1, "singular": "coin", "plural":"coins", "emoji":":moneybag:", "ship":None},
-    "serfs":      {"type": "int",  "default":SERFS+random.randint(0, 200), "singular": "serf", "plural": "serfs", "ship":"passenger", "emoji":":person:"}, # sf x(19)
-    "land":       {"type": "int",  "default":LAND, "singular":"acre", "plural":"acres", "determiner":"an", "ship":None, "emoji":":farmer:"}, # la x(2)
-    "grain":      {"type": "int",  "default":GRAIN, "singular": "bushel", "plural": "bushels", "emoji":":crop:", "ship":"cargo"}, # gr
-    "soldiers":   {"type": "int",  "default":SOLDIERS, "price":20, "singular":"soldier", "plural":"soldiers", "ship":"millitary passenger"},
-    "nobles":     {"type": "int",  "default":3, "price":25000, "singular":"noble", "plural":"nobles", "ship":"passenger"}, # x(6)
-    "palaces":    {"type": "int",  "default":1, "price":20, "singular":"palace", "plural":"palaces", "ship":None}, # f%(1)
-    "markets":    {"type": "int",  "default":1, "price":1000, "singular":"market", "plural":"markets", "ship":None}, # f%(2) x(7)
-    "mills":      {"type": "int",  "default":1, "price":2000, "singular":"mill", "plural":"mills", "ship":None}, # f%(3) x(8)
-    "foundries":  {"type": "int",  "default":2, "price":7000, "singular":"foundry", "plural":"foundries", "ship":None}, # f%(4) x(9)
-    "shipyards":  {"type": "int",  "default":0, "price":8000, "singular":"shipyard", "plural":"shipyards", "ship":None}, # yc or f%(5)? x(10)
-    "diplomats":  {"type": "int",  "default":0, "price":50000, "singular":"diplomat", "plural":"diplomats", "ship":"passenger millitary"}, # f%(6) 0
-    "ships":      {"type": "int",  "default":0, "price":5000, "singular":"ship", "plural":"ships", "emoji":":anchor:", "ship":None}, # 5000 each, yc? x(12)
-    "navigators": {"type": "int",  "default":0, "price":500, "singular": "navigator", "plural": "navigators", "emoji":":compass:"}, # @since 20220907
-    "stables":    {"type": "int",  "default":1, "price":10000, "singular": "stable", "plural":"stables", "ship":None}, # x(11)
-    "colonies":   {"type": "int",  "default":0, "ship":None, "singular": "colony", "plural":"colonies"}, # i8
+    "coins":      { "default":COINS, "price":1, "singular": "coin", "plural":"coins", "emoji":":moneybag:", "ship":None},
+    "serfs":      { "default":SERFS+random.randint(0, 200), "singular": "serf", "plural": "serfs", "ship":"passenger", "emoji":":person:"}, # sf x(19)
+    "land":       { "default":LAND, "singular":"acre", "plural":"acres", "determiner":"an", "ship":None, "emoji":":farmer:"}, # la x(2)
+    "grain":      { "default":GRAIN, "singular": "bushel", "plural": "bushels", "emoji":":crop:", "ship":"cargo"}, # gr
+    "soldiers":   { "default":SOLDIERS, "price":20, "singular":"soldier", "plural":"soldiers", "ship":"millitary passenger"},
+    "nobles":     { "default":3, "price":25000, "singular":"noble", "plural":"nobles", "ship":"passenger"}, # x(6)
+    "palaces":    { "default":1, "price":20, "singular":"palace", "plural":"palaces", "ship":None}, # f%(1)
+    "markets":    { "default":1, "price":1000, "singular":"market", "plural":"markets", "ship":None}, # f%(2) x(7)
+    "mills":      { "default":1, "price":2000, "singular":"mill", "plural":"mills", "ship":None}, # f%(3) x(8)
+    "foundries":  { "default":2, "price":7000, "singular":"foundry", "plural":"foundries", "ship":None}, # f%(4) x(9)
+    "shipyards":  { "default":0, "price":8000, "singular":"shipyard", "plural":"shipyards", "ship":None}, # yc or f%(5)? x(10)
+    "diplomats":  { "default":0, "price":50000, "singular":"diplomat", "plural":"diplomats", "ship":"passenger millitary"}, # f%(6) 0
+    "ships":      { "default":0, "price":5000, "singular":"ship", "plural":"ships", "emoji":":anchor:", "ship":None}, # 5000 each, yc? x(12)
+    "navigators": { "default":0, "price":500, "singular": "navigator", "plural": "navigators", "emoji":":compass:"}, # @since 20220907
+    "stables":    { "default":1, "price":10000, "singular": "stable", "plural":"stables", "ship":None}, # x(11)
+    "colonies":   { "default":0, "ship":None, "singular": "colony", "plural":"colonies"}, # i8
     #            "warriors":   {"type": "int",  "default":0, "singular":"warrior", "plural":"warriors", "ship":"millitary passenger"}, # wa soldier -> warrior or noble?
-    "spices":     {"type": "int",  "default":0, "singular":"ton", "plural":"tons", "ship":"cargo"}, # x(25)
-    "cannons":    {"type": "int",  "default":0, "singular":"cannon", "plural":"cannons","ship":"any"}, # x(14)
-    "forts":      {"type": "int",  "default":0, "singular":"fort", "plural":"forts", "ship":None}, # x(13)
-    "dragons":    {"type": "int",  "default":0, "singular":"dragon", "plural":"dragons", "emoji":":dragon:"},
-    "horses":     {"type": "int",  "default":50,"emoji":":horse:", "ship":"cargo", "singular":"horse", "plural":"horses"}, # x(23)
-    "timber":     {"type": "int",  "default":0, "singular":"log", "plural":"logs", "emoji":":wood:", "ship":"cargo"}, # x(16)
-    "rebels":     {"type": "int",  "default":0, "singular":"rebel", "plural":"rebels", "ship":None},
-    "exports":    {"type": "int",  "default":0, "singular":"ton", "plural":"tons","emoji": ":package:"},
-    "islands":    {"type": "int",  "default":0, "singular":"island", "plural":"islands", "emoji":":palmtree:"},
+    "spices":     { "default":0, "singular":"ton", "plural":"tons", "ship":"cargo"}, # x(25)
+    "cannons":    { "default":0, "singular":"cannon", "plural":"cannons","ship":"any"}, # x(14)
+    "forts":      { "default":0, "singular":"fort", "plural":"forts", "ship":None}, # x(13)
+    "dragons":    { "default":0, "singular":"dragon", "plural":"dragons", "emoji":":dragon:"},
+    "horses":     { "default":50,"emoji":":horse:", "ship":"cargo", "singular":"horse", "plural":"horses"}, # x(23)
+    "timber":     { "default":0, "singular":"log", "plural":"logs", "emoji":":wood:", "ship":"cargo"}, # x(16)
+    "rebels":     { "default":0, "singular":"rebel", "plural":"rebels", "ship":None},
+    "exports":    { "default":0, "singular":"ton", "plural":"tons","emoji": ":package:"},
+    "islands":    { "default":0, "singular":"island", "plural":"islands", "emoji":":palmtree:"},
 }
 
 ATTRIBUTES = {
@@ -76,7 +78,8 @@ class Player(object):
 
         self.pool = kwargs.get("pool", None)
         if self.pool is None:
-            self.pool = database.getpool(args, dbname=args.databasename)
+            io.echo(f"empyre.Player._init.100: {self.pool=}")
+            return
 
 #        self.conn = kwargs.get("conn", None)
 #        if self.conn is None:
@@ -119,7 +122,7 @@ class Player(object):
             _r = self.resources.get(name)
             r = copy.copy(_r)
             v = getattr(self, name)
-            if r["type"] == "int":
+            if isinstance(v, int):
                 if v is None:
                     v = 0
                 else:
@@ -164,11 +167,11 @@ class Player(object):
 
             r = op.listitem.resource
             n = op.listitem.pk
-            t = r["type"] if "type" in r else "int"
+            t = r["type"] if "type" in r else int
             v = r["value"] if "value" in r else None
             if t == "datetime":
                 x = input.date(f"{n} (date): ", v)
-            elif t == "int":
+            elif t == int:
                 x = io.inputinteger(f"{n} (int): ", v)
             elif t == "bool":
                 if v is True:
@@ -188,9 +191,13 @@ class Player(object):
     def buildrec(self, **kwargs):
         rec = {}
         for name, data in self.attributes.items():
-            if name not in ("datelastplayedlocal",):
-                rec[name] = data.get("value", data["default"])
-
+            if name == "datelastplayedlocal":
+                continue
+            v = data.get("value", data["default"])
+            if isinstance(v, datetime):
+                io.echo(f"buildrec.datetime!", level="debug")
+                v = str(v)
+            rec[name] = v #data.get("value", data["default"])
         rec["resources"] = database.Jsonb(self.resources)
         return rec
 
@@ -260,74 +267,94 @@ class Player(object):
             return True
 
     def status(self):
-        import math
+        MAX_LABEL_WIDTH = 12
+        DATETIME_FMT = "%m/%d@%H%M%Z"
+        TRUNCATED_LABEL_SUFFIX = '..'
+        TRUNCATED_LABEL_WIDTH = MAX_LABEL_WIDTH
+        LABEL_DISPLAY_WIDTH = MAX_LABEL_WIDTH + len(TRUNCATED_LABEL_SUFFIX)
 
-        if self.args.debug is True:
-            io.echo(f"{member.getcurrentid()=}", level="debug")
-            io.echo(f"{player.playerid=}, {player.membermoniker=}, {player.moniker=}", level="debug")
+        LAYOUT = "column"
+
+        MAX_STR_VALUE_WIDTH = 10
+
+        TRUNCATED_STR_SUFFIX = '..'
+        TRUNCATED_STR_WIDTH = MAX_STR_VALUE_WIDTH
+        STR_DISPLAY_WIDTH = MAX_STR_VALUE_WIDTH + len(TRUNCATED_STR_SUFFIX)
+
+        COLUMN_SEPARATOR = "  "
 
         util.heading(f"player status for {self.moniker}")
 
-        terminalwidth = io.getterminalwidth()-2
+        terminal_width = io.getterminalwidth()-2
 
-        maxwidth = 0
-        maxlabellen = 0
-        for name, data in self.resources.items():
-            label = name
-            label = label[:12] + (label[12:] and '..')
-            if len(label) > maxlabellen:
-                maxlabellen = len(label)
-            attr = self.getresource(name)
-            v = getattr(self, name)
-            if v is not None:
-                t = data["type"] if "type" in data else "int"
-                if t == "int":
-                    v = f"{v:>6n}"
-                elif t == "datetime":
-                    if label == "datelastplayed":
-                        v = attr["datelastplayedlocal"]
-                    v = util.datestamp(v, format="%m/%d@%H%M%P%Z")
+        data = self.resources
+        data.update(self.attributes)
 
-            buf = f"{label.ljust(maxlabellen)}: {v}"
-            buflen = len(io.tostr(buf))
-            if buflen > maxwidth:
-                maxwidth = buflen
-        columns = math.floor(terminalwidth / maxwidth) - 3
-        if columns < 1:
-            columns = 1
+        sorted_items = sorted(data.items())
 
-        currentcolumn = 0
-        for name, data in self.resources.items():
-            n = name
-            # https://stackoverflow.com/questions/2872512/python-truncate-a-long-string
-            n = n[:12] + (n[12:] and '..')
+        # Set locale for thousands separator
+        # locale.setlocale(locale.LC_ALL, '')
 
-            res  = self.getresource(name) # getattr(self, a["name"])
-            v = getattr(self, name)
-            if v is not None:
-                t = data["type"] if "type" in data else "int"
-                if t == "int":
-                    v = f"{int(v):>6n}"
-                elif t == "datetime":
-                    v = util.datestamp(v, format="%m/%d@%I%M%P%Z")
+        def truncate_label(label):
+            return label if len(label) <= MAX_LABEL_WIDTH else label[:TRUNCATED_LABEL_WIDTH-len(TRUNCATED_LABEL_SUFFIX)] + TRUNCATED_LABEL_SUFFIX
 
-            if name == "soldiers" and self.nobles*SOLDIERSPERNOBLE < self.soldiers:
-                buf = f"{{labelcolor}}{n.ljust(maxlabellen)}: {{highlightcolor}}{v}{{normalcolor}}" # % (n.ljust(maxlabellen), v)
-            elif name == "horses" and self.stables*HORSESPERSTABLE < self.horses:
-                buf = f"{{labelcolor}}{n.ljust(maxlabellen)}: {{highlightcolor}}{v}{{normalcolor}}" # % (n.ljust(maxlabellen), v)
+        def truncate_str_value(s):
+            return s if len(s) <= MAX_STR_VALUE_WIDTH else s[:TRUNCATED_STR_WIDTH] + TRUNCATED_STR_SUFFIX
+
+        def format_value(value):
+            if value is None:
+                return ""
+            if isinstance(value, int):
+                return f"{value:n}"
+            elif isinstance(value, datetime):
+                return value.strftime(DATETIME_FMT)
+            elif isinstance(value, bool):
+                return "yes" if value else "no"
+            elif isinstance(value, str):
+                return truncate_str_value(value)
             else:
-                buf = f"{{labelcolor}}{n.ljust(maxlabellen)}: {{valuecolor}}{v}{{normalcolor}}" # % (n.ljust(maxlabellen), v)
+                return str(value.rstrip())
 
-            buflen = len(io.tostr(buf, exclude=("COLOR",), strip=True)) # ttyio.interpret(buf, strip=True, wordwrap=False))
-            if currentcolumn == columns-1:
-                io.echo(f"{buf}")
-            else:
-                io.echo(f" {buf}{' '*(maxwidth-buflen)} ", end="")
+        sorted_items = sorted(data.items())
 
-            currentcolumn += 1
-            currentcolumn = currentcolumn % columns
-        io.echo()
-        return
+        # determine max widths
+        formatted = []
+        max_value_width = 0
+        max_label_width = 0
+
+        for label, data in sorted_items:
+            label = truncate_label(label)
+            value_str = format_value(data["value"])
+            formatted.append((label, value_str))
+            max_label_width = max(max_label_width, len(label))
+            max_value_width = max(max_value_width, len(value_str))
+
+        key_width = MAX_LABEL_WIDTH
+        column_width = key_width + len(COLUMN_SEPARATOR) + max_value_width  # ": " separator
+
+        lines = [ f"{{var:labelcolor}}{label:<{key_width}}: {{var:valuecolor}}{value:>{max_value_width}}" for label, value in formatted ]
+
+        num_columns = max(1, terminal_width // (column_width + 2))
+        num_rows = (len(lines) + num_columns - 1) // num_columns  # ceiling division
+
+        if LAYOUT == "row":
+            for row in range(num_rows):
+                line = ""
+                for col in range(num_columns):
+                    idx = row * num_columns + col
+                    if idx < len(lines):
+                        line += lines[idx].ljust(column_width) + COLUMN_SEPARATOR
+                io.echo(line.rstrip())
+        elif LAYOUT == "column":
+            for row in range(num_rows):
+                line = ""
+                for col in range(num_columns):
+                    idx = col * num_rows + row
+                    if idx < len(lines):
+                        line += lines[idx].ljust(column_width) + COLUMN_SEPARATOR
+                io.echo(line.rstrip())
+        else:
+            raise ValueError("valid layouts are 'column' and 'row'")
 
     def adjust(self):
 #        if self.taxrate is None or self.taxrate == "":
@@ -401,7 +428,7 @@ class Player(object):
 
         # if pn>1e6 then a%=pn/1.5:pn=pn-a%:&"{f6}{lt. blue}You pay {lt. green}${pound}%f {lt. blue}to the monks for this{f6}year's provisions for your subjects' survival.{f6}"
 
-        io.echo(f"{self.resources['coins']['value']=} {self.coins=}", level="debug")
+#        io.echo(f"{self.resources['coins']['value']=} {self.coins=}", level="debug")
         if self.coins > MAXCOINS:
             a = int(self.coins / 1.5)
             self.coins -= a
@@ -451,17 +478,12 @@ class Player(object):
 
         lost = []
         for name, data in self.resources.items():
-            type = data["type"] if "type" in data else "int"
-            if type != "int":
+            value = data.get("value", data.get("default", None))
+            if isinstance(value, int) is False:
                 continue
             # ttyio.echo("player.adjust.100: name=%r" % (name), level="debug")
-            attr = self.getresource(name) # getattr(player, name)
-            singular = data["singular"] if "singular" in data else "singular"
-            plural = data["plural"] if "plural" in data else "plural"
-            default = data["default"] if "default" in data else 0
-            val = data["value"] if "value" in data and data["value"] is not None else default
-            if val < 0:
-                lost.append(util.pluralize(abs(val), singular, plural))
+            if value < 0:
+                lost.append(util.pluralize(abs(val), data.get("singular", "FIXME"), data.get("plural", "FIXME")))
                 setattr(player, name, 0)
 
         if len(lost) > 0:
@@ -472,9 +494,6 @@ class Player(object):
         # player.save()
 
         return
-
-    def revert(self):
-        pass
 
 class completePlayerName(object):
     def __init__(self, args):
@@ -564,18 +583,18 @@ def build(args, rec:dict, **kwargs) -> Player:
         # io.echo(f"empyre.player.build.120: {name=} {v=}", level="debug")
         setattr(p, name, v)
 
-    io.echo(f"empyre.player.build.200: {rec=}", level="debug")
+    # io.echo(f"empyre.player.build.200: {rec=}", level="debug")
 
     for name, data in p.resources.items():
         v = rec.get(name, data["default"])
         if v is None:
             v = data["default"]
-        io.echo(f"empyre.player.build.220: {name=} {v=}", level="debug")
+        # io.echo(f"empyre.player.build.220: {name=} {v=}", level="debug")
 
         setattr(p, name, v)
         # p.setresourcevalue(name, v)
 
-    io.echo(f"empyre.player.build.200: {rec=}", level="debug")
+    # io.echo(f"empyre.player.build.220: {rec=}", level="debug")
     return p
 
 def load(args, moniker, **kwargs):
@@ -844,34 +863,33 @@ def calculaterank(args:object, player:Player) -> int:
 
     rank = 0
 
-    if (player.markets > 23 and
+    if player.markets > 23 and
         player.mills >= 10 and
         player.foundries > 13 and
         player.shipyards > 11 and
         player.palaces > 9 and
-        (player.land / player.serfs) > 23.4 and
+        player.land / player.serfs > 23.4 and
         player.serfs >= 2500): # b? > 62
             rank = 3 # emperor
-    elif (player.markets > 15 and
+    elif player.markets > 15 and
         player.mills >= 10 and
         player.diplomats > 2 and
         player.foundries > 6 and
         player.shipyards > 4 and
         player.palaces > 6 and
-        (player.land / player.serfs > 10.5) and
+        player.land / player.serfs > 10.5 and
         player.serfs > 3500 and
         player.nobles > 30):
             rank = 2 # king
-    elif (player.markets >= 10 and
+    elif player.markets >= 10 and
         player.diplomats > 0 and
         player.mills > 5 and
         player.foundries > 1 and
         player.shipyards > 1 and
         player.palaces > 2 and
-        (player.land/player.serfs > 5.1) and
+        player.land / player.serfs > 5.1 and
         player.nobles > 15 and
-        player.serfs > 3000):
+        player.serfs > 3000:
             rank = 1 # prince
 
     return rank
-
