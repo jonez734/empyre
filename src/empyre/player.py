@@ -78,8 +78,8 @@ class Player(object):
 
         self.pool = kwargs.get("pool", None)
         if self.pool is None:
-            io.echo(f"empyre.Player._init.100: {self.pool=}")
-            return
+            io.echo(f"empyre.Player._init.100: {self.pool=}", level="error")
+            return None
 
 #        self.conn = kwargs.get("conn", None)
 #        if self.conn is None:
@@ -100,7 +100,7 @@ class Player(object):
 
         self.attributes = copy.copy(ATTRIBUTES)
         for name, data in self.attributes.items():
-            # io.echo(f"attribute {name} {data['default']=}", level="debug")
+            io.echo(f"attribute {name} {data['default']=}", level="debug")
             setattr(self, name, data["default"])
             attr = self.attributes[name]
 
@@ -161,42 +161,39 @@ class Player(object):
         while not done:
             libempyre.setarea(self.args, f"edit player resources for {self.moniker}", player=self)
             op = libempyre.selectresource(self.args, "select player resource", self.resources)
-            io.echo(f"{op=}", level="debug")
+            io.echo(f"empyre.Player.edit.100: {op=}", level="debug")
             if op.kind == "exit" or op.kind == "noitems":
                 break
 
-            r = op.listitem.resource
-            n = op.listitem.pk
-            t = r["type"] if "type" in r else int
-            v = r["value"] if "value" in r else None
-            if t == "datetime":
-                x = input.date(f"{n} (date): ", v)
-            elif t == int:
-                x = io.inputinteger(f"{n} (int): ", v)
-            elif t == "bool":
-                if v is True:
-                    default = "Y"
-                    prompt = "{promptcolor}{n} (bool)? {optioncolor}[{currentoptioncolor}Y{optioncolor}n]{promptcolor}: {inputcolor}"
-                elif v is False:
-                    default = "N"
-                    prompt = f"{promptcolor}{n} (bool)? {optioncolor}[y{{currentoptioncolor}}N]{promptcolor}: {inputcolor}"
-                x = io.inputboolean(prompt, default)
-            else:
-                io.echo(f"invalid resource type for {n=} {t=}", level="error")
-                return
-            setattr(self, n, x)
-            r["value"] = x
+            res = op.listitem.resource
+            pk = op.listitem.pk
+            val = res.get("value", res.get("default"))
+            if isinstance(val, datetime):
+                f = input.date
+                t = "datetime"
+            elif isinstance(val, int):
+                f = io.inputinteger
+                t = "int"
+            elif isinstance(val, bool):
+                f = io.inputboolean
+                t = "bool"
+            elif isinstance(val, str):
+                f = io.inputstring
+                t = "str"
+            val = f(f"{{var:promptcolor}}{pk} ({t}): {{var:inputcolor}}", val)
+            setattr(self, pk, val)
         return
 
     def buildrec(self, **kwargs):
         rec = {}
+        io.echo(f"{type(self)=}", level="debug")
         for name, data in self.attributes.items():
             if name == "datelastplayedlocal":
                 continue
             v = data.get("value", data["default"])
             if isinstance(v, datetime):
                 io.echo(f"buildrec.datetime!", level="debug")
-                v = str(v)
+                v = v.isotime()
             rec[name] = v #data.get("value", data["default"])
         rec["resources"] = database.Jsonb(self.resources)
         return rec
@@ -216,15 +213,16 @@ class Player(object):
         def getresval(name):
             if name in self.resources:
                 r = self.resources[name]
-                return r["value"] if "value" in r else r["default"]
+                return r.get("value", r.get("default"))
             return None
 
         def getattrval(name):
             if name in self.attributes.keys():
-                attr = self.attributes[name]
-                return attr["value"] if "value" in attr else attr["default"]
+                r = self.attributes.get(name)
+                return r.get("value", r.get("default"))
             return None
 
+        dirty = False
         for name in self.resources.keys():
             curval = getattr(self, name)
             oldval = getresval(name)
@@ -232,7 +230,7 @@ class Player(object):
                 io.echo(f"{name=} {curval=} {oldval=}", level="debug")
             if curval != oldval:
                 io.echo(f"player.isdirty.100: {name=} {oldval=} {curval=}", level="debug")
-                return True
+                dirty = True
 
         for name in self.attributes.keys():
             curval = getattr(self, name)
@@ -240,11 +238,10 @@ class Player(object):
             if self.debug is True:
                 io.echo(f"{name=} {curval=} {oldval=}", level="debug")
             if curval != oldval:
-                if self.debug is True:
-                    io.echo(f"player.isdirty.100: {name=} {oldval=} {curval=}", level="debug")
-                return True
+                io.echo(f"player.isdirty.100: {name=} {oldval=} {curval=}", level="debug")
+                dirty = True
 
-        return False
+        return dirty
 
     def save(self, force=False, commit=True):
         if self.args.debug is True:
@@ -610,10 +607,8 @@ def load(args, moniker, **kwargs):
 
             rec = cur.fetchone()
             io.echo(f"empyre.player.load.320: {type(rec['resources'])=}", level="debug")
-            p = build(args, rec)
-            # io.echo(f"empyre.player.load.400: {p.coins=}", level="debug")
+            p = build(args, rec, **kwargs)
             p.sync()
-            # io.echo(f"empyre.player.load.422: {p.coins=}", level="debug")
             return p
         
     pool = kwargs.get("pool", None)
@@ -784,12 +779,17 @@ def inputplayername(prompt:str="player name: ", oldvalue:str="", **kwargs:dict):
     return name
 
 def create(args, **kwargs):
+    pool = kwargs.get("pool", None)
+    if pool is None:
+        io.echo("empyre.player.create.140: {pool=}", level="error")
+        return False
     def _work(conn, playermoniker, membermoniker) -> str:
-        p = Player(args)
+        p = Player(args, pool=pool)
         p.moniker = playermoniker
         p.membermoniker = membermoniker
         p.datecreated = "now()"
 
+        io.echo(f"empyre.player.create.100: {p.attributes=}", level="debug")
         rec = p.buildrec()
         rec["moniker"] = playermoniker
         rec["membermoniker"] = membermoniker
@@ -816,17 +816,17 @@ def create(args, **kwargs):
         if conn is None:
             pool = kwargs.get("pool", None)
             if pool is None:
-                io.echo(f"empyre.lib.insert.140: {pool=}", level="error")
+                io.echo(f"empyre.lib.create.140: {pool=}", level="error")
                 return False
             with database.connect(args, pool=pool) as conn:
                 return _work(conn, playermoniker, currentmembermoniker)
         else:
             return _work(conn, playermoniker, currentmembermoniker)
     except Exception as e:
-        io.echo(f"empyre.lib.insert.100: exception {e}", level="error")
+        io.echo(f"empyre.lib.create.100: exception {e}", level="error")
         raise
 
-    io.echo(f"player.insert.100: {self.moniker=}", level="debug")
+    io.echo(f"player.create.100: {self.moniker=}", level="debug")
     return p
 
 def generate(self, rank=0):
@@ -863,7 +863,7 @@ def calculaterank(args:object, player:Player) -> int:
 
     rank = 0
 
-    if player.markets > 23 and
+    if (player.markets > 23 and
         player.mills >= 10 and
         player.foundries > 13 and
         player.shipyards > 11 and
@@ -871,7 +871,7 @@ def calculaterank(args:object, player:Player) -> int:
         player.land / player.serfs > 23.4 and
         player.serfs >= 2500): # b? > 62
             rank = 3 # emperor
-    elif player.markets > 15 and
+    elif (player.markets > 15 and
         player.mills >= 10 and
         player.diplomats > 2 and
         player.foundries > 6 and
@@ -881,7 +881,7 @@ def calculaterank(args:object, player:Player) -> int:
         player.serfs > 3500 and
         player.nobles > 30):
             rank = 2 # king
-    elif player.markets >= 10 and
+    elif (player.markets >= 10 and
         player.diplomats > 0 and
         player.mills > 5 and
         player.foundries > 1 and
@@ -889,7 +889,7 @@ def calculaterank(args:object, player:Player) -> int:
         player.palaces > 2 and
         player.land / player.serfs > 5.1 and
         player.nobles > 15 and
-        player.serfs > 3000:
+        player.serfs > 3000):
             rank = 1 # prince
 
     return rank
