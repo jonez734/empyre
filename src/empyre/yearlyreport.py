@@ -5,18 +5,19 @@ import random
 from bbsengine6 import io, util
 
 from . import lib
+from . import player as libplayer
 
-def init(args, **kw):
+def init(args, **kwargs):
     return True
 
-def access(args, op, **kw):
+def access(args, op, **kwargs):
     return True
 
-def buildargs(args, **kw):
+def buildargs(args, **kwargs):
     return None
 
-def main(args, **kw):
-    player = kw["player"] if "player" in kw else None
+def main(args, **kwargs):
+    player = kwargs.get("player", None)
     if player is None:
         io.echo("You do not exist! Go Away!", level="error")
         return False
@@ -128,7 +129,7 @@ def main(args, **kw):
     player.coins += receivables
     player.coins -= payables
 
-    rank = lib.calculaterank(args, player)
+    rank = libplayer.calculaterank(args, player)
 
     if args.debug is True:
         io.echo(f"{player.rank=} {rank=}", level="debug")
