@@ -14,6 +14,7 @@ create table if not exists empyre.__player (
     "combatvictorycount" bigint,
 --    "coins" bigint,
     "beheaded" boolean,
+    "training" bigint,
     "taxrate" bigint,
     "resources" jsonb
 );
