@@ -17,7 +17,7 @@ setup(
   url=f"https://repo.zoidtechnologies.com/{projectname}/",
   author="zoidtechnologies.com",
   author_email=f"{projectname}@projects.zoidtechnologies.com",
-  requires=["bbsengine6", "psycopg", "psycopg-pool"],
+  requires=["bbsengine6", "psycopg", "psycopg_pool"],
   scripts=["bin/empyre"],
   license="GPLv2",
   provides=[projectname],
