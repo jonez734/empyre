@@ -2,7 +2,7 @@
 #import bbsengine6 as bbsengine
 from bbsengine6 import io, member, util, database
 
-from .. import lib, player as libplayer
+from .. import player as libplayer
 
 def init(args, **kw):
     io.setvariable("acscolor", "{white}")
@@ -25,7 +25,6 @@ def main(args:object, player=None, **kwargs):
                 io.echo("{/all}{acscolor}{acs:ulcorner}{acs:hline:%s}{acs:urcorner}" % (terminalwidth-2), wordwrap=False)
                 io.echo("{acscolor}{acs:vline}{gray} name %s{/all} {acscolor}{acs:vline}" % ("land".rjust(terminalwidth-len("land")-5)), wordwrap=False)
                 io.echo("{acscolor}{acs:ltee}%s{acscolor}{acs:rtee}" % (util.hr(chars="-=", color="{acscolor}", width=terminalwidth-2, padding="")), wordwrap=False)
-                # player = lib.Player(args, conn=conn)
                 io.echo(f"empyre.maint.listplayers.100: {kwargs=}", level="debug")
                 sysop = member.checkflag(args, "SYSOP", conn=conn, **kwargs)
                 io.echo(f"empyre.maint.listplayers.120: {sysop=}", level="debug")
@@ -37,6 +36,7 @@ def main(args:object, player=None, **kwargs):
                         color = "{lightgray}"
                     moniker = rec["moniker"]
                     p = libplayer.load(args, moniker, conn=conn, **kwargs)
+#                    libplayer.build(args, rec, **kwargs)
 
                     if sysop is True:
                         leftbuf  = f"{p.moniker} ({p.membermoniker})" # "({:>4n}".format(player.memberid))
@@ -59,13 +59,9 @@ def main(args:object, player=None, **kwargs):
     io.echo(f"empyre.maint.listplayers.220: {kwargs=}", level="debug")
     util.heading("list players")
     terminalwidth = io.getterminalwidth()
-    conn = kwargs.get("conn", None)
-    if conn is None:
-        pool = kwargs.get("pool", None)
-        if pool is None:
-            io.echo(f"empyre.maint.listplayer.200: {pool=}", level="error")
-            return False
-        with database.connect(args, pool=pool) as conn:
-            return _work(conn)
-    else:
+    pool = kwargs.get("pool", None)
+    if pool is None:
+        io.echo(f"empyre.maint.listplayer.200: {pool=}", level="error")
+        return False
+    with database.connect(args, pool=pool) as conn:
         return _work(conn)
