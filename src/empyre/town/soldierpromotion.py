@@ -45,7 +45,7 @@ def main(args, player, **kwargs):
     
     util.heading(": Soldier Promotions :")
     io.echo("{F6}{var:normalcolor}Good day, I take it that you are here to see if any of your soldiers are eligible for promotion to the status of noble.{F6}")
-    io.echo("{wait:15}Well, after checking all of them, I have found that %s eligible.{f6}" % (util.pluralize(promotable, "soldier is", "soldiers are")))
+    io.echo("{f6:3}Well, after checking all of them, I have found that %s eligible.{f6}" % (util.pluralize(promotable, "soldier is", "soldiers are")))
     if promotable == 0:
         return
 
