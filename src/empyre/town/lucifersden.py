@@ -26,9 +26,10 @@ def main(args, **kw):
         return False
 
     if player.coins > 10000 or player.land > 15000:
-        io.echo("{F6}I checked our inventory and we have plenty of souls. Maybe we can deal some other time.")
+        io.echo("{F6}I checked our inventory and we have plenty of souls. Maybe we can deal some other time.{f6:2}")
         return True
 
+    io.echo("{f6:2}")
     lib.setarea(args, player, "town: lucifer's den")
 
     util.heading("LUCIFER'S DEN - Where Gamblin's no Sin!") # , hrcolor="{orange}", titlecolor="{bgred}{yellow}")
