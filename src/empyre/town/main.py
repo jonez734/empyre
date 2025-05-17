@@ -22,7 +22,7 @@ def main(args, **kwargs):
         ("L", "Lucifer's Den :fire:", "lucifersden"), # lucifersden),
         ("P", "Soldier Promotion to Noble :prince:", "soldierpromotion"),
         ("R", "Realtor's Advice :house:", "realtorsadvice"),
-        ("J", "Juicebar", "juicebar"),
+#        ("J", "Juicebar", "juicebar"),
 #        ("S", "   Slave Market", None),
         ("T", "Change Tax Rate :receipt:", "changetaxrate"),
 #        ("U", "   Utopia's Auction", None),
@@ -31,7 +31,7 @@ def main(args, **kwargs):
         ("Y", "Your Status", libempyre.playerstatus)
     )
 
-    def help(**kw):
+    def townhelp(**kwargs):
         for hotkey, description, func in optiontable:
             if callable(func) is True or lib.checkmodule(args, func) is True:
                 io.echo(f"{{optioncolor}}[{hotkey}]{{labelcolor}} {description}")
@@ -41,7 +41,7 @@ def main(args, **kwargs):
     def menu():
         util.heading("town menu")
 
-        help()
+        townhelp()
         
         io.echo("{/all}{optioncolor}[Q]{/all} {labelcolor}Return to the Empyre :door:{/all}{f6}")
     
@@ -50,7 +50,6 @@ def main(args, **kwargs):
     hotkeys = "Q"
     for hotkey, desc, func in optiontable:
         if callable(func) or lib.checkmodule(args, func, **kwargs):
-            # ttyio.echo("empyre.town.menu.100: adding hotkey %r" % (hotkey), level="debug")
             hotkeys += hotkey
 
     done = False
@@ -59,11 +58,10 @@ def main(args, **kwargs):
         player.adjust()
         player.save()
         menu()
-        ch = io.inputchar(f"{{promptcolor}}town {{optioncolor}}[{hotkeys}]{{promptcolor}}: {{inputcolor}}", hotkeys, "Q", help=help)
+        ch = io.inputchoice(f"town", hotkeys, "Q", help=townhelp, rewriteprompt=True)
         if ch == "Q":
             io.echo(":door: {green}Return to the Empyre{/all}")
             done = True
-            continue
         else:
             for key, desc, func in optiontable:
                 if func is None:
