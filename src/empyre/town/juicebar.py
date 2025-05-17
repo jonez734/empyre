@@ -10,24 +10,26 @@ def buildargs(args, **kw):
     return None
 
 def checkavailable(args, **kwargs):
-    cur = kwargs.get("cur", None)
-    def _available(cur):
+    def _work(conn):
         sql:str = "select * from empyre.mercs where hiredbymoniker is null"
         dat:tuple = ()
-
-        cur.execute(sql, dat)
-        if cur.rowcount == 0:
-            io.echo("no teams available for hire")
-            return False
-        return True
+        with database.cursor(conn) as cur:
+            cur.execute(sql, dat)
+            if cur.rowcount == 0:
+                io.echo("no teams available for hire")
+                return False
+            return True
 
     try:
-        if cur is None:
-            with database.connect(args) as conn:
-                with database.cursor(conn) as cur:
-                    available = _available(cur)
-        else:
-            available = _available(cur)
+        conn = kwargs.get("conn", None)
+        if conn is None:
+            pool = kwargs.get("pool", None)
+            if pool is None:
+                io.echo(f"empyre.town.juicebar.checkavailable.120: {pool=}", level="error")
+                return False
+            with database.connect(args, pool=pool) as conn:
+                return _work(conn)
+        return _work(conn)
     except Exception as e:
         io.echo("town.juicebar.checkavailable.100: exception {e}", level="error")
         raise
