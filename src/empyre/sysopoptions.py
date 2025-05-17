@@ -1,22 +1,35 @@
-import ttyio6 as ttyio
-import bbsengine6 as bbsengine
+#import ttyio6 as ttyio
+#import bbsengine6 as bbsengine
+from bbsengine6 import io, member, util
 
 from . import lib
 
-def init(args, **kw):
-    pass
+def init(args, **kwargs):
+    return True
 
-def access(args, op, **kw):
-    sysop = bbsengine.member.checkflag(args, "SYSOP")
+def access(args, op, **kwargs):
+    conn = kwargs.get("conn", None)
+    if conn is None:
+        pool = kwargs.get("pool")
+        if pool is None:
+            return False
+        conn = database.connect(args, pool=pool)
+
+    sysop = member.checkflag(args, "SYSOP", mogrify=True, conn=conn)
+    io.echo(f"empyre.sysopoptions.120: {sysop=}", level="debug")
     if sysop is True:
+        io.echo("empyre.sysopoptions.140: access check pass", level="debug")
         return True
-    ttyio.echo("empyre.sysopoptions.access.100: permission denied")
+    io.echo("empyre.sysopoptions.access.100: permission denied")
     return False
 
+def buildargs(args, **kwargs):
+    return None
+
 def main(args, **kwargs):
-    player = kwargs["player"] if "player" in kwargs else None
+    player = kwargs.get("player", None)
     if player is None:
-        ttyio.echo("You do not exist! Go away!", level="error")
+        io.echo("You do not exist! Go away!", level="error")
         return False
 
 #    ttyio.echo("sysopoptions.100: trace", level="debug")
@@ -25,15 +38,16 @@ def main(args, **kwargs):
 #        ttyio.echo("permission denied")
 #        return False
     # ttyio.echo("sysopoptions.100: sysop=%r" % (sysop), level="debug")
-    lib.setarea(args, player, "sysop options")
-    bbsengine.util.heading("sysop options")
-    player.turncount = ttyio.inputinteger("{var:promptcolor}turncount: {var:inputcolor}", player.turncount)
-    x = ttyio.inputinteger("{var:promptcolor}:moneybag: coins: {var:inputcolor}", player.coins)
+    lib.setarea(args, "sysop options", player=player)
+    util.heading("sysop options")
+    player.turncount = io.inputinteger("{var:promptcolor}turncount: {var:inputcolor}", player.turncount, args=args, **kw)
+    x = io.inputinteger("{var:promptcolor}:moneybag: coins: {var:inputcolor}", player.coins, **kw)
     if x > 0:
         player.coins = x
     else:
-        ttyio.echo("coins cannot be less than zero")
-    ttyio.echo("{/all}")
+        io.echo("coins cannot be less than zero")
+    io.echo("{/all}")
+    player.adjust()
     player.save()
-    ttyio.echo(bbsengine.util.hr())
+    io.echo(util.hr())
     return True
