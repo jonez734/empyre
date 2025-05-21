@@ -28,7 +28,7 @@ def main(args, **kwargs):
 #        ("U", "   Utopia's Auction", None),
 #        ("W", "   Buy Soldiers", None),
         ("X", "Train Serfs to Soldiers :military-helmet:", "trainsoldiers"),
-        ("Y", "Your Status", libempyre.playerstatus)
+        ("Y", "Your Status", "playerstatus")
     )
 
     def townhelp(**kwargs):
