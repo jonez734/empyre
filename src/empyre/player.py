@@ -42,7 +42,6 @@ RESOURCES = {
     "navigators": { "default":0, "price":500, "singular": "navigator", "plural": "navigators", "emoji":":compass:"}, # @since 20220907
     "stables":    { "default":1, "price":10000, "singular": "stable", "plural":"stables", "ship":None}, # x(11)
     "colonies":   { "default":0, "ship":None, "singular": "colony", "plural":"colonies"}, # i8
-    #            "warriors":   {"type": "int",  "default":0, "singular":"warrior", "plural":"warriors", "ship":"millitary passenger"}, # wa soldier -> warrior or noble?
     "spices":     { "default":0, "singular":"ton", "plural":"tons", "ship":"cargo"}, # x(25)
     "cannons":    { "default":0, "singular":"cannon", "plural":"cannons","ship":"any"}, # x(14)
     "forts":      { "default":0, "singular":"fort", "plural":"forts", "ship":None}, # x(13)
@@ -88,32 +87,64 @@ class Player(object):
         with database.connect(args, pool=self.pool) as conn:
             currentmoniker = member.getcurrentmoniker(args, conn=conn)
 
-        # @see https://github.com/Pinacolada64/ImageBBS/blob/e9f033af1f0b341d0d435ee23def7120821c3960/v1.2/games/empire6/mdl.emp.delx2.txt#L25
+        # @see empire6/mdl.emp.delx2.txt#L25
         self.resources = copy.copy(RESOURCES)
         for name, data in self.resources.items():
             val = data["default"]
-            # io.echo(f"resource {name=} {val=}", level="debug")
-            setattr(self, name, val)
-            res = self.resources[name]
-            res["value"] = val
+            # io.echo(f"empyre.Player.100: resource {name=} {val=}", level="debug")
+            setattr(self, name, data["default"])
+            self.resources[name]["value"] = data["default"]
             # io.echo(f"Player.__init__.100: {name=} {res=} {getattr(self, name)=}", level="debug")
 
         self.attributes = copy.copy(ATTRIBUTES)
         for name, data in self.attributes.items():
-            io.echo(f"attribute {name} {data['default']=}", level="debug")
+            # io.echo(f"attribute {name} {data['default']=}", level="debug")
             setattr(self, name, data["default"])
-            attr = self.attributes[name]
+            self.attributes[name]["value"] = data["default"]
 
         self.debug = args.debug
 
 #        tz=0:i1=self.palaces:i2=self.markets:i3=self.mills:i4=self.foundries:i5=self.shipyards:i6=self.diplomats
     def sync(self):
         # io.echo(f"Player.sync()", level="debug")
-        for name in self.resources.keys():
-            self.setresourcevalue(name, getattr(self, name))
+        for name, data in self.resources.items():
+            newval = getattr(self, name)
+            res = self.resources[name] # getresource(name)
+            curval = res.get("value") #, res.get("default"))
+            if newval != curval:
+                io.echo(f"empyre.player.sync.100: {name=} {curval=} != {newval=}", level="debug")
+            res["value"] = newval
+
         for name in self.attributes.keys():
             self.setattributevalue(name, getattr(self, name))
         return True
+
+    def verify_consistency(self, verbose=False) -> bool:
+        consistent = True
+
+        for name in self.resources.keys():
+            attr_val = getattr(self, name, None)
+            res_val = self.resources[name].get("value", None)
+            if attr_val != res_val:
+                consistent = False
+                if verbose:
+                    io.echo(f"inconsistent resource: {name}: attr={attr_val} != res['value']={res_val}", level="warn")
+
+        for name in self.attributes.keys():
+            attr_val = getattr(self, name, None)
+            attr_dict_val = self.attributes[name].get("value", None)
+            if attr_val != attr_dict_val:
+                consistent = False
+                if verbose:
+                    io.echo(f"inconsistent attribute: {name}: attr={attr_val} != attributes['value']={attr_dict_val}", level="warn")
+
+        if verbose:
+            if consistent:
+                io.echo("verify_consistency: all values consistent", level="info")
+            else:
+                io.echo("verify_consistency: inconsistencies found", level="warn")
+
+        return consistent
 
     def getresource(self, name, **kwargs):
         if self.debug:
@@ -186,30 +217,40 @@ class Player(object):
 
     def buildrec(self, **kwargs):
         rec = {}
-        io.echo(f"{type(self)=}", level="debug")
         for name, data in self.attributes.items():
             if name == "datelastplayedlocal":
                 continue
             v = data.get("value", data["default"])
             if isinstance(v, datetime):
-                io.echo(f"buildrec.datetime!", level="debug")
-                v = v.isotime()
+                io.echo(f"buildrec.attributes.datetime!", level="debug")
+                v = v.isoformat()
             rec[name] = v #data.get("value", data["default"])
-        rec["resources"] = database.Jsonb(self.resources)
+        resources = copy.copy(self.resources)
+        for name, data in resources.items():
+            v = data.get("value", data["default"])
+            if isinstance(v, datetime):
+                io.echo("buildrec.resources.datetime!", level="debug")
+                v = v.isoformat()
+            resources[name]["value"] = v
+        # io.echo(f"empyre.Player.buildrec.200: {resources=}", level="debug")
+        rec["resources"] = database.Jsonb(resources)
         return rec
 
     def update(self, conn):
         def _work(conn):
-            rec = self.buildrec()
-            database.update(self.args, "empyre.__player", self.moniker, rec, primarykey="moniker", conn=conn)
+            database.update(self.args, "empyre.__player", self.moniker, self.buildrec(), primarykey="moniker", conn=conn, mogrify=True)
             return True
 
-        if self.pool is None:
-            io.echo(f"empyre.Player.update.160: {pool=}", level="error")
+        if conn is None:
+            io.echo(f"empyre.Player.update.160: {conn=}", level="error")
             return False
+
         return _work(conn)
 
     def isdirty(self):
+        if self.debug is True:
+            if self.verify_consistency(verbose=True) is True:
+                io.echo("Player.isdirty.300: player data integrity failure", level="warn")
         def getresval(name):
             if name in self.resources:
                 r = self.resources[name]
@@ -223,29 +264,30 @@ class Player(object):
             return None
 
         dirty = False
-        for name in self.resources.keys():
+        for name, data in self.resources.items():
             curval = getattr(self, name)
-            oldval = getresval(name)
+            oldval = data.get("value", data.get("default"))
             if self.debug is True:
                 io.echo(f"{name=} {curval=} {oldval=}", level="debug")
             if curval != oldval:
                 io.echo(f"player.isdirty.100: {name=} {oldval=} {curval=}", level="debug")
                 dirty = True
 
-        for name in self.attributes.keys():
+        for name, data in self.attributes.items():
             curval = getattr(self, name)
-            oldval = getattrval(name)
+            oldval = data.get("value", data.get("default"))
             if self.debug is True:
                 io.echo(f"{name=} {curval=} {oldval=}", level="debug")
             if curval != oldval:
                 io.echo(f"player.isdirty.100: {name=} {oldval=} {curval=}", level="debug")
                 dirty = True
 
+        io.echo(f"Player.isdirty.140: {dirty=}", level="debug")
         return dirty
 
     def save(self, force=False, commit=True):
         if self.args.debug is True:
-            io.echo(f"player.save.100: {self.playerid=}", level="debug")
+            io.echo(f"player.save.100: {self.moniker=}", level="debug")
         if self.moniker is None:
             io.echo(f"player moniker is not set. save aborted.", level="error")
             return None
@@ -258,8 +300,7 @@ class Player(object):
             with database.connect(self.args, pool=self.pool) as conn:
                 self.sync()
                 self.update(conn)
-                if commit is True:
-                    conn.commit()
+                conn.commit()
             io.echo(" ok ", level="ok")
             return True
 
@@ -284,6 +325,9 @@ class Player(object):
 
         terminal_width = io.getterminalwidth()-2
 
+        io.echo(f"empyre.player.status.100: {self.resources=}", level="debug")
+        # io.echo(f"empyre.player.status.120: {self.attributes=}", level="debug")
+
         data = self.resources
         data.update(self.attributes)
 
@@ -301,16 +345,16 @@ class Player(object):
         def format_value(value):
             if value is None:
                 return ""
-            if isinstance(value, int):
+            if isinstance(value, bool):
+                return "yes" if value else "no"
+            elif isinstance(value, int):
                 return f"{value:n}"
             elif isinstance(value, datetime):
                 return value.strftime(DATETIME_FMT)
-            elif isinstance(value, bool):
-                return "yes" if value else "no"
             elif isinstance(value, str):
-                return truncate_str_value(value)
+                return truncate_str_value(value).rstrip()
             else:
-                return str(value.rstrip())
+                return str(value)
 
         sorted_items = sorted(data.items())
 
@@ -320,9 +364,20 @@ class Player(object):
         max_label_width = 0
 
         for label, data in sorted_items:
-            label = truncate_label(label)
-            value_str = format_value(data["value"])
-            formatted.append((label, value_str))
+            label_display = truncate_label(label)
+            resource_value = data.get("value")
+            attr_value = getattr(self, label, None)
+
+            if label in self.resources:
+                if label == "beheaded":
+                    value_str = f"{format_value(bool(attr_value))} [{format_value(bool(resource_value))}]"
+                else:
+                    # Show both stored resource value and current attribute
+                    value_str = f"{format_value(attr_value)} [{format_value(resource_value)}]"
+            else:
+                value_str = format_value(resource_value)
+
+            formatted.append((label_display, value_str))
             max_label_width = max(max_label_width, len(label))
             max_value_width = max(max_value_width, len(value_str))
 
@@ -354,11 +409,6 @@ class Player(object):
             raise ValueError("valid layouts are 'column' and 'row'")
 
     def adjust(self):
-#        if self.taxrate is None or self.taxrate == "":
-#            io.echo("updated taxrate", level="debug")
-#            self.taxrate = 15
-#            self.save(force=True)
-
         # io.echo(f"empyre.Player.adjust.100: {self.grain=} {self.land=}", level="debug")
         if self.grain < 0:
             io.echo("less than zero bushels of grain. glitch corrected.")
@@ -488,7 +538,10 @@ class Player(object):
 
         self.previousrank = self.rank
         self.rank = calculaterank(self.args, self)
-        # player.save()
+
+        if self.serfs < 100:
+            self.beheaded = True
+            io.echo("{normalcolor}You haven't enough serfs to maintain the empyre! It's turned over to King George and you are {highlightcolor}beheaded{normalcolor}.{/all}")
 
         return
 
@@ -524,7 +577,6 @@ def verifyPlayerNameFound(name:str, **kwargs:dict) -> bool:
     if cur.rowcount == 0:
         return False
     return True
-
 
 def verifyPlayerNameFound(moniker:str, **kwargs:dict) -> bool:
     import argparse
@@ -572,7 +624,6 @@ def verifyPlayerNameNotFound(moniker:str, **kwargs:dict) -> bool:
 
 def build(args, rec:dict, **kwargs) -> Player:
     p = Player(args, **kwargs) # Player(args, **kwargs)
-    # io.echo(f"build.100: {getattr(p, 'coins')=}", level="debug")
     for name, data in p.attributes.items():
         v = rec.get(name, data["default"])
         if v is None:
@@ -583,18 +634,16 @@ def build(args, rec:dict, **kwargs) -> Player:
     # io.echo(f"empyre.player.build.200: {rec=}", level="debug")
 
     for name, data in p.resources.items():
-        v = rec.get(name, data["default"])
+        v = rec["resources"].get(name, data["default"])["value"]
         if v is None:
             v = data["default"]
-        # io.echo(f"empyre.player.build.220: {name=} {v=}", level="debug")
 
         setattr(p, name, v)
-        # p.setresourcevalue(name, v)
+        io.echo(f"empyre.player.build.220: {p.foundries=}", level="debug")
 
-    # io.echo(f"empyre.player.build.220: {rec=}", level="debug")
     return p
 
-def load(args, moniker, **kwargs):
+def load(args, moniker:str, **kwargs) -> Player:
     def _work(conn):
         sql:str = "select * from empyre.player where moniker=%s"
         dat:tuple = (moniker,)
@@ -606,9 +655,11 @@ def load(args, moniker, **kwargs):
                 return None
 
             rec = cur.fetchone()
-            io.echo(f"empyre.player.load.320: {type(rec['resources'])=}", level="debug")
+            io.echo(f"empyre.player.load.320: {rec['resources']['foundries']['value']=}", level="debug")
             p = build(args, rec, **kwargs)
+            io.echo(f"empyre.player.load.340: {p.foundries=}", level="debug")
             p.sync()
+            io.echo(f"empyre.player.load.360: {p.foundries=}", level="debug")
             return p
         
     pool = kwargs.get("pool", None)
@@ -642,7 +693,7 @@ def load(args, moniker, **kwargs):
 #    else:
 #        return _work(conn)
 
-def select(args, title:str="select player", prompt:str="player: ", membermoniker:str=None, **kwargs):
+def select(args, title:str="select player", prompt:str="player: ", membermoniker:str=None, **kwargs) -> Player:
     pool = kwargs.get("pool", None)
     if pool is None:
         io.echo(f"empyre.player.select.300: {pool=}", level="error")
@@ -668,11 +719,11 @@ def select(args, title:str="select player", prompt:str="player: ", membermoniker
     class EmpyrePlayerListboxItem(listbox.ListboxItem):
         def __init__(self, rec:dict, **kwargs):
             self.pool = kwargs.get("pool", None)
-            io.echo(f"empyre.lib.EmpyreListboxItem.200: {kwargs=}", level="debug")
+            # io.echo(f"empyre.lib.EmpyreListboxItem.200: {kwargs=}", level="debug")
             width = kwargs.get("width", io.terminal.width())
             height = 1
             super().__init__(self, width, height, **kwargs)
-            io.echo(f"empyre.player.EmpyrePlayerListboxItem.300: {rec=}", level="debug")
+            # io.echo(f"empyre.player.EmpyrePlayerListboxItem.300: {rec=}", level="debug")
             self.player = load(args, rec["moniker"], **kwargs)
             if self.player is None:
                 io.echo(f"empyre.player.select.240: {self.player=}", level="error")
@@ -708,8 +759,7 @@ def select(args, title:str="select player", prompt:str="player: ", membermoniker
         if ch == "KEY_ENTER":
             io.setvar("cic", "{currentitemcolor}")
             currentitem.display()
-            io.echo("{restorecursor}", end="", flush=True)
-            io.echo(f"{currentitem.player.moniker}")
+            io.echo(f"{restorecursor}{currentitem.player.moniker}", end="", flush=True)
             return False
         elif ch == "KEY_INS":
             io.echo("{restorecursor}add player")
@@ -728,7 +778,7 @@ def select(args, title:str="select player", prompt:str="player: ", membermoniker
         totalitems = count(args, membermoniker, conn=conn)
         with database.cursor(conn) as cur:
             if args.debug is True:
-                io.echo(f"getplayer.110: {cur.mogrify(sql, dat)=}", level="debug")
+                io.echo(f"getplayer.110: {database.mogrifysql(cur, sql, dat)=}", level="debug")
             cur.execute(sql, dat)
             if cur.rowcount == 0:
                 io.echo("no player record.")
@@ -807,10 +857,6 @@ def create(args, **kwargs):
         io.echo("aborted.")
         return None
 
-#    player = Player(args, **kwargs)
-#    player.datecreated = "now()"
-
-#    io.echo(f"empyre.lib.Player.insert.100: {player=}", level="debug")
     try:
         conn = kwargs.get("conn", None)
         if conn is None:
