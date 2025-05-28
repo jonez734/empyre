@@ -409,11 +409,6 @@ class Player(object):
             raise ValueError("valid layouts are 'column' and 'row'")
 
     def adjust(self):
-        # io.echo(f"empyre.Player.adjust.100: {self.grain=} {self.land=}", level="debug")
-        if self.grain < 0:
-            io.echo("less than zero bushels of grain. glitch corrected.")
-            self.grain = 0
-
         soldierpay = (self.soldiers*(self.combatvictorycount+2))+(self.taxrate*self.palaces*10)//40 # py
 
         a = 0
@@ -438,7 +433,6 @@ class Player(object):
             a +=  abs(self.nobles*SOLDIERSPERNOBLE - self.soldiers)
             io.echo(f"Not enough nobles for your {util.pluralize(soldiers, **soldierres)}!") # "soldier", "soldiers", emoji=":military-helmet:")))
         self.soldiers -= a
-#        ttyio.echo("adjust.180: a=%d" % (a), level="debug")
 
         if a > 0:
             io.echo("{valuecolor}{util.pluralize(a, 'soldier deserts', 'soldiers desert', **soldierres)}{/all}{labelcolor} your army")
@@ -657,9 +651,7 @@ def load(args, moniker:str, **kwargs) -> Player:
             rec = cur.fetchone()
             io.echo(f"empyre.player.load.320: {rec['resources']['foundries']['value']=}", level="debug")
             p = build(args, rec, **kwargs)
-            io.echo(f"empyre.player.load.340: {p.foundries=}", level="debug")
             p.sync()
-            io.echo(f"empyre.player.load.360: {p.foundries=}", level="debug")
             return p
         
     pool = kwargs.get("pool", None)
