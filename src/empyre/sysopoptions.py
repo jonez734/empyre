@@ -8,20 +8,28 @@ def init(args, **kwargs):
     return True
 
 def access(args, op, **kwargs):
+    from bbsengine6 import database
+    def _work(conn):
+        io.echo(f"empyre.sysopoptions.access.120: {op=} {conn=}", level="debug")
+        sysop = member.checkflag(args, "sysop", mogrify=True, conn=conn)
+        io.echo(f"empyre.sysopoptions.120: {sysop=}", level="debug")
+        if sysop is True:
+            if args.debug is True:
+                io.echo("empyre.sysopoptions.140: access check pass", level="debug")
+            return True
+        io.echo("empyre.sysopoptions.access.100: permission denied", level="error")
+        return False
+
+    # io.echo(f"empyre.sysopoptions.access.180: {kwargs=}", level="debug")
     conn = kwargs.get("conn", None)
     if conn is None:
-        pool = kwargs.get("pool")
+        pool = kwargs.get("pool", None)
         if pool is None:
+            io.echo(f"empyre.sysopoptions.160: {pool=}", level="error")
             return False
-        conn = database.connect(args, pool=pool)
-
-    sysop = member.checkflag(args, "SYSOP", mogrify=True, conn=conn)
-    io.echo(f"empyre.sysopoptions.120: {sysop=}", level="debug")
-    if sysop is True:
-        io.echo("empyre.sysopoptions.140: access check pass", level="debug")
-        return True
-    io.echo("empyre.sysopoptions.access.100: permission denied")
-    return False
+        with database.connect(args, pool=pool) as conn:
+            return _work(conn)
+    return _work(conn)
 
 def buildargs(args, **kwargs):
     return None
@@ -32,16 +40,10 @@ def main(args, **kwargs):
         io.echo("You do not exist! Go away!", level="error")
         return False
 
-#    ttyio.echo("sysopoptions.100: trace", level="debug")
-#    sysop = bbsengine.checkflag(args, "SYSOP")
-#    if sysop is False:
-#        ttyio.echo("permission denied")
-#        return False
-    # ttyio.echo("sysopoptions.100: sysop=%r" % (sysop), level="debug")
     lib.setarea(args, "sysop options", player=player)
     util.heading("sysop options")
-    player.turncount = io.inputinteger("{var:promptcolor}turncount: {var:inputcolor}", player.turncount, args=args, **kw)
-    x = io.inputinteger("{var:promptcolor}:moneybag: coins: {var:inputcolor}", player.coins, **kw)
+    player.turncount = io.inputinteger("{var:promptcolor}turncount: {var:inputcolor}", player.turncount, args=args, **kwargs)
+    x = io.inputinteger("{var:promptcolor}:moneybag: coins: {var:inputcolor}", player.coins, **kwargs)
     if x > 0:
         player.coins = x
     else:
