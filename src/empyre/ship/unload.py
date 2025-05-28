@@ -28,18 +28,18 @@ def main(args, **kw):
     playerres = player.getresource(resourcename)
     manifestentry = ship.getmanifestentry(resourcename)
     if type(manifestentry) is int:
-        manifestentry = {"quantity":manifestentry}
-    manifestentryvalue = manifestentry["quantity"]
+        manifestentry = {"value":manifestentry}
+    manifestentryvalue = manifestentry["value"]
 
     playerattr = getattr(player, resourcename)
 
     io.echo(f"{resourcename=}", level="debug")
     if resourcename not in ship.manifest:
         io.echo(f"You do not have any {resourcename} on board.")
-        ship.manifest[resourcename] = {"quantity":0}
+        ship.manifest[resourcename] = {"value":0}
         return True
 
-    amount = io.inputinteger(f"{{promptcolor}}unload amount of {resourcename}: {{inputcolor}}", manifestentry["quantity"])
+    amount = io.inputinteger(f"{{promptcolor}}unload amount of {resourcename}: {{inputcolor}}", manifestentry["value"])
     if amount is None or amount == 0:
         io.echo("aborted.")
         return True
@@ -60,9 +60,9 @@ def main(args, **kw):
             return True
 
         if resourcename in ship.manifest:
-            manifestentry["quantity"] -= amount
+            manifestentry["value"] -= amount
         else:
-            manifestentry["quantity"] = 0
+            manifestentry["value"] = 0
 
         playerattr += amount
         setattr(player, resourcename, playerattr)
