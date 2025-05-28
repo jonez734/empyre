@@ -1,5 +1,6 @@
 from bbsengine6 import io, database, util
 from . import lib
+from .. import lib as libempyre
 
 def init(args, **kw):
     return True
@@ -14,7 +15,13 @@ def main(args, **kw):
     player = kw["player"] if "player" in kw else None
     ship = kw["ship"] if "ship" in kw else None
 
-    op = lib.selectresource(args, **kw)
+    player.save()
+    #for name in player.resources.keys():
+    #    r = player.resources[name]
+    #    r["value"] = getattr(player, name)
+    #    io.echo("{name=} {r['value']=}", level="debug")
+
+    op = libempyre.selectresource(args, "select load resource", player.resources, **kw)
     if op.kind == "exit":
         return True
 
