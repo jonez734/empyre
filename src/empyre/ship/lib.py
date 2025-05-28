@@ -2,14 +2,18 @@ import copy
 
 from argparse import Namespace
 
-from bbsengine6 import io, database, member, listbox, util
-from bbsengine6.listbox import Listbox, genericListboxItem
+from bbsengine6 import io, database, member, util
+from bbsengine6.listbox import Listbox, ListboxItem
 from .. import lib as libempyre
 
+MAXSHIPYARDS:int = 10
+SHIPSPERSHIPYARD:int = 10
+
 class Ship(object):
-    def __init__(self, args, player, location):
+    def __init__(self, args, **kwargs):
         self.args = args
-        self.player = player
+        self.player = kwargs.get("player", None)
+        self.location = kwargs.get("location", "mainland")
 #        io.echo(f"Ship.100: {self.player=}", level="debug")
 #        io.echo(f"{self.player=}", level="debug")
 #        self.playermoniker = player.moniker
@@ -17,12 +21,12 @@ class Ship(object):
         self.kind = "cargo"
         self.manifest = {}
         self.navigator = False
-        self.location = "mainland"
+        self.status = None
         self.datecreated = None
-        self.createdbyid = None
+        self.createdbymoniker = None
         self.datedocked = None
 
-        self.dbh = database.connect(args)
+#        self.dbh = database.connect(args)
 
     def load(self, moniker:str) -> bool:
         sql = f"select * from empyre.ship where moniker=%s"
@@ -55,32 +59,30 @@ class Ship(object):
         return self.manifest[name] if name in self.manifest else None
 
     def adjust(self):
-        count = countships(self.args, self.player.moniker)
+        c = count(self.args, self.player.moniker)
 
-        if self.player.ships != count:
-            io.echo("adjusting {self.player.ships=} to {count=}")
-            self.player.ships = count
+        if self.player.ships != c:
+            io.echo("adjusting {self.player.ships=} to {count=}", level="debug")
+            self.player.ships = c
             self.player.save()
 
         return True
 
-def countships(args, playermoniker):
-    sql = "select count(moniker) from empyre.ship where playermoniker=%s"
-    dat = (playermoniker,)
-    dbh = database.connect(args)
-    cur = dbh.cursor()
-    cur.execute(sql, dat)
-    return cur.rowcount
-
-def build(args, player, **kw):
+def build(args, **kwargs):
+    player = kwargs.get("player", None)
     if player is None:
         io.echo("You do not exist! Go Away!", level="error")
         return False
 
-    location = kw["location"] if "location" in kw else "mainland"
+    if player.ships+1 > player.shipyards*SHIPSPERSHIPYARD:
+        io.echo("You need to build a shipyard before you can build a ship.")
+        shipyardres = player.getresource("shipyards")
+        libempyre.trade(args, player, "shipyards", **shipyardres)
+        player.adjust()
+        player.save()
 
-    ship = Ship(args, player, location)
-    _ship = _edit(args, "build", ship, player=player, **kw)
+    ship = Ship(args, **kwargs)
+    _ship = _edit(args, "build", ship, **kwargs)
     if _ship == ship:
         io.echo("no changes")
     else:
@@ -93,17 +95,17 @@ def build(args, player, **kw):
         for k in ("manifest", "location", "status", "kind", "navigator"):
             s[k] = getattr(ship, k)
         s["datecreated"] = "now()" # ship.datecreated
-        s["createdbyid"] = member.getcurrentid(args)
+        s["createdbymoniker"] = member.getcurrentmoniker(args)
         s["datedocked"] = "now()"
         res = database.insert(args, "empyre.__ship", s, mogrify=True, primarykey="moniker")
         database.commit(args)
         return s
     return True
 
-def _edit(args, mode, ship, **kw):
-    player = kw["player"] if "player" in kw else None
+def _edit(args, mode, ship, **kwargs):
+    player = kwargs.get("player", None)
 
-    _ship = copy.deepcopy(ship)
+    _ship = copy.copy(ship)
 
     done = False
     while not done:
@@ -119,7 +121,7 @@ def _edit(args, mode, ship, **kw):
         else:
             io.echo()
 
-        io.echo(f"{{optioncolor}}[A]{{:labelcolor}} Navigator: {{valuecolor}}{ship.navigator}", end="")
+        io.echo(f"{{optioncolor}}[A]{{labelcolor}} Navigator: {{valuecolor}}{ship.navigator}", end="")
         if _ship.navigator != ship.navigator:
             io.echo(f" {{labelcolor}}(was: {{valuecolor}}{_ship.navigator}{{labelcolor}})")
         else:
@@ -130,7 +132,7 @@ def _edit(args, mode, ship, **kw):
             io.echo("Quit")
             done = True
         elif ch == "N":
-            completer = completeShipName(args, ship.player)
+            completer = completeShipName(args, **kwargs)
             ship.moniker = inputshipname(args, ship.moniker, completer=completer, verify=verifyShipNameNotFound)
         elif ch == "L":
             io.echo("Load")
@@ -148,7 +150,7 @@ def _edit(args, mode, ship, **kw):
                 io.echo("You need {} to purchase a navigator".format(util.pluralize(nav["price"], "coin", "coins", **nav)))
             else:
                 player.coins -= nav["price"]
-                ship["navigator"] = True
+                ship.navigator = True
         elif ch == "K":
             io.echo("Kind")
             k = io.inputchoice("[C]argo [P]assenger [M]ilitary", "CPM", "C")
@@ -164,17 +166,25 @@ def _edit(args, mode, ship, **kw):
     return ship
 
 class completeShipName(object):
-    def __init__(self, args, player):
+    def __init__(self, args, **kwargs):
         self.args = args
-        self.dbh = database.connect(self.args)
-        self.cur = self.dbh.cursor()
-        sql = "select moniker from empyre.ship where playermoniker=%s"
-        dat = (player.moniker,)
-        self.cur.execute(sql, dat)
-        self.names = []
-        if self.cur.rowcount > 0:
-            for rec in self.cur.fetchall():
-                self.names.append(rec["name"])
+
+        self.player = kwargs.get("player", None)
+
+        self.pool = kwargs.get("pool", None)
+        if self.pool is None:
+            io.echo(f"empyre.ship.lib.completeShipName.100: {self.pool=}")
+            return
+
+        with database.connect(args, pool=self.pool) as conn:
+            with database.cursor(conn) as cur:
+                sql = "select moniker from empyre.ship where playermoniker=%s"
+                dat = (self.player.moniker,)
+                cur.execute(sql, dat)
+                self.names = []
+                if cur.rowcount > 0:
+                    for rec in cur.fetchall():
+                        self.names.append(rec["moniker"])
 
     # @log_exceptions
     def complete(self:object, text:str, state:int):
@@ -188,38 +198,41 @@ def verifyShipNameFound(moniker:str, **kwargs) -> bool:
     args = kwargs["args"] if "args" in kwargs else Namespace()
 
     io.echo(f"verifyShipNameFound.120: {args=} {moniker=}", level="debug")
-    dbh = database.connect(args)
-    cur = dbh.cursor()
-    sql = "select 1 from empyre.ship where moniker=%s"
-    dat = (moniker,)
-    cur.execute(sql, dat)
-    io.echo(f"verifyShipNameFound.100: mogrify={cur.mogrify(sql, dat)}", level="debug")
-    if cur.rowcount == 0:
-        return False
-    return True
+    pool = kwargs.get("pool", None)
+    if pool is None:
+        io.echo(f"empyre.ship.lib.verifyShipNameFound.100: {pool=}", level="error")
+        return None
+    with database.connect(args, pool=pool) as conn:
+        with database.cursor(conn) as cur:
+            sql = "select 1 from empyre.ship where moniker=%s"
+            dat = (moniker,)
+            cur.execute(sql, dat)
+            io.echo(f"verifyShipNameFound.100: mogrify={cur.mogrify(sql, dat)}", level="debug")
+            if cur.rowcount == 0:
+                return False
+            return True
 
 def verifyShipNameNotFound(moniker:str, **kwargs) -> bool:
     args = kwargs["args"] if "args" in kwargs else Namespace()
 
     io.echo(f"verifyShipNameNotFound.120: {args=} {moniker=}", level="debug")
-    dbh = database.connect(args)
-    cur = dbh.cursor()
-    sql = "select 1 from empyre.ship where moniker=%s"
-    dat = (moniker,)
-    cur.execute(sql, dat)
-    io.echo(f"verifyShipNameNotFound.100: mogrify={cur.mogrify(sql, dat)}", level="debug")
-    if cur.rowcount == 0:
-        return True
-    return False
+    pool = kwargs.get("pool", None)
+    if pool is None:
+        io.echo(f"empyre.ship.lib.verifyShipNameFound.100: {pool=}", level="error")
+        return None
+    with database.connect(args, pool=pool) as conn:
+        with database.cursor(conn) as cur:
+            sql = "select 1 from empyre.ship where moniker=%s"
+            dat = (moniker,)
+            cur.execute(sql, dat)
+            io.echo(f"verifyShipNameFound.100: mogrify={cur.mogrify(sql, dat)}", level="debug")
+            if cur.rowcount == 0:
+                return False
+            return True
 
-def inputshipname(args, prompt:str, currentmoniker="", **kw) -> str:
-    if "verify" in kw:
-        verify = kw["verify"]
-        del kw["verify"]
-    else:
-        verify = verifyShipNameNotFound
-        
-    moniker = io.inputstring(prompt, currentmoniker, verify=verify, args=args, **kw)
+def inputshipname(args, prompt:str, currentmoniker="", **kwargs) -> str:
+    verify = kwargs.pop("verify", verifyShipNameNotFound)
+    moniker = io.inputstring(prompt, currentmoniker, verify=verify, args=args, **kwargs)
     if args.debug is True:
         io.echo(f"inputshipname.100: {moniker=}", level="debug")
     return moniker
@@ -241,10 +254,11 @@ def selectship(args, **kw):
             self.numitems = len(self.items)
             return self.items
 
-    class EmpyreShipListboxItem(object):
+    class EmpyreShipListboxItem(ListboxItem):
         def __init__(self, rec:dict, width:int=None, player=None, location:str="mainland"):
+            super().__init__(rec, width, player, location)
 #            io.echo(f"empyreshiplistboxitem: {player=}", level="debug")
-            self.ship = Ship(args, player, location)
+            self.ship = Ship(args, **kw)
             self.ship.load(rec["moniker"])
 
             left = f"{self.ship.moniker}"
@@ -256,6 +270,7 @@ def selectship(args, **kw):
             self.rec = rec
             self.width = width
             self.player = player
+            self.height = 1
 
         def help(self):
             io.echo("use KEY_ENTER to select one of your ships")
@@ -265,19 +280,24 @@ def selectship(args, **kw):
             io.echo(f"{{/all}}{{cha}} {{engine.menu.cursorcolor}}{{engine.menu.color}} {{engine.menu.boxcharcolor}}{{acs:vline}}{{cic}} {self.label.ljust(self.width-9, ' ')} {{/all}}{{engine.menu.boxcharcolor}}{{acs:vline}}{{engine.menu.shadowcolor}} {{engine.menu.color}} {{/all}}{{cha}}", end="", flush=True)
             return
 
-    player = kw["player"] if "player" in kw else None
+    player = kw.get("player", None)
     io.echo(f"{player=}", level="debug")
     if player is None:
-        io.echo("You do not exist! Go Away!")
+        io.echo("You do not exist! Go Away!", level="error")
         return False
 
-    totalships = countships(args, player.moniker)
+    totalships = count(args, player.moniker)
 
-    sql = f"select * from empyre.ship where playermoniker=%s"
-    dat = (player.moniker,)
-    dbh = database.connect(args)
-    cur = dbh.cursor()
-    cur.execute(sql, dat)
+    pool = kw.get("pool", None)
+    if pool is None:
+        io.echo(f"empyre.ship.lib.selectship.200: {pool=}", level="error")
+        return False
+
+    with database.connect(args, pool=pool) as conn:
+        with database.cursor(conn) as cur:
+            sql = f"select * from empyre.ship where playermoniker=%s"
+            dat = (player.moniker,)
+            cur.execute(sql, dat)
 
     io.echo(f"{kw['player']=}", level="debug")
     lb = EmpyreShipListbox(args, "select ship", keyhandler=None, totalitems=totalships, itemclass=EmpyreShipListboxItem, **kw)
@@ -351,15 +371,16 @@ def selectmanifestitem(args, **kw):
             self.pk = resourcename
             self.label = "NEEDINFO"
             self.res = self.player.getresource(resourcename)
+            self.height = 1
 #            self.rec = rec
             self.width = width
             io.echo(f"{self.width=}", level="debug")
 
             self.manifestitem = self.ship.manifest[self.pk] if self.pk in self.ship.manifest else {}
-            quantity = self.manifestitem["quantity"]
+            value = self.manifestitem["value"]
 
             left = f"{self.pk}"
-            right = f"{quantity:>6n}" # {util.pluralize(value, **self.res)}"
+            right = f"{value:>6n}" # {util.pluralize(value, **self.res)}"
             rightlen = len(right)
             self.label = f"{left.ljust(self.width-rightlen-10)}{right}" # %s%s {{/all}}{{var:acscolor}}{{acs:vline}}" % (left.ljust(width-rightlen-4), right)
             
@@ -384,3 +405,22 @@ def selectmanifestitem(args, **kw):
 
 def runmodule(args, modulename, **kw):
     return libempyre.runmodule(args, f"ship.{modulename}", **kw)
+
+# @since 20240414
+def count(args, playermoniker=None, **kwargs):
+    def _work(conn):
+        with database.cursor(conn) as cur:
+            sql:str = "select count(moniker) from empyre.ship where playermoniker=%s"
+            dat:tuple = (playermoniker,)
+            cur.execute(sql, dat)
+            return cur.rowcount
+
+    conn = kwargs.get("conn", None)
+    if conn is None:
+        pool = kwargs.get("pool", None)
+        if pool is None:
+            io.echo(f"empyre.lib.countships.100: {pool=}", level="error")
+            return False
+        with database.connect(args, pool=pool) as conn:
+            return _work(conn)
+    return _work(conn)
