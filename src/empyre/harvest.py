@@ -4,21 +4,22 @@ from bbsengine6 import io, util
 
 from . import lib
 
-def init(args, **kw):
+def init(args, **kwargs):
     return True
 
-def access(args, op, **kw):
+def access(args, op, **kwargs):
     return True
 
-def buildargs(args, **kw):
+def buildargs(args, **kwargs):
     return None
 
-def main(args, **kw):
-    player = kw["player"] if "player" in kw else None
+def main(args, **kwargs):
+    player = kwargs.get("player", None)
+    conn = kwargs.get("conn", None)
 
     grainres = player.getresource("grain")
 
-    lib.setarea(args, "harvest", **kw)
+    lib.setarea(args, "harvest", **kwargs)
     x = int((player.land*player.weatherconditions+(random.random()*player.serfs)+player.grain*player.weatherconditions)/3)
     x = min(x, player.land+player.serfs*4)
     #if x > (player.land+player.serfs)*4:
@@ -62,7 +63,7 @@ def main(args, **kw):
         player.armyrequires = player.grain
     player.armygiven = io.inputinteger("{promptcolor}Give them how many?: {/all}{inputcolor}", player.armyrequires)
     if player.armygiven > player.grain:
-        io.echo("You do not have enough grain! Your army has been given {util.pluralize(player.grain, **grainres)}")
+        io.echo(f"You do not have enough grain! Your army has been given {util.pluralize(player.grain, **grainres)}")
         player.armygiven = player.grain
     io.echo("{/all}")
     if player.armygiven < 1:
@@ -73,7 +74,7 @@ def main(args, **kw):
     horsesres = player.getresource("horses", singular="horse requires", plural="horses require")
     if player.horses > 0:
         horsesrequire = random.randint(2, 7)*player.horses*10
-        io.echo("Your {util.pluralize(player.horses, quantity=False, **horsesres)} {util.pluralize(horsesrequire, **grainres)}")
+        io.echo(f"Your {util.pluralize(player.horses, quantity=False, **horsesres)} {util.pluralize(horsesrequire, **grainres)}")
         horsesgiven = io.inputinteger("{promptcolor}Give them how many?: {/all}{inputcolor}", horsesrequire)
         if horsesgiven < 0:
             horsesgiven = 0
