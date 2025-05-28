@@ -14,7 +14,7 @@ def buildargs(args, **kw):
 def main(args, **kw):
     player = kw["player"] if "player" in kw else None
 
-    io.echo("player.coins=%r" % (player.coins), level="debug")
+    io.echo(f"{player.coins=}", level="debug")
 
     if isquestcompleted() is True:
         coinres = player.getresource("coins")
@@ -25,4 +25,6 @@ def main(args, **kw):
         ttyio.echo("You failed to complete this quest.")
         result = False
     io.echo(f"after completed check, {player.coins=}", level="debug")
+    player.adjust()
+    player.save()
     return result
