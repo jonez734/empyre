@@ -1,93 +1,148 @@
-import ttyio6 as ttyio
-import bbsengine6 as bbsengine
+from bbsengine6 import io, util, member, database, session
 
 from . import lib
 from . import _version
+from . import player as libplayer
 
-# @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_startturn.lbl#L6
+# @see plus_emp6_startturn.lbl
 # @since 20200913
 # @since 20220729 - submodule
 
-def init(args, **kw):
+def init(args, **kwargs):
     # ttyio.echo("empyre.mainmenu.init.100: args=%r" % (args), level="debug")
-    ttyio.setvariable("empyre.highlightcolor", "{bggray}{white}")
-
+#    io.setvariable("empyre.highlightcolor", "{bggray}{white}")
     return True
 
-def main(args, **kw):
-    player = kw["player"] if "player" in kw else None
+def access(args, op, **kwargs):
+    return True
+
+def buildargs(args, **kwargs):
+    return None
+
+def main(args, **kwargs):
     if args.debug is True:
-        ttyio.echo("empyre.mainmenu.main.100: player=%r" % (player), level="debug")
+        io.echo(f"empyre.main.100: {args=}", level="debug")
 
     options = (
-        ("I", "Instructions",    "instructions"),
-        ("M", "Maintenance",     "maint"),
-        ("N", "News",            "shownews", ":newspaper:"),
-        ("L", "List Players",    "maint.listplayers"),
-        ("P", "Play Empyre",     "play"),
-        ("T", "Town Activities", "town"), #, ":building:"),
-        ("Y", "Your Status",     "playerstatus"),
-        ("G", "Generate NPC",    "generatenpc"),
+        ("I", "Instructions",     "instructions"),
+        ("M", "Maintenance",      "maint", ":maint:"),
+        ("N", "News",             "shownews", ":newspaper:"),
+        ("L", "List Players",     "maint.listplayers"),
+        ("P", "Play Empyre",      "play"),
+        ("T", "Town Activities",  "town", ":building:"),
+        ("Y", "Your Status",      "playerstatus"),
+#        ("G", "Generate NPC",     "generatenpc"),
     )
 
-    def help(**kw):
-        ttyio.echo(f"empyre.mainmenu.help.100: kw={kw!r}",level="debug")
+    def mainmenuhelp(**kwargs):
+        io.echo(f"empyre.mainmenu.help.100: {kwargs=}",level="debug")
         for o in options: #opt, t, callback, emoji in options:
             opt = o[0]
             t = o[1]
             callback = o[2]
             if len(o) == 3:
-                emoji = "  "
+                emoji = ""
             elif len(o) == 4:
                 emoji = o[3]
-            ttyio.echo(f"{{/all}}{emoji} {{var:optioncolor}}[{opt}]{{/all}}{{var:valuecolor}} {t}")
+            io.echo(f"{{/all}}{{optioncolor}}[{opt}]{{/all}} {{valuecolor}} {t} {emoji}")
 #            choices += opt
-        ttyio.echo("{F6}:door: {var:optioncolor}[Q]{/all}{var:valuecolor} Quit{/all}")
+        io.echo("{F6}:door: {optioncolor}[Q]{/all}{valuecolor} Quit{/all}")
 
-    init(args)
-    done = False
-    while not done:
-        player.save()
-        terminalwidth = ttyio.getterminalwidth()
-        lib.setarea(args, player, "main menu %s rev %s" % (_version.__datestamp__, _version.__version__))
-        bbsengine.util.heading("main menu")
-        ttyio.echo()
-        choices = "Q"
-        for o in options:
-            choices += o[0]
-        help()
-        if args.debug is True:
-            ttyio.echo("mainmenu.100: player.name=%r" % (player.name), level="debug")
-        try:
-            ch = ttyio.inputchar("{var:promptcolor}Your command, %s %s? {var:inputcolor}" % (lib.getranktitle(args, player.rank).title(), player.name.title()), choices, "", help=help)
+    util.heading("empyre")
 
-            if ch == "Q":
-                ttyio.echo(":door: {var:optioncolor}Q{cyan} -- quit game{/all}")
-                loop = False
-                break
-            else:
-                for o in options:# opt, t, callback in options:
-                    if o[0] != ch:
-                        continue
-                    option = o[0]
-                    title = o[1]
-                    submodule = o[2]
-                    if len(o) == 4:
-                        emoji = o[3]
-                    else:
-                        emoji = ""
-                    ttyio.echo(f"{emoji}{{var:optioncolor}}{option}{{var:normalcolor}} -- {title}{{/all}}") #  % (emoji, option, title))
-                    res = lib.runsubmodule(args, player, submodule)
-                    if res is not True:
-                        ttyio.echo(f"error running submodule {submodule}, returned {res!r}", level="error")
-                    ttyio.echo()
+    io.echo(f"database: {args.databasename} host: {args.databasehost}:{args.databaseport}", level="info")
+
+    if lib.runmodule(args, "startup", **kwargs) is False:
+        io.echo(f"empyre failed to start up", level="error")
+        return False
+
+    with database.getpool(args, dbname=args.databasename) as pool:
+        if session.start(args, pool=pool) is False:
+            io.echo(f"empyre.main.240: session.start() failed", level="error")
+            return False
+
+        lib.setarea(args, f"empyre {_version.datestamp} githash {_version.githash}", player=None)
+
+        currentmoniker = member.getcurrentmoniker(args, pool=pool, **kwargs)
+        io.echo(f"startup.300: {currentmoniker=}", level="debug")
+        if currentmoniker is False:
+            io.echo("empyre.main.200: you do not exist! go away!", level="error")
+            return False
+
+        currentplayer = None
+
+        playercount = libplayer.count(args, currentmoniker, pool=pool, **kwargs)
+        io.echo(f"empyre.main.100: {playercount=}", level="debug")
+        if playercount is None:
+            currentplayer = libplayer.create(args, pool=pool)
+            if currentplayer is None:
+                io.echo("empyre.main.200: unable to create new player!", level="error")
+                return False
+        elif playercount > 1:
+            currentplayer = libplayer.select(args, currentmoniker, pool=pool, **kwargs)
+            if currentplayer is None:
+                io.echo(f"empyre.main.220: error selecting player", level="error")
+                return False
+        else:
+            membermoniker = member.getcurrentmoniker(args, pool=pool)
+            currentplayer = libplayer.load(args, currentmoniker, pool=pool, **kwargs)
+
+        done = False
+        while not done:
+            # io.echo(f"empyre.main.320: {currentplayer=}", level="debug")
+            if currentplayer is not None:
+                currentplayer.adjust()
+                currentplayer.save()
+
+            lib.setarea(args, f"{_version.datestamp} git {_version.githash}", player=currentplayer)
+
+            util.heading("main menu")
+
+            io.echo()
+
+            choices = "QX"
+            for o in options:
+                choices += o[0]
+            mainmenuhelp()
+#            io.echo(f"mainmenu.100: {currentplayer.moniker=}", level="debug")
+            try:
+    #            io.echo(f"{player.rank=} {player.moniker=}", level="debug")
+                if currentplayer is not None:
+                    ch = io.inputchar("{promptcolor}Your command, %s %s? {inputcolor}" % (libplayer.getranktitle(args, currentplayer.rank).title(), currentplayer.moniker), choices, "", help=mainmenuhelp)
+                else:
+                    ch = io.inputchar("{promptcolor}Your command? {inputcolor}", choices, "", help=mainmenuhelp)
+
+                if ch == "Q" or ch == "X":
+                    io.echo(":door: {optioncolor}Q{labelcolor} -- quit game{/all}")
+                    done = True
                     break
-        except EOFError:
-            ttyio.echo("{lightgreen}EOF{/all}")
-            return True
-        except KeyboardInterrupt:
-            ttyio.echo("{lightgreen}INTR{/all}")
-            return True
+#                elif ch == "Y":
+#                    io.echo("Current Player Status")
+#                    currentplayer.status()
+#                    continue
+                else:
+                    for o in options:# opt, t, callback in options:
+                        if o[0] != ch:
+                            continue
+                        option = o[0]
+                        title = o[1]
+                        submodule = o[2]
+                        if len(o) == 4:
+                            emoji = o[3]
+                        else:
+                            emoji = ""
+                        io.echo(f"{emoji}{{optioncolor}}{option}{{normalcolor}} -- {title}{{/all}}") #  % (emoji, option, title))
+                        res = lib.runmodule(args, submodule, player=currentplayer, pool=pool, **kwargs)
+                        if res is not True:
+                            io.echo(f"error running submodule {submodule}, returned {res!r}", level="error")
+                        io.echo()
+                        break
+            except EOFError:
+                io.echo("{/all}*EOF*")
+                return True
+            except KeyboardInterrupt:
+                io.echo("{/all}*INTR*")
+                return True
 
-    player.save()
+        currentplayer.save()
     return True
