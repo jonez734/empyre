@@ -56,8 +56,6 @@ def main(args, **kwargs):
         io.echo(" ok ", level="ok")
 
     io.echo("{f6}{cyan}it is a new year...{/all}")
-#    io.echo(f"short circuit", level="info")
-#    return True
     if player.turncount >= libplayer.TURNSPERDAY:
         io.echo("{red}The other rulers unite against you for hogging the game!{/all}")
         player.turncount = libplayer.TURNSPERDAY
@@ -73,8 +71,8 @@ def main(args, **kwargs):
     player.save()
     io.echo(f"{player.datelastplayed=}", level="debug")
 
-    for x in ("dock",):# "investments"):
-#    for x in ("weather", "disaster", "colonytrip", "harvest", "town", "combat", "dock", "investments", "yearlyreport"): # colonytrip after disaster; dock, quests after combat?
+#    for x in ("dock",):# "investments"):
+    for x in ("weather", "disaster", "colonytrip", "harvest", "town", "combat", "shipyard", "dock", "investments", "yearlyreport"): # quests after combat?
         if args.debug is True:
             io.echo(f"play.100: {x=}", level="debug")
         if lib.runmodule(args, x, **kwargs) is False:
