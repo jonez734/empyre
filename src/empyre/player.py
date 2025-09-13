@@ -222,14 +222,14 @@ class Player(object):
                 continue
             v = data.get("value", data["default"])
             if isinstance(v, datetime):
-                io.echo(f"buildrec.attributes.datetime!", level="debug")
+                # io.echo(f"buildrec.attributes.datetime!", level="debug")
                 v = v.isoformat()
             rec[name] = v #data.get("value", data["default"])
         resources = copy.copy(self.resources)
         for name, data in resources.items():
             v = data.get("value", data["default"])
             if isinstance(v, datetime):
-                io.echo("buildrec.resources.datetime!", level="debug")
+                # io.echo("buildrec.resources.datetime!", level="debug")
                 v = v.isoformat()
             resources[name]["value"] = v
         # io.echo(f"empyre.Player.buildrec.200: {resources=}", level="debug")
@@ -325,7 +325,7 @@ class Player(object):
 
         terminal_width = io.getterminalwidth()-2
 
-        io.echo(f"empyre.player.status.100: {self.resources=}", level="debug")
+        # io.echo(f"empyre.player.status.100: {self.resources=}", level="debug")
         # io.echo(f"empyre.player.status.120: {self.attributes=}", level="debug")
 
         data = self.resources
@@ -633,7 +633,7 @@ def build(args, rec:dict, **kwargs) -> Player:
             v = data["default"]
 
         setattr(p, name, v)
-        io.echo(f"empyre.player.build.220: {p.foundries=}", level="debug")
+        #io.echo(f"empyre.player.build.220: {p.foundries=}", level="debug")
 
     return p
 
@@ -649,7 +649,7 @@ def load(args, moniker:str, **kwargs) -> Player:
                 return None
 
             rec = cur.fetchone()
-            io.echo(f"empyre.player.load.320: {rec['resources']['foundries']['value']=}", level="debug")
+            # io.echo(f"empyre.player.load.320: {rec['resources']['foundries']['value']=}", level="debug")
             p = build(args, rec, **kwargs)
             p.sync()
             return p
@@ -931,3 +931,80 @@ def calculaterank(args:object, player:Player) -> int:
             rank = 1 # prince
 
     return rank
+
+def generate(self, rank=0):
+    # http://donjon.bin.sh/fantasy/name/#type=me;me=english_male -- ty ryan
+    #        namelist = ("Richye", "Gerey", "Andrew", "Ryany", "Mathye Burne", "Enryn", "Andes", "Piersym Jordye", "Vyncis", "Gery Aryn", "Hone Sharcey", "Kater", "Erix", "Abell", "Wene Noke", "Jane Folcey", "Abel", "Bilia", "Cilia", "Joycie")
+    self.moniker = generatename(self.args) # namelist[random.randint(0, len(namelist)-1)]
+    if rank == 1:
+        self.markets = random.randint(10, 15)
+        self.mills = random.randint(6, 9)
+        self.diplomats = random.randint(1, 2)
+        # self.serfs = random.randint()
+    return
+
+class completePlayerName(object):
+    def __init__(self, args):
+        self.args = args
+        self.matches = []
+        self.debug = args.debug if "debug" in args else False
+
+    def complete(self:object, text:str, state:int):
+        dbh = database.connect(self.args)
+
+        vocab = []
+        sql:str = "select name from empyre.player"
+        dat:tuple = ()
+        cur = dbh.cursor()
+        cur.execute(sql, dat)
+        for rec in database.resultiter(cur):
+            vocab.append(rec["name"])
+        results = [x for x in vocab if x.startswith(text)] + [None]
+        return results[state]
+
+def verifyPlayerNameFound(name:str, **kwargs:dict) -> bool:
+    args = kwargs["args"] if "args" in kwargs else Namespace()
+
+    dbh = database.connect(args)
+
+    cur = dbh.cursor()
+    sql:str = "select 1 from empyre.player where moniker=%s"
+    dat:tuple = (name,)
+    cur.execute(sql, dat)
+    if cur.rowcount == 0:
+        return False
+    return True
+
+def verifyPlayerNameNotFound(moniker:str, **kwargs:dict) -> bool:
+    args = kwargs["args"] if "args" in kwargs else Namespace()
+    def _work(cur):
+        sql:str = "select 1 from empyre.player where moniker=%s"
+        dat:tuple = (moniker,)
+        cur.execute(sql, dat)
+        io.echo(f"verifyPlayerNameNotFound.100: mogrify={database.sqlmogrify(cur, sql, dat)}", level="debug")
+        if cur.rowcount == 0:
+            return True
+        return False
+
+    io.echo(f"verifyPlayerNameNotFound.120: {args=} {moniker=}", level="debug")
+    try:
+        if cur is None:
+            with database.connect(args) as conn:
+                with database.cursor(conn) as cur:
+                    return _work(cur)
+        else:
+            return _work(cur)
+    except Exception as e:
+        io.echo(f"verifyPlayerNameNotFound.140: exception {e}", level="error")
+
+def inputplayername(prompt:str="player name: ", oldvalue:str="", **kwargs:dict):
+    multiple:bool = kwargs.get("multiple", False)
+    args = kwargs["args"] if "args" in kwargs else argparse.Namespace()
+    noneok:bool = kwargs.get("noneok", True)
+    verify = kwargs.pop("verify", verifyPlayerNameFound)
+    name = io.inputstring(prompt, oldvalue, verify=verify, completer=completePlayerName(args), completerdelims="", **kwargs)
+    io.echo(f"inputplayername.160: {name=}", level="debug")
+    return name
+#    playerid = getplayerid(args, name)
+#    ttyio.echo("inputplayername.140: name=%r, playerid=%r" % (name, playerid), level="debug")
+#    return playerid
