@@ -79,11 +79,12 @@ def volcano(player):
         io.echo("Mount Apocolypse has erupted!{F6}Lava wipes out %s" % (util.oxfordcomma(res)))
 
 def tidalwave(player):
-    if player.shipyards > 0:
-        x = random.randint(0, player.shipyards//2) # int(random.random()*player.shipyards/2)
-        if x > 0:
-#            shipyrd = player.getresource("shipyards")
-            io.echo("TIDAL WAVE!{F6:2}{blue}{empyre.highlightcolor}%s under water!" % (util.pluralize(x, "shipyard is", "shipyards are", emoji=":anchor:")))
+    x = random.randint(0, player.shipyards//2) # int(random.random()*player.shipyards/2)
+    if player.shipyards >= x:
+        shipyardres = player.getresource("shipyards")
+        io.echo("TIDAL WAVE!{F6:2}{blue}{var:empyre.highlightcolor}%s under water!" % (util.pluralize(x, "shipyard is", "shipyards are", emoji=":anchor:")))
+        shipyardres["value"] -= x
+    return
 
 def main(args, **kwargs) -> bool:
     player = kwargs.get("player", None)
