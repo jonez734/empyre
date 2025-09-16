@@ -1,24 +1,26 @@
 from bbsengine6 import io, util
 
-def init(args, **kw):
+def init(args, **kwargs):
     return True
 
-def access(args, op, **kw):
+def access(args, op, **kwargs):
     return True
 
-def buildargs(args, **kw):
+def buildargs(args, **kwargs):
     return None
 
-def main(args, **kw):
-    player = kw["player"] if "player" in kw else None
+def main(args, **kwargs):
+    player = kwargs.get("player", None)
     if player is None:
-        io.echo("you do not exist! go away!")
+        io.echo("you do not exist! go away!", level="error")
         return False
 
-    otherplayer = kw["otherplayer"] if "otherplayer" in kw else None
-
-#    player.adjust()
-#    player.save()
+    otherplayer = kwargs.get("otherplayer", None)
+    
+    if otherplayer == player:
+        if io.inputboolean("attacking yourself is a bad idea. Are you sure? [yN]: ") is False:
+            io.echo("wise choice. aborted")
+            return True
 
     if player.dragons < 0:
         player.dragons = 0
@@ -40,27 +42,27 @@ def main(args, **kw):
     if x > 0:
         otherplayer.grain -= x
         res = player.getresource("grain")
-        damages.append("baked {} of grain".format(util.pluralize(x, **res)))
+        damages.append(f"baked {util.pluralize(x, **res)} of grain")
 
     n = otherplayer.serfs//10
     x = util.diceroll(n)
     if x > 0:
         otherplayer.serfs -= x
         res = player.getresource("serfs")
-        damages.append("BBQ'd {}".format(util.pluralize(x, **res)))
+        damages.append(f"BBQ'd {util.pluralize(x, **res)}")
 
     n = otherplayer.horses//10
     x = util.diceroll(n)
     if x > 0:
         otherplayer.horses -= x
         res = player.getresource("horses")
-        damages.append("roasted {}".format(util.pluralize(x, **res)))
+        damages.append(f"roasted {util.pluralize(x, **res)}")
     n = otherplayer.acres//10
     x = util.diceroll(n)
     if x > 0:
         otherplayer.acres -= x
         res = player.getresource("land")
-        damages.append("incinerated {}".format(util.pluralize(x, **res)))
+        damages.append("incinerated {util.pluralize(x, **res)}")
 
 #    if util.diceroll(40) < 21 and player.dragons > 0:
 #        player.dragons -= 1
