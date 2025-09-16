@@ -2,28 +2,28 @@ from bbsengine6 import io, util
 
 from .. import lib as libempyre
 
-def init(args, **kw):
+def init(args, **kwargs):
     return True
 
-def access(args, op, **kw):
+def access(args, op, **kwargs):
     return True
 
-def buildargs(args, **kw):
+def buildargs(args, **kwargs):
     return None
 
-# @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_tourney.lbl#L2
+# @see empire6/plus_emp6_tourney.lbl#L2
 def main(args, **kw):
     player = kw["player"] if "player" in kw else None
     if player is None:
         io.echo("You do not exist! Go Away!")
         return False
     otherplayer = kw["otherplayer"] if "otherplayer" in kw else None
-    if player.playerid == otherplayer.playerid:
+    if player.moniker == otherplayer.moniker:
         io.echo("You cannot joust against yourself! Big mistake!")
         loss = util.diceroll(player.land//2)
         player.land -= loss
-        res = player.getresource("land")
-        io.echo("You lost %s." % (util.pluralize(loss, **res)))
+        landres = player.getresource("land")
+        io.echo(f"You lost {util.pluralize(loss, **landres)}")
         return True
 
     libempyre.setarea(args, "joust", player=player)
@@ -43,7 +43,7 @@ def main(args, **kw):
         return True
 
     io.echo("{f6:2}Your Noble mounts his mighty steed and aims his lance... ")
-    # @see https://github.com/Pinacolada64/ImageBBS/blob/e9f033af1f0b341d0d435ee23def7120821c3960/v1.2/games/empire6/plus_emp6_tourney.lbl#L12
+    # @see empire6/plus_emp6_tourney.lbl#L12
     if player.nobles > otherplayer.nobles*2:
         # player.joustwin = True # nj=1
         player.nobles += 1
