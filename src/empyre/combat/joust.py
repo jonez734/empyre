@@ -19,12 +19,12 @@ def main(args, **kw):
         return False
     otherplayer = kw["otherplayer"] if "otherplayer" in kw else None
     if player.moniker == otherplayer.moniker:
-        io.echo("You cannot joust against yourself! Big mistake!")
-        loss = util.diceroll(player.land//2)
-        player.land -= loss
-        landres = player.getresource("land")
-        io.echo(f"You lost {util.pluralize(loss, **landres)}")
-        return True
+        if io.inputboolean("You cannot joust against yourself! Big mistake! Continue?: ", "N") is True:
+            loss = util.diceroll(player.land//2)
+            player.land -= loss
+            landres = player.getresource("land")
+            io.echo(f"You lost {util.pluralize(loss, **landres)}")
+            return True
 
     libempyre.setarea(args, "joust", player=player)
 
