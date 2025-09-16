@@ -5,13 +5,13 @@ from . import lib
 from .. import lib as libempyre
 from .. import player as libplayer
 
-def init(args, **kw):
+def init(args, **kwargs):
     return True
 
-def access(args, op, **kw):
+def access(args, op, **kwargs):
     return True
 
-def buildargs(args, **kw):
+def buildargs(args, **kwargs):
     return None
 
 MENU = (
