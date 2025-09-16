@@ -62,7 +62,7 @@ def main(args, **kwargs):
     if x > 0:
         otherplayer.acres -= x
         res = player.getresource("land")
-        damages.append("incinerated {util.pluralize(x, **res)}")
+        damages.append(f"incinerated {util.pluralize(x, **res)}")
 
 #    if util.diceroll(40) < 21 and player.dragons > 0:
 #        player.dragons -= 1
