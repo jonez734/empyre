@@ -1,4 +1,6 @@
-def init(args, **kw):
+from bbsengine6 import io
+
+def init(args, **kwargs):
     return True
 
 def access(args, op, **kwargs):
