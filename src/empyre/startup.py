@@ -4,8 +4,14 @@ from . import lib
 from . import player as libplayer
 
 def init(args, **kwargs):
-    # ttyio.echo("empyre.mainmenu.init.100: args=%r" % (args), level="debug")
-#    io.setvariable("empyre.highlightcolor", "{bggray}{white}")
+    io.register_emojis({
+        "dragon": "\U0001F409",      # 🐉
+        "tree": "\U0001F333",        # 🌳
+        "wood": "\U0001FAB5",        # 🪵
+        "cityscape": "\U0001F3D9",  # 🏙
+        "desert": "\U0001F3DC",      # 🏜
+        "farmer": "\U0001F9D1",      # 👤
+    })
     return True
 
 def access(args, op, **kwargs):
@@ -17,12 +23,12 @@ def buildargs(args, **kwargs):
 def main(args, **kwargs):
     with database.getpool(args, dbname=database.DEFAULTDATABASE) as pool:
         with database.connect(args, pool=pool) as conn:
-            io.echo(f"database {{var:valuecolor}}{args.databasename}{{var:labelcolor}}: ", end="")
+            io.echo(f"database {{var:valuecolor}}{args.databasename}{{var:labelcolor}}: ", end="", flush=True)
             if database.exists(args, args.databasename, pool=pool) is False:
-                io.echo(f"{{var:valuecolor}}fail{{var:labelcolor}}", level="error")
+                io.echo(f"{{var:valuecolor}}fail{{var:labelcolor}}", level="error", flush=True)
                 return False
             else:
-                io.echo(f" ok ", level="ok")
+                io.echo(f" ok ", level="ok", flush=True)
 
     with database.getpool(args, dbname=args.databasename) as pool:
         with database.connect(args, pool=pool) as conn:
