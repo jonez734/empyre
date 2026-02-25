@@ -1,2 +1,4 @@
 include empyre/data/*.txt
 include empyre/data/quests/*.txt
+recursive-include empyre/sql/ *.sql
+

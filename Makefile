@@ -1,9 +1,10 @@
+PROJECT = empyre
+
 all:
 
 clean:
 	-rm *~
-	$(MAKE) -C data clean
-	$(MAKE) -C empyre clean
+	$(MAKE) -C src clean
 
 push:
 	git push
@@ -20,3 +21,6 @@ build: version
 
 sdist: version
 	./setup.py sdist
+
+backup:
+	rsync --recursive --verbose --exclude=.venv . /run/media/jam/AEAB-CF37/projects/$(PROJECT)/

@@ -5,7 +5,10 @@ import time
 from setuptools import setup
 
 r = 1
-v = time.strftime("%Y%m%d%H%M")
+# If VERSION env var is set, use it; otherwise use timestamp
+v = os.environ.get("VERSION")
+if v is None:
+    v = time.strftime("%Y%m%d%H%M")
 
 projectname = "empyre"
 
