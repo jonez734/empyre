@@ -6,9 +6,9 @@
   color: $blurb-textcolor;
   margin: 0.5em;
   // @include bordergradient(lighten($blurb-border-color, 10%), darken($blurb-border-color, 10%), top left, to bottom right);
-  border: $blurb-border-size $blurb-border-style $blurb-border-color; // -textcolor;
+  border: $blurb-border-size $blurb-border-style $blurb-border-color;
   overflow: hidden;
-  
+
   flex: 0;
 
   @include boxshadow();
@@ -79,7 +79,7 @@
   }
 
   .footer {
-    color: $blurb-footer-color; 
+    color: $blurb-footer-textcolor; 
 
     background-color: $blurb-footer-backgroundcolor;
     border: 0;
@@ -88,4 +88,15 @@
   &.vstretch {
   	flex: 1 0 auto;
   }
+  &.novstretch {
+	flex: 0 0 auto;
+}
+
+.vstretch {
+	flex: 1 0 auto;
+}
+
+.novstretch {
+	flex: 0 0 auto;
+}
 }

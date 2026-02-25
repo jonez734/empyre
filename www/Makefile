@@ -1,5 +1,5 @@
 export HOST = merlin
-export PROJECT = asimov
+export PROJECT = empyre
 
 export PROD = $(HOST):/srv/www/vhosts/zoidtechnologies.com/html/$(PROJECT)/
 export STAGE = /srv/www/vhosts/zoidtechnologies.com/html/$(PROJECT)/

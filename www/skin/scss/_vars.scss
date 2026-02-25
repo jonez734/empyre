@@ -1,5 +1,12 @@
-$page-backgroundcolor: #3a5a40;
-$page-textcolor: #dad7cd; // lightest of the palette
+$color-1: #ede0d4;
+$color-2: #e6ccb2;
+$color-3: #ddb892;
+$color-4: #b08968;
+$color-5: #9c6644;
+$color-6: #7f5539;
+
+$page-backgroundcolor: $color-2;
+$page-textcolor: $color-1; // lightest of the palette
 
 $blurb-backgroundcolor: #344e41;
 $blurb-textcolor: $page-textcolor;
@@ -7,11 +14,11 @@ $blurb-textcolor: $page-textcolor;
 $blurb-body-backgroundcolor: $page-backgroundcolor; // darken($page-backgroundcolor, 10%);
 $blurb-body-textcolor: $page-textcolor;
 
-$blurb-header-backgroundcolor: #a3b18a; //#006633; // $blurb-body-backgroundcolor;
-$blurb-header-textcolor: #dad7cd;
+$blurb-header-backgroundcolor: $color-4;
+$blurb-header-textcolor: $color-3;
 
 $blurb-footer-backgroundcolor: $blurb-body-backgroundcolor;
-$blurb-footer-color: $blurb-body-textcolor;
+$blurb-footer-textcolor: $blurb-body-textcolor;
 
 $blurb-metadata-color: $blurb-body-textcolor; // #909090
 $blurb-metadata-backgroundcolor: $blurb-body-backgroundcolor;
@@ -37,23 +44,11 @@ $notify-backgroundcolor: $blurb-backgroundcolor;
 $notify-color: $blurb-textcolor;
 $notify-footer-backgroundcolor: #ababab;
 
-//
-// these are deprecated.. need to be renamed!
-//
-//$linkcolor: lightblue; // white;
-//$linkhovercolor: darken($page-color, 5%);
-//$linkhoverbackgroundcolor: darken($page-backgroundcolor, 10%);
-//$linkvisitedcolor: darken($linkcolor, 10%);
-
 $headerbackgroundstartcolor: #006633;
 $headerbackgroundendcolor: darken($headerbackgroundstartcolor,2%);
 
 $topbarheight: 1.8em;
 $topbarlineheight: 1.8em;
-
-$backgroundcolor: gray; // #006633, #25567B, #090974, #101010
-
-$actions-color: lighten($blurb-header-backgroundcolor, 5%); // for icons
 
 $blurb-a-hover-color: white;
 $blurb-a-hover-backgroundcolor: gray;
@@ -63,7 +58,7 @@ $blurb-border-size: 0.125em;
 $blurb-border-style: solid;
 $blurb-border-color: #3A5A40;
 
-$body-fontsize: 1.5em;
+$body-fontsize: 1.125em;
 
 $pageheader-textcolor: $blurb-textcolor;
-$pageheader-backgroundcolor: $blurb-backgroundcolor;
+$pageheader-backgroundcolor: #B08968;

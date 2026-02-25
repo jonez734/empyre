@@ -35,9 +35,11 @@ details {
   margin-top: 5px;
 /*  background: white;*/
 }
+
 details summary::-webkit-details-marker {
   display:none;
 }
+
 details[open] > summary:before {
   transform: rotate(90deg);
 }
@@ -54,8 +56,6 @@ summary:before {
   transition: .25s transform ease;
 }
 
-
-
 .content {
   border-top: none;
   padding: 10px;
@@ -70,9 +70,11 @@ p {
     padding: 0;
   }
 }
+
 img {
   max-width: 100%;
 }
+
 body {
   font-family: 'Open Sans', sans-serif;
 }

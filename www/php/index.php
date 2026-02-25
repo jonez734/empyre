@@ -10,80 +10,23 @@ require_once("zoid6.php");
 
 class index
 {
-  function gethealthlinks()
-  {
-    return [];
-
-    $sql = "select elle.url from vulcan.link as elle, vulcan.map_link_sig as m where m.url = elle.url and m.path ~ 'top.achilles' order by elle.broken asc, lastmodified desc";
-
-    $pdo = \bbsengine6\database\connect(\config\SYSTEMDSN);
-    $dat = [];
-
-    $stmt = $pdo->prepare($sql);
-//    try {
-      $stmt->execute($dat);
-//    } catch (Exception $e) {
-//      return null;
-//    }
-    if ($stmt->rowCount() == 0)
-    {
-      return [];
-    }
-    $res = $stmt->fetchAll();
-    $healthlinks = [];
-    foreach ($res as $rec)
-    {
-      $link = \vulcan\lib\getlinkbyurl($rec["url"]);
-      $healthlinks[] = $link;
-      if (\vulcan\lib\access("view", $link) === true)
-      {
-        $healthlinks[] = $link;
-      }
-    }
-    return $healthlinks;
-  }
-
   function main()
   {
     \bbsengine6\session\start();
     
-    \bbsengine6\setcurrentsite("asimov");
+    \bbsengine6\setcurrentsite("empyre");
     \bbsengine6\setcurrentpage("index");
     \bbsengine6\setcurrentaction("view");
     \bbsengine6\setreturnto(\bbsengine6\getcurrenturi());
-//    \bbsengine6\clearpageprotocol();
-
-    $title = "achilles - a project to study manufactured free glutamic acid (aka monosodium glutamate (MSG)";
-
-//    $page = \bbsengine6\getpage($title);
-    $healthlinks = $this->gethealthlinks();
-//    \bbsengine6\logentry("healthlinks=".var_export($healthlinks, true));
-
-//    $tmpl = getsmarty();
-//    $tmpl->assign("healthlinks", $healthlinks);
 
     $data = [];
-
-    $metadata = [];
-
-    $data["healthlinks"] = $healthlinks;
-    $data["metadata"] = $metadata;
+    $data["metadata"] = [];
     $data["pagetemplate"] = "index.tmpl"; // achilles-page.tmpl";
 
-    $choices = [];
-/*
-    if (\bbsengine6\member\lib\checkflag("SYSOP"))
-    {
-      $choices[] = ["name" => "add link", "title" => "add link to achilles sig", "url" => TEOSURL."achilles/add-link", "desc" => "add link to achilles sig"];
-    }
-    $data["choices"] = \zoid6\buildchoices($choices);
-*/
     \bbsengine6\displaypage($data, "index.tmpl");
     return;
   }
 };
-
-//print("foo!");
 
 $a = new index();
 $b = $a->main();

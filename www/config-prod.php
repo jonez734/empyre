@@ -16,21 +16,21 @@ namespace {
 
 namespace config {
 
-    define("SITEADMINEMAIL", "asimov <asimov@projects.zoidtechnologies.com>");
+    define("SITEADMINEMAIL", "empyre <empyre@projects.zoidtechnologies.com>");
 
-    define("SITETITLE", "Project Asimov - Robotics, AI, and Augmented Reality");
-    define("SITEURL", "https://zoidtechnologies.com/asimov/");
+    define("SITETITLE", "Empyre - Turn-based multi-player economy game");
+    define("SITEURL", "https://zoidtechnologies.com/empyre/");
 //    define("SITEKEYWORDS", "project achilles, monosodium glutamate, mono-sodium glutamate, msg, glutamate, disodium glutamate, truth in labeling, health, nutrition, consumer protection, food additives");
-    define("SITEDESCRIPTION", "Asimov");
+    define("SITEDESCRIPTION", "Empyre");
     //define("SITETYPE", "website");
 
-    define("config\VHOSTDIR", "/srv/www/vhosts/zoidtechnologies.com/html/asimov/");
+    define("config\VHOSTDIR", "/srv/www/vhosts/zoidtechnologies.com/html/empyre/");
     define("DOCUMENTROOT", \config\VHOSTDIR);
 
     define("SKINDIR", DOCUMENTROOT . "skin/");
     define("SKINURL", SITEURL . "skin/");
     
-    define("JSURL", "/asimov/js/");
+    define("JSURL", "/empyre/js/");
 
     define("IMAGESURL", "https://zoidtechnologies.com/static/");
 
@@ -40,7 +40,7 @@ namespace config {
     define("SMARTYTEMPLATESDIR", [ 0 => VHOSTDIR . "tmpl/", 1=> "/srv/www/zoid6/skin/tmpl/", 2 => "/srv/www/bbsengine6/skin/tmpl/"]);
 */
 
-    define("config\LOGENTRYPREFIX", "asimovprod");
+    define("config\LOGENTRYPREFIX", "empyreprod");
 
 //    define("STATICSKINURL", "/static/skin/");
 
