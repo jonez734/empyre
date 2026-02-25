@@ -1,12 +1,12 @@
 from bbsengine6 import io, database, util
 
-def init(args, **kw):
+def init(args, **kwargs):
     return True
 
-def access(args, op, **kw):
+def access(args, op, **kwargs):
     return True
 
-def buildargs(args=None, **kw):
+def buildargs(args=None, **kwargs):
     return None
 
 def removeplayer(args, player):

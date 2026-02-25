@@ -133,7 +133,11 @@ def _edit(args, mode, ship, **kwargs):
             done = True
         elif ch == "N":
             completer = completeShipName(args, **kwargs)
-            ship.moniker = inputshipname(args, ship.moniker, completer=completer, verify=verifyShipNameNotFound)
+            moniker = inputshipname(args, ship.moniker, completer=completer, verify=verifyShipNameNotFound)
+            if ship.moniker is None or ship.moniker == "":
+                io.echo("You must enter a ship name")
+                continue
+            ship.moniker = moniker
         elif ch == "L":
             io.echo("Load")
             ship.load()
@@ -344,7 +348,7 @@ def selectmanifestitem(args, **kw):
             
             self.itemclass = kw["itemclass"] if "itemclass" in kw else None
             
-            self.width = kw["width"] if "width" in kw else io.getterminalwidth()
+            self.width = kw["width"] if "width" in kw else io.terminal.width()
 
             self.data = []
             for k, v in ship.manifest.items():

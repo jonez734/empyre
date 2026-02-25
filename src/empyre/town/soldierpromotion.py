@@ -17,7 +17,7 @@ def buildargs(args, **kw):
     return None
 
 def main(args, player, **kwargs):
-    terminalwidth = io.getterminalwidth()
+    terminalwidth = io.terminal.width()
     
     player.soldierpromotioncount += 1
     if player.turncount > 2:

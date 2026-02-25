@@ -19,7 +19,8 @@ def buildargs(args, **kwargs):
     return None
 
 def main(args, **kwargs):
-    player = kwargs.get("player", None)
+    player = kwargs.pop("player", None)
+
     pool = kwargs.get("pool", None)
     if pool is None:
         io.echo(f"empyre.play.main.300: {pool=}", level="error")
@@ -49,11 +50,7 @@ def main(args, **kwargs):
     tzlocal = dateutil.tz.tzlocal()
     player.datelastplayed = datetime.now(tzlocal)
     
-    io.echo(f"empyre.play.200: checking for sysop options... {kwargs=}")
-    if lib.runmodule(args, "sysopoptions", **kwargs) is False:
-        io.echo(f"failed to run module", level="error")
-    else:
-        io.echo(" ok ", level="ok")
+    lib.runmodule(args, "sysopoptions", **kwargs)
 
     io.echo("{f6}{cyan}it is a new year...{/all}")
     if player.turncount >= libplayer.TURNSPERDAY:
@@ -61,7 +58,7 @@ def main(args, **kwargs):
         player.turncount = libplayer.TURNSPERDAY
         player.save()
         return True
-    
+
 #    if player.coins is not None:
 #        coins = player.getresource("coins")
 #        coins["value"] = player.coins
@@ -72,11 +69,10 @@ def main(args, **kwargs):
     io.echo(f"{player.datelastplayed=}", level="debug")
 
 #    for x in ("dock",):# "investments"):
-    for x in ("weather", "disaster", "colonytrip", "harvest", "town", "combat", "shipyard", "dock", "investments", "yearlyreport"): # quests after combat?
-        if args.debug is True:
-            io.echo(f"play.100: {x=}", level="debug")
-        if lib.runmodule(args, x, **kwargs) is False:
-            io.echo("error running submodule %r" % (x), level="error")
+    for x in ("weather", "disaster", "harvest", "town", "combat", "shipyard", "dock", "investments", "yearlyreport"): # quests after combat?
+        io.echo(f"play.100: {x=} {player=}", level="debug")
+        if lib.runmodule(args, x, player=player, **kwargs) is False:
+            io.echo(f"error running submodule {x}", level="error")
         player.adjust()
         player.save()
 

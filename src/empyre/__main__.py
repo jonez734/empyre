@@ -1,27 +1,30 @@
-import time
-import locale
+import time, locale
 
-import ttyio5 as ttyio
-import bbsengine5 as bbsengine
+from bbsengine6 import io, screen, database
 
-from .boot import *
+from . import lib as libempyre
 
-if __name__ == "__main__":
-    parser = buildargs()
+def main():
+    parser = libempyre.buildargs()
     args = parser.parse_args()
 
-    bbsengine.initscreen()
+#    pool = database.getpool(args)
+#    session.start(args, pool=pool)
+
+    screen.init()
+    libempyre.init(args)
 
     locale.setlocale(locale.LC_ALL, "")
     time.tzset()
 
-    init(args)
-
     try:
-        main(args)
+        libempyre.runmodule(args, "main") # main(args) # lib.runsubmodule(args, "main") # module.main(args)
     except KeyboardInterrupt:
-        ttyio.echo("{/all}{bold}INTR{bold}")
+        io.echo("{/all}*INTR*")
     except EOFError:
-        ttyio.echo("{/all}{bold}EOF{/bold}")
+        io.echo("{/all}*EOF*")
     finally:
-        ttyio.echo("{decsc}{curpos:%d,0}{el}{decrc}{reset}{/all}" % (ttyio.getterminalheight()))
+        io.echo("{savecursor}{curpos:%d,0}{el}{reset}{decrc}" % (io.terminal.height()))
+
+if __name__ == "__main__":
+    main()

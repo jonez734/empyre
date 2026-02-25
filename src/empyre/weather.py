@@ -1,8 +1,5 @@
 # @since 20220729
 # @since 20230716 ported to bbsengine6
-
-#import ttyio6 as ttyio
-#import bbsengine6 as bbsengine
 from bbsengine6 import io, util
 from . import lib as libempyre
 
@@ -27,7 +24,7 @@ def main(args, **kwargs):
     else:
         weathercondition = util.diceroll(6) # random.randint(1, 6)
 
-    io.echo("{cyan}")
+    io.echo("{cyan}", end="")
     if weathercondition == libempyre.Weather.POOR:
         io.echo(":desert: Poor Weather. No Rain. Locusts Migrate")
     elif weathercondition == libempyre.Weather.ARID:
@@ -41,7 +38,7 @@ def main(args, **kwargs):
     elif weathercondition == libempyre.Weather.FANTASTIC:
         io.echo(":sun: Fantastic Weather! Great Year!")
         
-    io.echo("{/all}")
+    io.echo("{/all}", end="", flush=True)
     player.weathercondition = weathercondition
 
     return True

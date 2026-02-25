@@ -1,4 +1,4 @@
-from bbsengine6 import io, database
+from bbsengine6 import io, database, util
 from . import ship as libship
 
 def init(args, **kwargs):
@@ -48,7 +48,7 @@ def main(args, **kwargs):
                 io.echo(f"you do not have enough shipyard capacity to build another ship")
                 break
 
-            io.echo(f"A ship costs {shipres.price} {util.pluralize('coins', **coinres}. You have {util.pluralize('coin', **coinres}")
+            io.echo(f"A ship costs {shipres.price} {util.pluralize('coins', **coinres)}. You have {util.pluralize('coin', **coinres)}")
             break
 #        elif ch == "T":
 #            io.echo("Trade Shipyards")

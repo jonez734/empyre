@@ -1,5 +1,6 @@
 # @since 20250226
 import copy
+import argparse
 import random
 from datetime import datetime
 
@@ -73,47 +74,49 @@ ATTRIBUTES = {
 
 class Player(object):
     def __init__(self, args, **kwargs):
+        def _work(conn):
+###            currentmoniker = member.getcurrentmoniker(args, conn=conn)
+
+            # @see empire6/mdl.emp.delx2.txt#L25
+            self.resources = copy.copy(RESOURCES)
+            for name, data in self.resources.items():
+                val = data["default"]
+                # io.echo(f"empyre.Player.100: resource {name=} {val=}", level="debug")
+                setattr(self, name, data["default"])
+                self.resources[name]["value"] = data["default"]
+                # io.echo(f"Player.__init__.100: {name=} {res=} {getattr(self, name)=}", level="debug")
+
+            self.attributes = copy.copy(ATTRIBUTES)
+            for name, data in self.attributes.items():
+                # io.echo(f"attribute {name} {data['default']=}", level="debug")
+                setattr(self, name, data["default"])
+                self.attributes[name]["value"] = data["default"]
+
+            self.debug = args.debug
+        
         self.args = args
 
-        self.pool = kwargs.get("pool", None)
-        if self.pool is None:
-            io.echo(f"empyre.Player._init.100: {self.pool=}", level="error")
-            return None
+        self.conn = kwargs.get("conn", None)
+        if self.conn is None:
+            self.pool = kwargs.get("pool", None)
+            if self.pool is None:
+                io.echo(f"empyre.Player._init.100: {self.pool=}", level="error")
+                return None
 
-#        self.conn = kwargs.get("conn", None)
-#        if self.conn is None:
-#            self.conn = database.connect(args, pool=self.pool)
-
-        with database.connect(args, pool=self.pool) as conn:
-            currentmoniker = member.getcurrentmoniker(args, conn=conn)
-
-        # @see empire6/mdl.emp.delx2.txt#L25
-        self.resources = copy.copy(RESOURCES)
-        for name, data in self.resources.items():
-            val = data["default"]
-            # io.echo(f"empyre.Player.100: resource {name=} {val=}", level="debug")
-            setattr(self, name, data["default"])
-            self.resources[name]["value"] = data["default"]
-            # io.echo(f"Player.__init__.100: {name=} {res=} {getattr(self, name)=}", level="debug")
-
-        self.attributes = copy.copy(ATTRIBUTES)
-        for name, data in self.attributes.items():
-            # io.echo(f"attribute {name} {data['default']=}", level="debug")
-            setattr(self, name, data["default"])
-            self.attributes[name]["value"] = data["default"]
-
-        self.debug = args.debug
-
+            with database.connect(args, pool=self.pool) as conn:
+                return _work(conn)
+        else:
+            return _work(conn)
 #        tz=0:i1=self.palaces:i2=self.markets:i3=self.mills:i4=self.foundries:i5=self.shipyards:i6=self.diplomats
     def sync(self):
         # io.echo(f"Player.sync()", level="debug")
         for name, data in self.resources.items():
             newval = getattr(self, name)
             res = self.resources[name] # getresource(name)
-            curval = res.get("value") #, res.get("default"))
+            curval = res.get("value", res.get("default"))
             if newval != curval:
-                io.echo(f"empyre.player.sync.100: {name=} {curval=} != {newval=}", level="debug")
-            res["value"] = newval
+###                io.echo(f"empyre.player.sync.100: {name=} {curval=} != {newval=}", level="debug")
+                res["value"] = newval
 
         for name in self.attributes.keys():
             self.setattributevalue(name, getattr(self, name))
@@ -270,7 +273,7 @@ class Player(object):
             if self.debug is True:
                 io.echo(f"{name=} {curval=} {oldval=}", level="debug")
             if curval != oldval:
-                io.echo(f"player.isdirty.100: {name=} {oldval=} {curval=}", level="debug")
+                ### io.echo(f"player.isdirty.100: {name=} {oldval=} {curval=}", level="debug")
                 dirty = True
 
         for name, data in self.attributes.items():
@@ -282,7 +285,7 @@ class Player(object):
                 io.echo(f"player.isdirty.100: {name=} {oldval=} {curval=}", level="debug")
                 dirty = True
 
-        io.echo(f"Player.isdirty.140: {dirty=}", level="debug")
+###        io.echo(f"Player.isdirty.140: {dirty=}", level="debug")
         return dirty
 
     def save(self, force=False, commit=True):
@@ -323,7 +326,7 @@ class Player(object):
 
         util.heading(f"player status for {self.moniker}")
 
-        terminal_width = io.getterminalwidth()-2
+        terminal_width = io.terminal.width()-2
 
         # io.echo(f"empyre.player.status.100: {self.resources=}", level="debug")
         # io.echo(f"empyre.player.status.120: {self.attributes=}", level="debug")
@@ -407,6 +410,8 @@ class Player(object):
                 io.echo(line.rstrip())
         else:
             raise ValueError("valid layouts are 'column' and 'row'")
+
+        util.hr()
 
     def adjust(self):
         soldierpay = (self.soldiers*(self.combatvictorycount+2))+(self.taxrate*self.palaces*10)//40 # py
@@ -558,63 +563,16 @@ class completePlayerName(object):
         results = [x for x in vocab if x.startswith(text)] + [None]
         return results[state]
 
-def verifyPlayerNameFound(name:str, **kwargs:dict) -> bool:
-    import argparse
-    args = kwargs["args"] if "args" in kwargs else Namespace()
+def verifyPlayerNameFound(moniker:str, *, args) -> bool:
+    if exists(moniker, args=args) is True:
+        return True
+    return False
 
-    dbh = database.connect(args)
-
-    cur = dbh.cursor()
-    sql:str = "select 1 from empyre.player where moniker=%s"
-    dat:tuple = (name,)
-    cur.execute(sql, dat)
-    if cur.rowcount == 0:
-        return False
-    return True
-
-def verifyPlayerNameFound(moniker:str, **kwargs:dict) -> bool:
-    import argparse
-    args = kwargs.get("args", argparse.Namespace())
-    def _work(conn):
-        sql:str = "select 1 from empyre.player where moniker=%s"
-        dat:tuple = (moniker,)
-        with database.cursor(conn) as cur:
-            cur.execute(sql, dat)
-            io.echo(f"verifyPlayerNameNotFound.100: mogrify={database.mogrifysql(cur, sql, dat)}", level="debug")
-            if cur.rowcount == 0:
-                return False
-            return True
-
-    io.echo(f"verifyPlayerNameNotFound.120: {args=} {moniker=}", level="debug")
-    pool = kwargs.get("pool", None)
-    if pool is None:
-        io.echo(f"empyre.player.verifyPlayerNameNotFound.160: {pool=}", level="error")
-        return False
-
-    with database.connect(args, pool=pool) as conn:
-        return _work(conn)
-
-def verifyPlayerNameNotFound(moniker:str, **kwargs:dict) -> bool:
-    import argparse
-    args = kwargs.get("args", argparse.Namespace())
-    def _work(conn):
-        sql:str = "select 1 from empyre.player where moniker=%s"
-        dat:tuple = (moniker,)
-        with database.cursor(conn) as cur:
-            cur.execute(sql, dat)
-            io.echo(f"verifyPlayerNameNotFound.100: mogrify={database.mogrifysql(cur, sql, dat)}", level="debug")
-            if cur.rowcount == 0:
-                return True
-            return False
-
-    io.echo(f"verifyPlayerNameNotFound.120: {args=} {moniker=}", level="debug")
-    pool = kwargs.get("pool", None)
-    if pool is None:
-        io.echo(f"empyre.player.verifyPlayerNameNotFound.160: {pool=}", level="error")
-        return False
-
-    with database.connect(args, pool=pool) as conn:
-        return _work(conn)
+def verifyPlayerNameNotFound(moniker:str, *, args) -> bool:
+    if exists(moniker, args=args) is False:
+        return True
+    io.echo("verifyPlayerNameNotFound.100: returning False", level="debug")
+    return False
 
 def build(args, rec:dict, **kwargs) -> Player:
     p = Player(args, **kwargs) # Player(args, **kwargs)
@@ -662,28 +620,28 @@ def load(args, moniker:str, **kwargs) -> Player:
     with database.connect(args, pool=pool) as conn:
         return _work(conn)
 
-#def update(self, moniker, player, **kwargs):
-#    def _work(conn):
-#        for name in self.resources.keys():
-#            v = getattr(self, name)
-#            player.setresourcevalue(name, v)
-#
-#        p = {}
-#        for attr in ("moniker", "membermoniker", "rank", "previousrank", "turncount", "soldierpromotioncount", "datepromoted", "combatvictorycount", "weatherconditions", "beheaded", "datelastplayed", "coins", "taxrate", "resources"):
-#            p[attr] = getattr(player, attr)
-#
-#        return database.update(self.args, "empyre.__player", moniker, p, primarykey="moniker", conn=conn)
-#
-#    conn = kwargs.get("conn", None)
-#    if conn is None:
-#        pool = kwargs.get("pool", None)
-#        if pool is None:
-#            io.echo(f"empyre.player.update.200: {pool=}", level="error")
-#            return False
-#        with database.connect(pool=pool) as conn:
-#            return _work(conn)
-#    else:
-#        return _work(conn)
+def exists(moniker, *, args):
+    def _work(conn):
+        with database.cursor(conn) as cur:
+            sql:str = "select 1 from empyre.player where moniker=%s"
+            dat:tuple = (moniker,)
+            cur.execute(sql, dat)
+            io.echo(f"player.exists.100: mogrify={database.mogrifysql(cur, sql, dat)}", level="debug")
+            if cur.rowcount == 0:
+                return False
+            return True
+
+    if hasattr(args, "conn") is True:
+        return _work(conn)
+    
+    if hasattr(args, "pool") is False:
+        io.echo("player.exists.120: pool not passed", level="debug")
+        with database.getpool(args) as pool:
+            with database.connect(args, pool=pool) as conn:
+                return _work(conn)
+    else:
+        with database.connect(args, pool=pool) as conn:
+            return _work(conn)
 
 def select(args, title:str="select player", prompt:str="player: ", membermoniker:str=None, **kwargs) -> Player:
     pool = kwargs.get("pool", None)
@@ -795,12 +753,11 @@ def count(args, membermoniker:str, **kwargs) -> int:
                 return None
             rec = cur.fetchone()
             count = rec["count"] if rec["count"] > 0 else None
-            io.echo(f"empyre.player.count.120: {count=}", level="error")
+            io.echo(f"empyre.player.count.120: {count=}", level="debug")
             return count
     
     conn = kwargs.get("conn", None)
     if conn is None:
-        io.echo(f"empyre.player.count.140: {conn=}", level="error")
         pool = kwargs.get("pool", None)
         if pool is None:
             io.echo(f"empyre.player.count.160: {pool=}")
@@ -962,41 +919,6 @@ class completePlayerName(object):
         results = [x for x in vocab if x.startswith(text)] + [None]
         return results[state]
 
-def verifyPlayerNameFound(name:str, **kwargs:dict) -> bool:
-    args = kwargs["args"] if "args" in kwargs else Namespace()
-
-    dbh = database.connect(args)
-
-    cur = dbh.cursor()
-    sql:str = "select 1 from empyre.player where moniker=%s"
-    dat:tuple = (name,)
-    cur.execute(sql, dat)
-    if cur.rowcount == 0:
-        return False
-    return True
-
-def verifyPlayerNameNotFound(moniker:str, **kwargs:dict) -> bool:
-    args = kwargs["args"] if "args" in kwargs else Namespace()
-    def _work(cur):
-        sql:str = "select 1 from empyre.player where moniker=%s"
-        dat:tuple = (moniker,)
-        cur.execute(sql, dat)
-        io.echo(f"verifyPlayerNameNotFound.100: mogrify={database.sqlmogrify(cur, sql, dat)}", level="debug")
-        if cur.rowcount == 0:
-            return True
-        return False
-
-    io.echo(f"verifyPlayerNameNotFound.120: {args=} {moniker=}", level="debug")
-    try:
-        if cur is None:
-            with database.connect(args) as conn:
-                with database.cursor(conn) as cur:
-                    return _work(cur)
-        else:
-            return _work(cur)
-    except Exception as e:
-        io.echo(f"verifyPlayerNameNotFound.140: exception {e}", level="error")
-
 def inputplayername(prompt:str="player name: ", oldvalue:str="", **kwargs:dict):
     multiple:bool = kwargs.get("multiple", False)
     args = kwargs["args"] if "args" in kwargs else argparse.Namespace()
@@ -1008,3 +930,6 @@ def inputplayername(prompt:str="player name: ", oldvalue:str="", **kwargs:dict):
 #    playerid = getplayerid(args, name)
 #    ttyio.echo("inputplayername.140: name=%r, playerid=%r" % (name, playerid), level="debug")
 #    return playerid
+
+
+    

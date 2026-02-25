@@ -45,7 +45,7 @@ def main(args, **kwargs):
         
         io.echo("{/all}{optioncolor}[Q]{/all} {labelcolor}Return to the Empyre :door:{/all}{f6}")
     
-    terminalwidth = io.getterminalwidth()
+    terminalwidth = io.terminal.width()
 
     hotkeys = "Q"
     for hotkey, desc, func in optiontable:

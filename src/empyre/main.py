@@ -1,4 +1,5 @@
 from bbsengine6 import io, util, member, database, session
+from argparse import Namespace
 
 from . import lib
 from . import _version
@@ -35,7 +36,7 @@ def main(args, **kwargs):
     )
 
     def mainmenuhelp(**kwargs):
-        io.echo(f"empyre.mainmenu.help.100: {kwargs=}",level="debug")
+###        io.echo(f"empyre.mainmenu.help.100: {kwargs=}",level="debug")
         for o in options: #opt, t, callback, emoji in options:
             opt = o[0]
             t = o[1]
@@ -46,14 +47,15 @@ def main(args, **kwargs):
                 emoji = o[3]
             io.echo(f"{{/all}}{{optioncolor}}[{opt}]{{/all}} {{valuecolor}} {t} {emoji}")
 #            choices += opt
-        io.echo("{F6}:door: {optioncolor}[Q]{/all}{valuecolor} Quit{/all}")
+        io.echo(f"{{F6}}{{optioncolor}}[Q]{{/all}}{{valuecolor}} Quit :door:{{/all}}")
 
+    io.echo(f"empyre.main.400: {args=}")
     util.heading("empyre")
 
-    io.echo(f"database: {args.databasename} host: {args.databasehost}:{args.databaseport}", level="info")
+    io.echo(f"database: {args.databasename} host: {args.databasehost}:{args.databaseport}", level="debug")
 
     if lib.runmodule(args, "startup", **kwargs) is False:
-        io.echo(f"empyre failed to start up", level="error")
+        io.echo(f"empyre failed to start up", level="critical")
         return False
 
     with database.getpool(args, dbname=args.databasename) as pool:
@@ -63,15 +65,15 @@ def main(args, **kwargs):
 
         lib.setarea(args, f"empyre {_version.datestamp} githash {_version.githash}", player=None)
 
-        currentmoniker = member.getcurrentmoniker(args, pool=pool, **kwargs)
-        io.echo(f"startup.300: {currentmoniker=}", level="debug")
-        if currentmoniker is False:
+        currentmembermoniker = member.getcurrentmoniker(args, pool=pool)
+        io.echo(f"main.300: {currentmembermoniker=}", level="debug")
+        if currentmembermoniker is False:
             io.echo("empyre.main.200: you do not exist! go away!", level="error")
             return False
 
         currentplayer = None
 
-        playercount = libplayer.count(args, currentmoniker, pool=pool, **kwargs)
+        playercount = libplayer.count(args, currentmembermoniker, pool=pool, **kwargs)
         io.echo(f"empyre.main.100: {playercount=}", level="debug")
         if playercount is None:
             currentplayer = libplayer.create(args, pool=pool)
@@ -84,8 +86,8 @@ def main(args, **kwargs):
                 io.echo(f"empyre.main.220: error selecting player", level="error")
                 return False
         else:
-            membermoniker = member.getcurrentmoniker(args, pool=pool)
-            currentplayer = libplayer.load(args, currentmoniker, pool=pool, **kwargs)
+            io.echo(f"empyre.main.300: calling libplayer.load {currentmembermoniker=}", level="debug")
+            currentplayer = libplayer.load(args, currentmembermoniker, pool=pool)
 
         done = False
         while not done:
@@ -108,9 +110,10 @@ def main(args, **kwargs):
             try:
     #            io.echo(f"{player.rank=} {player.moniker=}", level="debug")
                 if currentplayer is not None:
-                    ch = io.inputchar("{promptcolor}Your command, %s %s? {inputcolor}" % (libplayer.getranktitle(args, currentplayer.rank).title(), currentplayer.moniker), choices, "", help=mainmenuhelp)
+                    ranktitle = libplayer.getranktitle(args, currentplayer.rank).title()
+                    ch = io.inputchoice(f"{{promptcolor}}Your command, {ranktitle.title()} {currentplayer.moniker}? {{inputcolor}}", choices, "", help=mainmenuhelp)
                 else:
-                    ch = io.inputchar("{promptcolor}Your command? {inputcolor}", choices, "", help=mainmenuhelp)
+                    ch = io.inputchoice(f"{{promptcolor}}Your command? {{inputcolor}}", choices, "", help=mainmenuhelp)
 
                 if ch == "Q" or ch == "X":
                     io.echo(":door: {optioncolor}Q{labelcolor} -- quit game{/all}")
@@ -134,7 +137,7 @@ def main(args, **kwargs):
                         io.echo(f"{emoji}{{optioncolor}}{option}{{normalcolor}} -- {title}{{/all}}") #  % (emoji, option, title))
                         res = lib.runmodule(args, submodule, player=currentplayer, pool=pool, **kwargs)
                         if res is not True:
-                            io.echo(f"error running submodule {submodule}, returned {res!r}", level="error")
+                            io.echo(f"error running submodule {submodule}, returned {res=}", level="error")
                         io.echo()
                         break
             except EOFError:

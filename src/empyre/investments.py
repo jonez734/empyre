@@ -54,7 +54,7 @@ def main(args, **kw):
 
     util.heading("investments")
 
-    terminalwidth = io.getterminalwidth()
+    terminalwidth = io.terminal.width()
 
     investmentoptions = buildinvestmentoptions(player)
 

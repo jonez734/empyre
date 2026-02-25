@@ -37,6 +37,8 @@ def main(args, **kw):
         io.echo("you do not exist! go away!", level="error")
         return False
 
+    io.echo(f"empyre.colony.main.100: {player.colonies=}", level="debug")
+
     if player.colonies > 0:
         io.echo(f"colony trip... {util.pluralize(player.colonies, 'colony', 'colonies')}{{f6}}")
     else:

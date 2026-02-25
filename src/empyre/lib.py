@@ -70,13 +70,14 @@ class Colony(object):
     def __init__(self, args):
         self.args = args
 
-def setarea(args, buf, stack=False, **kwargs) -> None:
+def setarea(args, buf, **kwargs) -> None:
     player = kwargs.get("player", None)
     help = kwargs.get("help", None)
+    stack = kwargs.get("stack", False)
 
-    def rightside():
+    def rightside(**kwargs):
         debug = True if args is not None and args.debug is True else False
-
+        player = kwargs.get("player", None)
         if player is not None:
             if player.isdirty() is True:
                 isdirty = "*"
@@ -92,14 +93,14 @@ def setarea(args, buf, stack=False, **kwargs) -> None:
 
             coinres = player.getresource("coins")
             coinres["emoji"] = ""
-            return f"empyre {{black}}|{{engine.areacolor}} {util.pluralize(turnremain, 'turn remains', 'turns remain')} {{black}}|{{engine.areacolor}} {isdirty}{player.moniker} {{black}}|{{engine.areacolor}} {util.pluralize(player.coins, **coinres)}{debug}"
+            return f"empyre {{black}}|{{bottombarcolor}} {util.pluralize(turnremain, 'turn remains', 'turns remain')} {{black}}|{{bottombarcolor}} {isdirty}{player.moniker} {{black}}|{{bottombarcolor}} {util.pluralize(player.coins, **coinres)}{debug}"
         else:
             if debug is True:
                 return "debug"
             else:
                 return ""
 
-    screen.setbottombar(buf, rightside, stack)
+    screen.setbottombar(buf, rightside, stack=False)
     #if args.debug is True:
     #    io.echo(f"empyre.setarea.100: {buf=} {stack=} {screen.areastack=}", level="debug")
     return
@@ -318,7 +319,7 @@ def selectresource(args, title, resources, kind=None, **kw):
             self.ship = kw["ship"] if "ship" in kw else None
             # self.itemclass = kw["itemclass"] if "itemclass" in kw else None
             self.pagesize:int = 10
-            self.terminalwidth:str = io.getterminalwidth()
+            self.terminalwidth:str = io.terminal.width()
             self.title:str = title
             self.resources:dict = resources
             self.filter = None
@@ -374,10 +375,10 @@ def checkmodule(args, modulename:str, **kwargs:dict):
 def runmodule(args, modulename:str, **kwargs:dict):
     x:str = f"{PACKAGENAME}.{modulename}"
 
-#    io.echo(f"empyre.lib.runmodule.120: {x=} {modulename=}", level="debug")
+    io.echo(f"empyre.lib.runmodule.120: {x=} {modulename=} {kwargs=}", level="debug")
 
     if checkmodule(args, modulename, **kwargs) is False:
         # io.echo(f"empyre.lib.runmodule.120: check of module {x!r} failed.", level="error")
         return False
 
-    return module.runmodule(args, x, **kwargs)
+    return module.run(args, x, **kwargs)
