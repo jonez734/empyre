@@ -1,2 +1,2 @@
-__version__ = "d756a4fed31cdd6e"
-__datestamp__ = "20220907-1959-jam"
+githash = "65fcd3302a75de8b"
+datestamp = "202512122258"
