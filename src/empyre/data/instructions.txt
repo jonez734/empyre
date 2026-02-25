@@ -1,123 +1,123 @@
-                    EMPIRE II (C)1990 - The "Wag" Version
-
+                    empyre - the "bbsengine" version (C) 2023
+{f6:2}
 Welcome to Empire II! This is Dirty Laundry's very own rendition of the famous online game Empire. In my opinion, this is one of the most professional and challenging versions I have ever played! Guaranteed to give even the most experienced player a run for their money! Both new players and veterans will want to read through these new docs completely. Covered are all aspects of the basic game-play and all new or changed rules.
-
+{f6:2}
 The OBJECT of Empire II is to build your Empire while destroying your opponents. Once you reach a certain level you will be declared KING. 
-
+{f6:2}
 Only 30 Players will be allowed to play at one time. All positions are available on a first come, first serve basis. The number of turns you receive each day will depend on the number of players in the game:
-
- 1-10 players get 3 turns per day
-11-20 players get 4 turns per day
-21-30 players get 5 turns per day.
-
+{f6:2}
+ 1-10 players get 3 turns per day{f6}
+11-20 players get 4 turns per day{f6}
+21-30 players get 5 turns per day.{f6}
+{f6}
 All NEW players will start with:
-
- 5000 Acres
- 2000 Serfs (approx.)
-    3 Nobles
-   40 Soldiers
-20000 Bushels of Grain
-    2 Foundries
-10000 Gold
-   50 Horses (approx.)
-
+{f6:2}
+ 5000 Acres{f6}
+ 2000 Serfs (approx.){f6}
+    3 Nobles{f6}
+   40 Soldiers{f6}
+20000 Bushels of Grain{f6}
+    2 Foundries{f6}
+10000 Gold{f6}
+   50 Horses (approx.){f6}
+{f6}
 (Remember, entering a 'Y' at most any prompt will give you a listing of your current stats.)
-
+{f6:2}
 Each player will also have 1 island. Your island must be stocked, developed and maintained during your rein.
-
+{f6:2}
 To win at Empire II, you must build your stats up to the following levels:
-
-  30,000 Acres
-   9,000 Serfs (mainland) 5,000 Serfs (island)
- 250,000 Gold
-     200 Nobles
-    100% Palace
-     200 Markets
-     200 Mills
-      50 Shipyards
-      50 Forts
+{f6:2}
+  30,000 Acres{f6}
+   9,000 Serfs (mainland) 5,000 Serfs (island){f6}
+ 250,000 Gold{f6}
+     200 Nobles{f6}
+    100% Palace{f6}
+     200 Markets{f6}
+     200 Mills{f6}
+      50 Shipyards{f6}
+      50 Forts{f6}
 
 (Any player with a point rating of 150 or higher will automatically become the new KING! Point ratings are based on your current assets.)
-
+{f6:2}
 Once attained, you will become the new KING! All kings receive a lump amount of d/l credits (based on acres owned at the time) and will also receive 20 credits per day for every day you REMAIN king! You must enter Empire II to collect these credits. However, they will accumulate and do not need to be collected on a daily basis.
-
+{f6:2}
 Good Luck! I know you're going to enjoy playing this new version. Now that you know all about the start and finish of the game, let's take a stroll through a complete turn and examine each of the games various options and components:
-
+{f6:2}
 -THE MAIN PROMPT-
-
+{f6:2}
 Upon entering EMPIRE II, the first place you'll stop is at the MAIN PROMPT. You may enter the game up to this prompt WITHOUT using any turns (even if you have NO plays left!). Pressing 'Q' will take you back to the BBS leaving all stats as they were (including number of plays remaining). The following options are available at this prompt:
-
+{f6:2}
 NEWS - 'N' will show a record of the past 2 days' activities. Among the items recorded here are wins, loses, ransacks, kills, ships lost and islands plundered.
-
+{f6:2}
 LIST OF EMPERORS - 'L' will show you a current list of all the other players, the amount of land they have and their point rating. 
-
+{f6:2}
 YOUR STATS - 'Y' will produce a list of your game stats. You can use this command at almost ANY prompt throughout the game. Refer to it often!
-
-QUIT - 'Q' will exit you back out to the BBS. Along that same line, using 'CTRL-P' from anywhere in the game will return you to the BBS. Your current stats will be saved at the same time!
-
+{f6:2}
+QUIT - 'Q' will exit you back out to the BBS. Along that same line, using 'CTRL-D' from anywhere in the game will return you to the BBS. Your current stats will be saved at the same time!
+{f6:2}
 CONTINUE - 'C' takes you into the game!
-
+{f6:2}
 After selecting 'C', you will see your production for this turn. Production is determined by the amount of LAND, SERFS, MILLS, etc. you have in your Empire.
-
+{f6:2}
 -BUYING/SELLING LAND-
-
+{f6:2}
 The next prompt will give you an opportunity to buy or sell land. Prices will vary from turn to turn. If it's not an emergency, you may want to wait and look for a better price on your next turn. 
-
+{f6:2}
 WARNING: You must maintain a minimum LAND:SERF ratio of 7:1. That means you must have at least 1 serf for every 7 acres. Do not buy more land than your serfs can handle. You will lose your Empire if this should happen!
-
+{f6:2}
 -BUYING/SELLING GRAIN-
-
+{f6:2}
 At this time you may buy or sell grain. Again, prices here will vary from turn to turn. Now is the time to be SURE you have the grain to support your Empire for this turn! Press 'Y' to check your stats!
-
+{f6:2}
 -FEEDING YOUR SERFS-
-
+{f6:2}
 At this prompt you will supply your serfs with food. The figure shown is based on 5 bushels per serf. This is only the RECOMMENDED amount. (Pressing RETURN will automatically supply the recommended amount without you having to enter the digits). TIP: The experienced Emperor knows that there is a definite strategy to overfeeding and underfeeding your serfs. If your population has grown overly large, underfeeding will help kill off some of your serfs. Use caution! Extreme or repeated underfeeding will cause the masses to plunder your Empire! It's better to do a little over several turns rather than one BIG famine. On the other hand, overfeeding will usually helps insure an increase your population.
-
+{f6:2}
 -FEEDING YOUR ARMIES-
-
+{f6:2}
 Be sure to save enough grain to feed your armies. They will REQUIRE 8 bushels per soldier. Should you be unable to feed them the required amount, they will be 'on strike' for the remainder of that turn. You may also lose some to the rebel forces when underfeeding armies! 
-
+{f6:2}
 -STATUS REPORT-
-
+{f6:2}
 After feeding the masses, a status chart will show any changes in your serfs population and the new TOTAL. You will also be informed of any tax money earned for that turn. If you have developed any forts on your island, at this time you must pay your island taxes. This is collected automatically. If you do not have the full amount you will lose 1 fort.
-
+{f6:2}
 -THE INVESTMENT PROMPT-
-
+{f6:2}
 At this stage you must replenish your Empire. There are 9 items available here. They are:
-
+{f6:2}
 1 - SOLDIERS: $10 each. You may purchase up to 20 men for every noble and/or 40 men for every foundry. Soldiers are your main line of defense and offense. Naturally, the more you have, the more powerful your Empire will be.
-
+{f6:2}
 2 - MARKETS: $1000 each. Markets are a low-return investment. However, they help stimulate the economy and the population.
-
+{f6:2}
 3- MILLS: $2000 each. Mills are a low-return investment also. Mills directly effect the results of each years harvests. Likewise, large harvests tend to cause the mills to pay better dividends.
-
+{f6:2}
 4 - PALACE: $10,000 per unit. 10 units max. The palace does not pay dividends. However, with each investment in the palace you will also receive 1 noble. The palace also adds to your defenses.
-
+{f6:2}
 5 - FOUNDRIES: $7000 each. Foundries are necessary for you to increase the size of your army. For each foundry you may purchase up to 40 soldiers (provided you have the required number of nobles). In addition, foundries will also pay dividends each turn!
-
+{f6:2}
 6 - SHIPYARDS: $8000 each. Shipyards are a high-return investment. They are also needed to increase the size of your fleet (ships).
-
+{f6:2}
 7- NOBLES: $25000 each. Nobles are needed to increase the size of your army. You may have up to 20 soldiers per noble.
-
+{f6:2}
 8 - SHIPS: $5000 each. Ships are needed to transport people and goods to and from your island. When buying ships, your total cannot exceed a 1:1 ship:shipyard ratio.
-
+{f6:2}
 9 - STABLES: $10000 each. You can put up to 40 horses in each stable you own. Horses not kept in a stable are subject to get stolen by rebel forces. Stables will also return a profit at the end of each turn.
-
+{f6:2}
 Once all purchases are completed, (check your stats!), select '0'. Now you may...
-
+{f6:2}
 (S)ail To Your Island, (V)isit The Dry Dock, Or (G)o To The Battlefields
-
+{f6:2}
 Pressing 'G' will take you directly to the attack prompt, bypassing both the dry dock and sailing options entirely.
-
+{f6:2}
 'V' will send you to the dry dock without you having to sail to your island first (as in the previous versions). This gives you a chance to sell any
 exports you may have stored there. Once all transactions are complete, or if you have no exports, you will be sent to the attack prompt. 
-
+{f6:2}
 'S'ailing, the final option, is an important aspect of your Empire. Your island is capable of producing a lot of money for you, but it also must be properly managed and fortified! This must be accomplished over a period of time. Selecting 'S' will take you to...
-
+{f6:2}
 -THE LOADING DOCKS-
-
+{f6:2}
 This is where you will load your ship(s) for the journey. There are two separate loading docks, one on your mainland and one on your island. There are SOME differences between them in regards to what can be loaded and where. For example, at the mainland loading docks you may load GRAIN, SERFS, NOBLES (and soldiers), NAVIGATORS and SPICES. At the island loading docks, NOBLES and NAVIGATORS are loaded automatically and SOLDIERS must be loaded separately. You may also take GRAIN, SERFS, HORSES and EXPORTS.
-
+{f6:2}
 Each item loaded into your ship(s) will take up a certain amount of space. When selecting an item to load, you will see the amount you have on board and the max you will be allowed to load (determined by the amount of room left on board, the amount you own, or cash you have -- Whichever applies).  Once loaded, an item may NOT be removed.  You may take as much or as little (or none) of any of the items as you like.  Your ships can not exceed 100% capacity.
 
 
@@ -211,13 +211,21 @@ Once you have completed the battle segment of your turn, the results (if any) wi
 Next you will see a current list of all your stats and you will be given the opportunity to replenish your troops. The price of these soldiers will vary from turn to turn. TIP: Normally, the only time you will want to purchase soldiers here is when you are leaving the game (to protect your Empire while you are gone). If you intend to play another turn, then buy them at the investment prompt when you get back around. They are usually cheaper and this saves you from having to feed them extra grain! If you are leaving the game, then you will need to buy them at whatever price they are offered (provided you have the gold to pay for them!)
 
 Provided you have at least 1 play remaining, you will now return to the beginning of the game. You may play all your turns during one call or split them up any way you like. If you have no plays left, you will have a chance to leave a message to the next player. This could be any tips, info, threats or promises you may wish to pass on. Pressing RETURN here will leave the message unchanged. 
-
-Empire II (C) Written By Steve Wagy
+Empire II (C) 1990 Written By Steve Wagy
+{f6}
 The Dirty Laundry BBS
+{f6}
 912-953-2998 - 2400/1200 - 24 Hrs
+{f6}
 Centerville, Georgia
+{f6}
 Member of the Color 64 BBS Network
-
+{f6:2}
 Quests converted to Image BBS by Pinacolada 
-
+{f6:2}
 ported to bbsengine by zoidtechnologies.com. copyright (C) 2022 zoidtechnologies.com. all rights reserved.
+{f6:2}
+
+Empyre is a meld of several version of Empire, all available on various BBS systems over the years. Thanks to ryan for his help with this program.
+
+

@@ -1,11 +1,15 @@
 # empyre
 
 ## todo
+
+- [ ] how to move/build sawmill,forts on island
+- [x] player 'attributes' are now called 'resources'
+- [ ] different types of ships (cargo, passenger) @ty dad,tmojd,ryan @since 20240107 @project 8568
 - [x] make sure all attributes with a price have a singular and plural defined.
 - [x] missing "each" on the end of the prompt in investments()
 - [x] maint mode should prompt for handle, default to currentloginname, tab-complete.
 - [ ] if there are no shipyards, do not allow purchase of ships
-- [ ] if there are no stables, do not allow acquiring horse(s)
+- [x] if there are no stables, do not allow acquiring horse(s)
 - [ ] need sawmill to use lumber to build stables, ships, etc
 - [ ] palaces
   * player.palaces in 10% increments sometimes
@@ -56,7 +60,7 @@
 - [x] check to be sure handling of boolean attributes in player.edit() is correct.
 - [x] use ttyio.inputboolean() instead of ttyio.inputchar() in some places.
 - [x] change inputplayername() to return playername instead of playerid
-- [ ] dbh.commit() a new player record.
+- [x] dbh.commit() a new player record.
 - [x] playerid shows up in engine.node, but not empyre.player
 - [x] psycopg2.errors.UndefinedColumn: column "memberid" does not exist
 - [x] sysop tool to maintain players
@@ -438,3 +442,7 @@ indeed
 - [ ] handle beheading properly (@since 20220829)
 - [ ] handle "no nobles" in zircon-fail.txt (@since 20220829)
 - [x] python -m empyre works, but running from letteredolive does not (@since 20220828 @done 20220829)
+- [ ] exports are limited to grain only.
+- [ ] sell excess sawmills/etc? calc required sawmills, offer to sell excess (@since 20220907)
+- [ ] drydock should allow recruiting navigators.
+- [ ] min 1 navigator per ship. wo navigator, better chance of wrecking or failing to reach an island

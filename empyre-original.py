@@ -12,7 +12,7 @@ import traceback
 import ttyio5 as ttyio
 import bbsengine5 as bbsengine
 
-from empyremodules import lib
+from . import lib
 
 import _empyreversion
 
