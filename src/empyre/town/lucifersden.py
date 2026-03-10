@@ -30,7 +30,7 @@ def main(args, **kw):
         return True
 
     io.echo("{f6:2}")
-    lib.setarea(args, player, "town: lucifer's den")
+    lib.setbottombar(args, player, "town: lucifer's den")
 
     util.heading("LUCIFER'S DEN - Where Gamblin's no Sin!") # , hrcolor="{orange}", titlecolor="{bgred}{yellow}")
     io.echo("{yellow}I will let you play for the price of a few souls!")

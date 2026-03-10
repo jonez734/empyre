@@ -193,7 +193,7 @@ class Player(object):
     def edit(self):
         done = False
         while not done:
-            libempyre.setarea(self.args, f"edit player resources for {self.moniker}", player=self)
+            libempyre.setbottombar(self.args, f"edit player resources for {self.moniker}", player=self)
             op = libempyre.selectresource(self.args, "select player resource", self.resources)
             io.echo(f"empyre.Player.edit.100: {op=}", level="debug")
             if op.kind == "exit" or op.kind == "noitems":

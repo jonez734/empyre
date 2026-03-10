@@ -12,7 +12,7 @@ def buildargs(args, **kw):
 
 def main(args, player, **kwargs):
     util.heading(": hood's real deals! :")
-    libempyre.setarea(args, "town -> hood's real deals!", **kwargs)
+    libempyre.setbottombar(args, "town -> hood's real deals!", **kwargs)
 
     def _work(conn):
 

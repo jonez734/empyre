@@ -19,7 +19,7 @@ def main(args, **kwargs):
 
     grainres = player.getresource("grain")
 
-    libempyre.setarea(args, "harvest", **kwargs)
+    libempyre.setbottombar(args, "harvest", **kwargs)
     x = int((player.land*player.weatherconditions+(random.random()*player.serfs)+player.grain*player.weatherconditions)/3)
     x = min(x, player.land+player.serfs*4)
     #if x > (player.land+player.serfs)*4:

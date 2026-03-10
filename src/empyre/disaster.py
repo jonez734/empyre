@@ -102,7 +102,9 @@ def main(args, **kwargs) -> bool:
     player = kwargs.get("player", None)
     disaster = kwargs.get("disaster", util.diceroll(12))
     save = kwargs.get("save", True)
-    io.echo(f"disaster.200: {disaster=}", level="debug")
+#    io.echo(f"disaster.200: {disaster=}", level="debug")
+
+    lib.setbottombar("disaster", **kwargs)
     
     if disaster == 2:
         plague(player)
@@ -115,9 +117,15 @@ def main(args, **kwargs) -> bool:
     elif disaster == 6:
         tidalwave(player)
     io.echo("{/all}", end="", flush=True)
+
     if save is True:
         player.adjust()
         player.save()
     else:
         io.echo("skipped adjust+save")
+
+    io.echo(f"{{promptcolor}}press any key to continue... {{inputcolor}}")
+    getch(noneok=True)
+    io.echo()
+
     return True

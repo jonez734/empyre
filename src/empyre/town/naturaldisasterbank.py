@@ -17,7 +17,7 @@ def buildargs(args, **kw):
 # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_town.lbl#L293
 def main(args, player, **kwargs):
     util.heading("natural disaster bank") # , titlecolor="{bggray}{white}", hrcolor="{darkgreen}")
-    lib.setarea(args, "natural disaster bank", player=player) # "{bggray}{white}%s{/all}" % ("bank".ljust(terminalwidth)))
+    lib.setbottombar(args, "natural disaster bank", player=player) # "{bggray}{white}%s{/all}" % ("bank".ljust(terminalwidth)))
     coinres = player.getresource("coins")
     io.echo()
     exchangerate = 3 #:1 -- 3 coins per credit
@@ -48,5 +48,5 @@ def main(args, player, **kwargs):
     player.save()
 
     io.echo(f"{{var:normalcolor}}You now have {{var:valuecolor}}{util.pluralize(player.coins, **coinres)}{{var:normalcolor}} and {{var:valuecolor}}{util.pluralize(cr, 'credit', 'credits', emoji=':moneybag:')}{{var:normalcolor}}")
-    lib.setarea(args, "natural disaster bank", player=player)
+    lib.setbottombar(args, "natural disaster bank", player=player)
     return True

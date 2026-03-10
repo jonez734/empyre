@@ -63,7 +63,7 @@ def main(args, **kwargs):
             io.echo(f"empyre.main.240: session.start() failed", level="error")
             return False
 
-        lib.setarea(args, f"empyre {_version.datestamp} githash {_version.githash}", player=None)
+        lib.setbottombar(args, f"empyre {_version.datestamp} githash {_version.githash}", player=None)
 
         currentmembermoniker = member.getcurrentmoniker(args, pool=pool)
         io.echo(f"main.300: {currentmembermoniker=}", level="debug")
@@ -96,7 +96,7 @@ def main(args, **kwargs):
                 currentplayer.adjust()
                 currentplayer.save()
 
-            lib.setarea(args, f"{_version.datestamp} git {_version.githash}", player=currentplayer)
+            lib.setbottombar(args, f"{_version.datestamp} git {_version.githash}", player=currentplayer)
 
             util.heading("main menu")
 

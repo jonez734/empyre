@@ -18,7 +18,7 @@ def buildargs(args, **kw):
 # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_town.lbl#L244
 def main(args, player, **kwargs):
     util.heading(": Soldier Training :")
-    lib.setarea(args, "town -> train soldiers", **kwargs)
+    lib.setbottombar(args, "town -> train soldiers", **kwargs)
     io.echo()
     eligible = int(player.nobles*20-player.soldiers)
     io.echo(f"empyre.trainsoldiers.100: {eligible=}", level="debug")

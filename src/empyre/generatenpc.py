@@ -15,7 +15,7 @@ def main(args:object, **kw):
     player = kw["player"] if "player" in kw else None
 
     bbsengine.title("generate npc")
-    lib.setarea(args, player, "generate npc")
+    lib.setbottombar(args, player, "generate npc")
 
     nonplayerchar = lib.Player(args)
     nonplayercharrank = random.randint(0, min(3, player.rank + 1))

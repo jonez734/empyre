@@ -46,7 +46,7 @@ def main(args, **kwargs):
         io.echo("you do not exist! go away!", level="error")
         return False
 
-    libempyre.setarea(args, "dock", player=player)
+    libempyre.setbottombar(args, "dock", player=player)
 
     io.echo("checking ship count..: ", end="")
     s = libship.count(args, playermoniker=player.moniker, **kwargs)

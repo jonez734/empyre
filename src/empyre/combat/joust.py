@@ -26,7 +26,7 @@ def main(args, **kw):
             io.echo(f"You lost {util.pluralize(loss, **landres)}")
             return True
 
-    libempyre.setarea(args, "joust", player=player)
+    libempyre.setbottombar(args, "joust", player=player)
 
     io.echo(f"joust.100: {otherplayer=}", level="debug")
 

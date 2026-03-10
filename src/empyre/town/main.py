@@ -54,7 +54,7 @@ def main(args, **kwargs):
 
     done = False
     while not done:
-        libempyre.setarea(args, "town menu", player=player)
+        libempyre.setbottombar(args, "town menu", player=player)
         player.adjust()
         player.save()
         menu()

@@ -33,7 +33,7 @@ def main(args, **kwargs):
     done = False
     while not done:
         util.heading("maint")
-        libempyre.setarea(args, "maint", **kwargs)
+        libempyre.setbottombar(args, "maint", **kwargs)
         mainthelp()
         ch = io.inputchar("{promptcolor}maintenance: {inputcolor}", "XELRSYQ", "", help=mainthelp)
 
@@ -49,7 +49,7 @@ def main(args, **kwargs):
             p = libplayer.select(args, title="select player to edit", prompt="select player:", **kwargs)
             if p is None:
                 continue
-            libempyre.setarea(args, p, f"edit player {player.moniker}")
+            libempyre.setbottombar(args, p, f"edit player {player.moniker}")
             p.edit()
             p.adjust()
             p.status()

@@ -70,7 +70,7 @@ class Colony(object):
     def __init__(self, args):
         self.args = args
 
-def setarea(args, buf, **kwargs) -> None:
+def setbottombar(args, buf, **kwargs) -> None:
     player = kwargs.get("player", None)
     help = kwargs.get("help", None)
     stack = kwargs.get("stack", False)
@@ -195,7 +195,7 @@ def trade(args, player:object, name:str, **kwargs:dict):
     while not done:
         player.adjust()
         player.save()
-        setarea(args, f"trade: {plural}", stack=False, player=player)
+        setbottombar(args, f"trade: {plural}", stack=False, player=player)
 
         # currentvalue = getattr(player, attr)
         # prompt = "You have {reverse}%s{/reverse} and {reverse}%s{/reverse}{F6}" % (pluralize(currentvalue, singular, plural), pluralize(player.coins, "coin", "coins"))

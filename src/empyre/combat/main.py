@@ -35,7 +35,7 @@ def main(args, **kwargs):
             io.echo(f"{{var:optioncolor}}[{m['hotkey']}]{{var:labelcolor}} {m['label']}")
         return
 
-    libempyre.setarea(args, "combat: select opponent", player=player)
+    libempyre.setbottombar(args, "combat: select opponent", player=player)
 
     otherplayer = libplayer.select(args, title="select opponent", prompt="opponent: ", **kwargs)
     if otherplayer is False:
@@ -60,7 +60,7 @@ def main(args, **kwargs):
         otherplayer.adjust()
         otherplayer.save()
 
-        libempyre.setarea(args, "combat", help=True, player=player)
+        libempyre.setbottombar(args, "combat", help=True, player=player)
 
         # @see empire6/mdl.emp.delx3.txt#L91
         ch = io.inputchar("{var:promptcolor}Combat Command {var:optioncolor}[1-6,?,Q]{var:promptcolor}: {var:inputcolor}", "123456Q?", "Q", help=combathelp)

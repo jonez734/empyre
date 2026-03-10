@@ -39,7 +39,7 @@ def main(args, **kwargs):
         io.echo("You do not exist! Go away!", level="error")
         return False
 
-    lib.setarea(args, "sysop options", player=player)
+    lib.setbottombar(args, "sysop options", player=player)
     util.heading("sysop options")
     player.turncount = io.inputinteger("{var:promptcolor}turncount: {var:inputcolor}", player.turncount, args=args, **kwargs)
     x = io.inputinteger("{var:promptcolor}:moneybag: coins: {var:inputcolor}", player.coins, **kwargs)
