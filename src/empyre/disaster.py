@@ -104,7 +104,7 @@ def main(args, **kwargs) -> bool:
     save = kwargs.get("save", True)
 #    io.echo(f"disaster.200: {disaster=}", level="debug")
 
-    lib.setbottombar("disaster", **kwargs)
+    lib.setbottombar(args, "disaster", **kwargs)
     
     if disaster == 2:
         plague(player)
