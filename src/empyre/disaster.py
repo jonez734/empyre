@@ -124,7 +124,7 @@ def main(args, **kwargs) -> bool:
     else:
         io.echo("skipped adjust+save")
 
-    io.echo(f"{{promptcolor}}press any key to continue... {{inputcolor}}", end="")
+    io.echo(f"{{promptcolor}}press any key to continue... {{inputcolor}}", end="", flush=True)
     io.getch(timeout=None)
     io.echo()
 

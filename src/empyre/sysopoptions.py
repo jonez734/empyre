@@ -36,7 +36,7 @@ def buildargs(args, **kwargs):
 def main(args, **kwargs):
     player = kwargs.get("player", None)
     if player is None:
-        io.echo("You do not exist! Go away!", level="error")
+        io.echo("empyre.sysopoptions.100: You do not exist! Go away!", level="error")
         return False
 
     lib.setbottombar(args, "sysop options", player=player)
