@@ -5,18 +5,24 @@ import dateutil.tz
 
 from bbsengine6 import io, member
 
-from . import lib # this means "import lib from the current package" also allows .. and ...
+from . import (
+    lib,
+)  # this means "import lib from the current package" also allows .. and ...
 
 from . import player as libplayer
+
 
 def init(args, **kwargs):
     return True
 
+
 def access(args, op, **kwargs):
     return True
 
+
 def buildargs(args, **kwargs):
     return None
+
 
 def main(args, **kwargs):
     player = kwargs.pop("player", None)
@@ -26,31 +32,31 @@ def main(args, **kwargs):
         io.echo(f"empyre.play.main.300: {pool=}", level="error")
         return False
 
-#    currentmoniker = member.getcurrentmoniker(args, **kwargs)
-#    playercount = libplayer.count(args, currentmoniker, **kwargs)
-#    io.echo(f"empyre.main.100: {playercount=}", level="debug")
-#    if playercount is None:
-#        player = libplayer.create(args, pool=pool)
-#        if player is None:
-#            io.echo("empyre.main.200: unable to create new player!", level="error")
-#            return False
-#    elif playercount > 0:
-#        io.echo(f"empyre.main.220: {pool=}", level="debug")
-#        player = libplayer.select(args, currentmoniker, **kwargs)
-#        if player is None:
-#            return False
+    #    currentmoniker = member.getcurrentmoniker(args, **kwargs)
+    #    playercount = libplayer.count(args, currentmoniker, **kwargs)
+    #    io.echo(f"empyre.main.100: {playercount=}", level="debug")
+    #    if playercount is None:
+    #        player = libplayer.create(args, pool=pool)
+    #        if player is None:
+    #            io.echo("empyre.main.200: unable to create new player!", level="error")
+    #            return False
+    #    elif playercount > 0:
+    #        io.echo(f"empyre.main.220: {pool=}", level="debug")
+    #        player = libplayer.select(args, currentmoniker, **kwargs)
+    #        if player is None:
+    #            return False
 
-#    player = kw["player"] if "player" in kw else None
-#    if player is None:
-#        io.echo("You do not exist! Go Away!")
-#        return False
+    #    player = kw["player"] if "player" in kw else None
+    #    if player is None:
+    #        io.echo("You do not exist! Go Away!")
+    #        return False
 
-#    io.echo(f"empyre.play.main.200: {player.resources['grain']=} {player.grain=} {player.attributes=}")
-#    player.datelastplayedepoch = time.mktime(time.localtime())
+    #    io.echo(f"empyre.play.main.200: {player.resources['grain']=} {player.grain=} {player.attributes=}")
+    #    player.datelastplayedepoch = time.mktime(time.localtime())
     tzlocal = dateutil.tz.tzlocal()
     player.datelastplayed = datetime.now(tzlocal)
-    
-    lib.runmodule(args, "sysopoptions", **kwargs)
+
+    lib.runmodule(args, "sysopoptions", player=player, **kwargs)
 
     io.echo("{f6}{cyan}it is a new year...{/all}")
     if player.turncount >= libplayer.TURNSPERDAY:
@@ -59,17 +65,17 @@ def main(args, **kwargs):
         player.save()
         return True
 
-#    if player.coins is not None:
-#        coins = player.getresource("coins")
-#        coins["value"] = player.coins
-#        player.coins = None
+    #    if player.coins is not None:
+    #        coins = player.getresource("coins")
+    #        coins["value"] = player.coins
+    #        player.coins = None
     player.turncount += 1
     player.adjust()
     player.save()
     io.echo(f"{player.datelastplayed=}", level="debug")
 
-#    for x in ("dock",):# "investments"):
-    for x in ("weather", "disaster", "harvest", "town", "combat", "shipyard", "dock", "investments", "yearlyreport"): # quests after combat?
+    #    for x in ("dock",):# "investments"):
+    for x in args.modules:
         io.echo(f"play.100: {x=} {player=}", level="debug")
         if lib.runmodule(args, x, player=player, **kwargs) is False:
             io.echo(f"error running submodule {x}", level="error")
