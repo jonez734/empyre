@@ -1,11 +1,11 @@
-from bbsengine6 import io, listbox, database, member
+from bbsengine6 import io, database
 
 from . import lib as libship
 from .. import lib as libempyre
-from .. import player as libplayer
 
-def keyhandler(args, ch, listbox):
-    currentitem = listbox.currentitem
+
+def keyhandler(args, ch, lb):
+    currentitem = lb.currentitem
     ship = currentitem.rec
 
     keys = {}
@@ -17,24 +17,31 @@ def keyhandler(args, ch, listbox):
         io.echo("{restorecursor}new ship")
         ship = libship.build(args)
         libship.insert(args, "__ship", ship)
-        return True # key has been handled
+        return True  # key has been handled
     return False
+
 
 def init(args, **kwargs):
     return True
 
+
 def access(args, op, **kwargs):
     return True
+
 
 def buildargs(args=None, **kwargs):
     return None
 
+
 def main(args, **kwargs):
     io.echo("ships")
-    
+
     def _work(conn):
-        sql = f"select moniker from empyre.ship where location=%s and playermoniker=%s"
-        dat = (location, player.moniker,)
+        sql = "select moniker from empyre.ship where location=%s and playermoniker=%s"
+        dat = (
+            location,
+            player.moniker,
+        )
         with database.cursor(conn) as cur:
             cur.execute(sql, dat)
             if cur.rowcount == 0:
@@ -46,7 +53,7 @@ def main(args, **kwargs):
                 return True
 
             ship = op.listitem.ship
-        #    ship.player = player
+            #    ship.player = player
 
             io.echo(f"{ship.moniker=}", level="debug")
             if ship is None:
@@ -59,18 +66,20 @@ def main(args, **kwargs):
                 player.save()
                 ship.adjust()
                 ship.save()
-                io.echo(f"{{optioncolor}}[L]{{labelcolor}} Load")
-                io.echo(f"{{optioncolor}}[U]{{labelcolor}} Unload")
+                io.echo("{optioncolor}[L]{labelcolor} Load")
+                io.echo("{optioncolor}[U]{labelcolor} Unload")
                 io.echo(f"{{optioncolor}}[M]{{labelcolor}} Moniker: {ship.moniker}")
-                io.echo(f"{{optioncolor}}[S]{{labelcolor}} Sail")
-                io.echo(f"{{optioncolor}}[X]{{labelcolor}} Exit to dock")
-                
+                io.echo("{optioncolor}[S]{labelcolor} Sail")
+                io.echo("{optioncolor}[X]{labelcolor} Exit to dock")
+
                 ch = io.inputchar("ship: {inputcolor}", "ULMSXQ", "X")
                 if ch == "Q" or ch == "X":
                     io.echo("Exit")
                     done = True
                 elif ch == "M":
-                    moniker = libship.inputshipname(args, "ship's moniker:", ship.moniker)
+                    moniker = libship.inputshipname(
+                        args, "ship's moniker:", ship.moniker
+                    )
                     if moniker == ship.moniker:
                         io.echo("no change")
                         continue
@@ -85,7 +94,7 @@ def main(args, **kwargs):
             return True
 
     player = kwargs.get("player", None)
-#    location = kw["location"] if "location" in kw else "mainland"
+    #    location = kw["location"] if "location" in kw else "mainland"
     if player is None:
         io.echo("You do not exist! Go Away!", level="error")
         return False
@@ -96,10 +105,10 @@ def main(args, **kwargs):
         libship.build(args, **kwargs)
         return False
 
-    if player.ships > player.shipyards*libship.SHIPSPERSHIPYARD:
+    if player.ships > player.shipyards * libship.SHIPSPERSHIPYARD:
         shipyardres = player.getresource("shipyards")
         libempyre.trade(args, player, "shipyards", **shipyardres)
-        if player.ships > player.shipyards*libship.SHIPSPERSHIPYARD:
+        if player.ships > player.shipyards * libship.SHIPSPERSHIPYARD:
             io.echo("aborted")
             return False
 

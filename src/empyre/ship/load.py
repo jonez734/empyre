@@ -1,22 +1,25 @@
 from bbsengine6 import io, database, util
-from . import lib
 from .. import lib as libempyre
+
 
 def init(args, **kw):
     return True
 
+
 def access(args, op, **kw):
     return True
 
+
 def buildargs(args, **kw):
     return None
+
 
 def main(args, **kw):
     player = kw["player"] if "player" in kw else None
     ship = kw["ship"] if "ship" in kw else None
 
     player.save()
-    #for name in player.resources.keys():
+    # for name in player.resources.keys():
     #    r = player.resources[name]
     #    r["value"] = getattr(player, name)
     #    io.echo("{name=} {r['value']=}", level="debug")
@@ -26,11 +29,13 @@ def main(args, **kw):
         return True
 
     resourcename = op.listitem.pk
-#    io.echo(f"{resourcename=}", level="debug")
+    #    io.echo(f"{resourcename=}", level="debug")
 
     io.echo("load")
     attr = getattr(player, resourcename)
-    amount = io.inputinteger(f"{{promptcolor}}load amount of {resourcename}: {{inputcolor}}", attr)
+    amount = io.inputinteger(
+        f"{{promptcolor}}load amount of {resourcename}: {{inputcolor}}", attr
+    )
     if amount is None:
         io.echo("aborted.")
         return True
@@ -39,7 +44,9 @@ def main(args, **kw):
         return True
     elif amount > attr:
         res = player.getresource(resourcename)
-        io.echo(f"You are short by {{valuecolor}}{util.pluralize(amount - attr, **res)} of {resourcename}.")
+        io.echo(
+            f"You are short by {{valuecolor}}{util.pluralize(amount - attr, **res)} of {resourcename}."
+        )
         return True
     else:
         attr -= amount

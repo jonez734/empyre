@@ -31,7 +31,7 @@ class Ship(object):
     #        self.dbh = database.connect(args)
 
     def load(self, moniker: str) -> bool:
-        sql = f"select * from empyre.ship where moniker=%s"
+        sql = "select * from empyre.ship where moniker=%s"
         dat = (moniker,)
         dbh = database.connect(self.args)
         cur = dbh.cursor()
@@ -126,9 +126,10 @@ def build(args, **kwargs):
         s["datecreated"] = "now()"  # ship.datecreated
         s["createdbymoniker"] = member.getcurrentmoniker(args)
         s["datedocked"] = "now()"
-        res = database.insert(
-            args, "empyre.__ship", s, mogrify=True, primarykey="moniker"
-        )
+        res = database.insert(args, "empyre.__ship", s, mogrify=True, primarykey="moniker")
+        if res is False:
+            io.echo("failed to insert ship", level="error")
+            return None
         database.commit(args)
         return s
     return True
@@ -346,7 +347,7 @@ def selectship(args, **kw):
 
     with database.connect(args, pool=pool) as conn:
         with database.cursor(conn) as cur:
-            sql = f"select * from empyre.ship where playermoniker=%s"
+            sql = "select * from empyre.ship where playermoniker=%s"
             dat = (player.moniker,)
             cur.execute(sql, dat)
 

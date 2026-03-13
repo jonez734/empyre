@@ -1,15 +1,19 @@
-from bbsengine6 import io, database
+from bbsengine6 import io
 
 from . import lib
+
 
 def init(args, **kw):
     return True
 
+
 def access(args, op, **kw):
     return True
 
+
 def buildargs(args=None, **kw):
     return None
+
 
 def main(args, **kw):
     player = kw["player"] if "player" in kw else None
@@ -25,10 +29,9 @@ def main(args, **kw):
         return True
 
     resourcename = op.listitem.pk
-    playerres = player.getresource(resourcename)
     manifestentry = ship.getmanifestentry(resourcename)
     if type(manifestentry) is int:
-        manifestentry = {"value":manifestentry}
+        manifestentry = {"value": manifestentry}
     manifestentryvalue = manifestentry["value"]
 
     playerattr = getattr(player, resourcename)
@@ -36,10 +39,13 @@ def main(args, **kw):
     io.echo(f"{resourcename=}", level="debug")
     if resourcename not in ship.manifest:
         io.echo(f"You do not have any {resourcename} on board.")
-        ship.manifest[resourcename] = {"value":0}
+        ship.manifest[resourcename] = {"value": 0}
         return True
 
-    amount = io.inputinteger(f"{{promptcolor}}unload amount of {resourcename}: {{inputcolor}}", manifestentry["value"])
+    amount = io.inputinteger(
+        f"{{promptcolor}}unload amount of {resourcename}: {{inputcolor}}",
+        manifestentry["value"],
+    )
     if amount is None or amount == 0:
         io.echo("aborted.")
         return True
