@@ -9,7 +9,7 @@ def keyhandler(args, ch, lb):
     ship = currentitem.rec
 
     keys = {}
-    keys["KEY_INS"] = "insertperson"
+    keys["KEY_INS"] = "insertship"
 
     if ch in ("KEY_INS"):
         io.setvar("cic", "{currentitemcolor}")
@@ -24,36 +24,29 @@ def keyhandler(args, ch, lb):
 def init(args, **kwargs):
     return True
 
-
 def access(args, op, **kwargs):
     return True
-
 
 def buildargs(args=None, **kwargs):
     return None
 
-
 def main(args, **kwargs):
     io.echo("ships")
 
+    io.echo(f"empyre.ship.main.200: {kwargs.get('pool')=}", level="debug")
+
     def _work(conn):
         sql = "select moniker from empyre.ship where location=%s and playermoniker=%s"
-        dat = (
-            location,
-            player.moniker,
-        )
+        dat = (location, player.moniker,)
         with database.cursor(conn) as cur:
             cur.execute(sql, dat)
-            if cur.rowcount == 0:
-                io.echo("building first ship")
-                libship.build(args, **kwargs)
+#            if cur.rowcount == 0:
+#                io.echo("building first ship")
+#                libship.build(args, **kwargs)
 
-            op = libship.selectship(args, cur=cur, **kwargs)
-            if op.kind == "exit":
+            ship = libship.selectship(args, cur=cur, **kwargs)
+            if ship is None:
                 return True
-
-            ship = op.listitem.ship
-            #    ship.player = player
 
             io.echo(f"{ship.moniker=}", level="debug")
             if ship is None:
@@ -78,7 +71,7 @@ def main(args, **kwargs):
                     done = True
                 elif ch == "M":
                     moniker = libship.inputshipname(
-                        args, "ship's moniker:", ship.moniker
+                        args, "ship's moniker:", ship.moniker, **kwargs
                     )
                     if moniker == ship.moniker:
                         io.echo("no change")

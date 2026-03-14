@@ -350,11 +350,11 @@ class Player(object):
                 self.args, "select player resource", self.resources
             )
             io.echo(f"empyre.Player.edit.100: {op=}", level="debug")
-            if op.kind == "exit" or op.kind == "noitems":
+            if op.status == "cancelled" or op.status == "noitems":
                 break
 
-            res = op.listitem.resource
-            pk = op.listitem.pk
+            res = op.item.data.get("resource", {})
+            pk = op.item.pk
             val = res.get("value", res.get("default"))
             if isinstance(val, datetime):
                 f = input.date

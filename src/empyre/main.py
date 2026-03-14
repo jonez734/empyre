@@ -24,6 +24,8 @@ def main(args, **kwargs):
     if args.debug is True:
         io.echo(f"empyre.main.100: {args=}", level="debug")
 
+    io.echo(f"empyre.main.100: {kwargs.get('pool')=}", level="debug")
+
     options = (
         ("I", "Instructions",     "instructions"),
         ("M", "Maintenance",      "maint", ":maint:"),
@@ -134,7 +136,7 @@ def main(args, **kwargs):
                             emoji = o[3]
                         else:
                             emoji = ""
-                        io.echo(f"{emoji}{{optioncolor}}{option}{{normalcolor}} -- {title}{{/all}}") #  % (emoji, option, title))
+                        io.echo(f"{emoji}{{optioncolor}}{option}{{normalcolor}} -- {title}{{/all}}")
                         res = lib.runmodule(args, submodule, player=currentplayer, pool=pool, **kwargs)
                         if res is not True:
                             io.echo(f"error running submodule {submodule}, returned {res=}", level="error")

@@ -3,13 +3,12 @@ import copy
 from argparse import Namespace
 
 from bbsengine6 import io, database, member, util
-from bbsengine6.listbox import Listbox, ListboxItem
+from bbsengine6.listbox import Listbox, ListboxItem, init as ListboxInit
 from bbsengine6.listboxcursor import ListboxCursor
 from .. import lib as libempyre
 
 MAXSHIPYARDS: int = 10
 SHIPSPERSHIPYARD: int = 10
-
 
 class Ship(object):
     def __init__(self, args, **kwargs):
@@ -91,8 +90,8 @@ class Ship(object):
 
         return True
 
-
 def build(args, **kwargs):
+    io.echo(f"empyre.ship.lib.build.100: {kwargs=}", level="debug")
     player = kwargs.get("player", None)
     if player is None:
         io.echo("You do not exist! Go Away!", level="error")
@@ -112,12 +111,7 @@ def build(args, **kwargs):
     else:
         io.echo("changes made")
 
-    if (
-        io.inputboolean(
-            "{promptcolor}build ship? {optioncolor}[Yn]{promptcolor}: {inputcolor}", "Y"
-        )
-        is True
-    ):
+    if (io.inputboolean("{promptcolor}build ship? {optioncolor}[Yn]{promptcolor}: {inputcolor}", "Y") is True):
         s = {}
         s["moniker"] = ship.moniker
         s["playermoniker"] = player.moniker
@@ -134,43 +128,29 @@ def build(args, **kwargs):
         return s
     return True
 
-
 def _edit(args, mode, ship, **kwargs):
     player = kwargs.get("player", None)
-
+    io.echo(f"empyre.ship.lib._edit.100: {kwargs=}", level="debug")
     _ship = copy.copy(ship)
 
     done = False
     while not done:
-        io.echo(
-            f"{{optioncolor}}[N]{{labelcolor}}ame: {{valuecolor}}{ship.moniker}", end=""
-        )
+        io.echo(f"{{optioncolor}}[N]{{labelcolor}}ame: {{valuecolor}}{ship.moniker}", end="")
         if _ship.moniker != ship.moniker:
-            io.echo(
-                f" {{labelcolor}}(was: {{valuecolor}}{_ship.moniker}{{labelcolor}})"
-            )
+            io.echo(f" {{labelcolor}}(was: {{valuecolor}}{_ship.moniker}{{labelcolor}})")
         else:
             io.echo()
 
-        io.echo(
-            f"{{optioncolor}}[O]{{labelcolor}}wner: {{valuecolor}}{ship.player.moniker}",
-            end="",
-        )
+        io.echo(f"{{optioncolor}}[O]{{labelcolor}}wner: {{valuecolor}}{ship.player.moniker}",end="",)
         if _ship.player.moniker != ship.player.moniker:
-            io.echo(
-                f" {{labelcolor}}(was: {{valuecolor}}{_ship.player.moniker}{{labelcolor}})"
-            )
+            io.echo(f" {{labelcolor}}(was: {{valuecolor}}{_ship.player.moniker}{{labelcolor}})")
         else:
             io.echo()
 
         io.echo(
-            f"{{optioncolor}}[A]{{labelcolor}} Navigator: {{valuecolor}}{ship.navigator}",
-            end="",
-        )
+            f"{{optioncolor}}[A]{{labelcolor}} Navigator: {{valuecolor}}{ship.navigator}",end="",)
         if _ship.navigator != ship.navigator:
-            io.echo(
-                f" {{labelcolor}}(was: {{valuecolor}}{_ship.navigator}{{labelcolor}})"
-            )
+            io.echo(f" {{labelcolor}}(was: {{valuecolor}}{_ship.navigator}{{labelcolor}})")
         else:
             io.echo()
 
@@ -180,9 +160,7 @@ def _edit(args, mode, ship, **kwargs):
             done = True
         elif ch == "N":
             completer = completeShipName(args, **kwargs)
-            moniker = inputshipname(
-                args, ship.moniker, completer=completer, verify=verifyShipNameNotFound
-            )
+            moniker = inputshipname(args, ship.moniker, completer=completer, verify=verifyShipNameNotFound, **kwargs)
             if ship.moniker is None or ship.moniker == "":
                 io.echo("You must enter a ship name")
                 continue
@@ -253,49 +231,39 @@ class completeShipName(object):
         return results[state]
 
 
-def verifyShipNameFound(moniker: str, **kwargs) -> bool:
-    args = kwargs["args"] if "args" in kwargs else Namespace()
 
-    io.echo(f"verifyShipNameFound.120: {args=} {moniker=}", level="debug")
-    pool = kwargs.get("pool", None)
-    if pool is None:
-        io.echo(f"empyre.ship.lib.verifyShipNameFound.100: {pool=}", level="error")
-        return None
-    with database.connect(args, pool=pool) as conn:
+def _verifyshipname(args, moniker, **kwargs) -> bool:
+    io.echo(f"_verifyshipname.100: {kwargs=}", level="debug")
+
+    def _work(conn):
         with database.cursor(conn) as cur:
             sql = "select 1 from empyre.ship where moniker=%s"
             dat = (moniker,)
             cur.execute(sql, dat)
-            io.echo(
-                f"verifyShipNameFound.100: mogrify={cur.mogrify(sql, dat)}",
-                level="debug",
-            )
+            io.echo(f"verifyShipNameFound.100: {database.mogrifysql(cur, sql, dat)=}", level="debug",)
             if cur.rowcount == 0:
                 return False
             return True
 
+    conn = kwargs.get("conn")
+    if conn is None:
+        pool = kwargs.get("pool")
+        if pool is None:
+            io.echo(f"empyre.ship.lib.verify.100: {pool=}", level="error")
+            return False
+        with database.connect(args, pool=pool) as conn:
+            return _work(conn)
+    return _work(conn)
 
-def verifyShipNameNotFound(moniker: str, **kwargs) -> bool:
-    args = kwargs["args"] if "args" in kwargs else Namespace()
+def verifyShipNameFound(args, moniker: str, **kwargs) -> bool:
+    if _verifyshipname(args, moniker, **kwargs) is True:
+        return False
+    return True
 
-    io.echo(f"verifyShipNameNotFound.120: {args=} {moniker=}", level="debug")
-    pool = kwargs.get("pool", None)
-    if pool is None:
-        io.echo(f"empyre.ship.lib.verifyShipNameFound.100: {pool=}", level="error")
-        return None
-    with database.connect(args, pool=pool) as conn:
-        with database.cursor(conn) as cur:
-            sql = "select 1 from empyre.ship where moniker=%s"
-            dat = (moniker,)
-            cur.execute(sql, dat)
-            io.echo(
-                f"verifyShipNameFound.100: mogrify={cur.mogrify(sql, dat)}",
-                level="debug",
-            )
-            if cur.rowcount == 0:
-                return False
-            return True
-
+def verifyShipNameNotFound(args, moniker: str, **kwargs) -> bool:
+    if _verifyshipname(args, moniker, **kwargs) is False:
+        return True
+    return False
 
 def inputshipname(args, prompt: str, currentmoniker="", **kwargs) -> str:
     verify = kwargs.pop("verify", verifyShipNameNotFound)
@@ -304,11 +272,10 @@ def inputshipname(args, prompt: str, currentmoniker="", **kwargs) -> str:
         io.echo(f"inputshipname.100: {moniker=}", level="debug")
     return moniker
 
-
-def selectship(args, **kw):
+def selectship(args, **kwargs):
     class EmpyreShipListbox(ListboxCursor):
-        def __init__(self, args, title: str, **kw):
-            super().__init__(args, title=title, **kw)
+        def __init__(self, args, title: str, **kwargs):
+            super().__init__(args, title=title, **kwargs)
 
     class EmpyreShipListboxItem(ListboxItem):
         def __init__(self, rec: dict, width: int):
@@ -333,14 +300,14 @@ def selectship(args, **kw):
             io.echo("use KEY_ENTER to select one of your ships")
             return
 
-    player = kw.get("player", None)
+    player = kwargs.get("player", None)
     if player is None:
         io.echo("You do not exist! Go Away!", level="error")
         return False
 
-    totalships = count(args, player.moniker)
+    totalships = count(args, player.moniker, **kwargs)
 
-    pool = kw.get("pool", None)
+    pool = kwargs.get("pool", None)
     if pool is None:
         io.echo(f"empyre.ship.lib.selectship.200: {pool=}", level="error")
         return False
@@ -357,7 +324,7 @@ def selectship(args, **kw):
         "select ship",
         totalitems=totalships,
         itemclass=EmpyreShipListboxItem,
-        **kw,
+        **kwargs,
     )
     op = lb.run("select ship: ")
     if op.status == "selected" and op.item:
@@ -365,7 +332,7 @@ def selectship(args, **kw):
     return None
 
 
-def getship(args, moniker, **kw):
+def getship(args, moniker, **kwargs):
     player = kw["player"] if "player" in kw else None
     if player is None:
         io.echo("You do not exist! Go Away!")
@@ -378,7 +345,7 @@ def getship(args, moniker, **kw):
     if cur.rowcount == 0:
         return None
     rec = cur.fetchone()
-    ship = Ship(args, rec=rec, **kw)
+    ship = Ship(args, rec=rec, **kwargs)
     ship.load(moniker)
     return ship
 
@@ -394,12 +361,12 @@ def empyshipkeyhandler(args, ch, lb):
         return False
 
 
-def selectmanifestitem(args, **kw):
+def selectmanifestitem(args, **kwargs):
     class EmpyreShipManifestListboxItem(ListboxItem):
-        def __init__(self, resourcename: str, width: int, **kw):
+        def __init__(self, resourcename: str, width: int, **kwargs):
             super().__init__()
-            self.ship = kw.get("ship")
-            self.player = kw.get("player")
+            self.ship = kwargs.get("ship")
+            self.player = kwargs.get("player")
             self.pk = resourcename
             self.res = self.player.getresource(resourcename) if self.player else {}
             self.width = width
@@ -422,17 +389,17 @@ def selectmanifestitem(args, **kw):
             io.echo("use KEY_ENTER to select a ship resource")
             return
 
-    ship = kw.get("ship")
+    ship = kwargs.get("ship")
     if ship is None:
         io.echo("ship not defined!")
         return False
 
-    player = kw.get("player")
+    player = kwargs.get("player")
     if player is None:
         io.echo("player not defined")
         return False
 
-    width = kw.get("width", io.terminal.width())
+    width = kwargs.get("width", io.terminal.width())
 
     items = []
     for k, v in ship.manifest.items():
@@ -440,18 +407,14 @@ def selectmanifestitem(args, **kw):
             EmpyreShipManifestListboxItem(k, width=width, ship=ship, player=player)
         )
 
-    lb = Listbox(
-        args, "select ship resource", itemsperpage=10, itemheight=1, items=items
-    )
+    lb = Listbox(args, "select ship resource", itemsperpage=10, itemheight=1, items=items)
     op = lb.run("ship resource: ")
     if op.status == "selected" and op.item:
         io.echo(f"{op.item.pk}")
     return op
 
-
-def runmodule(args, modulename, **kw):
-    return libempyre.runmodule(args, f"ship.{modulename}", **kw)
-
+def runmodule(args, modulename, **kwargs):
+    return libempyre.runmodule(args, f"ship.{modulename}", **kwargs)
 
 # @since 20240414
 def count(args, playermoniker=None, **kwargs):
@@ -462,11 +425,11 @@ def count(args, playermoniker=None, **kwargs):
             cur.execute(sql, dat)
             return cur.rowcount
 
-    conn = kwargs.get("conn", None)
+    conn = kwargs.get("conn")
     if conn is None:
-        pool = kwargs.get("pool", None)
+        pool = kwargs.get("pool")
         if pool is None:
-            io.echo(f"empyre.lib.countships.100: {pool=}", level="error")
+            io.echo(f"empyre.ship.count.100: {pool=}", level="error")
             return False
         with database.connect(args, pool=pool) as conn:
             return _work(conn)

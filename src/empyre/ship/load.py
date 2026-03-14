@@ -25,10 +25,10 @@ def main(args, **kw):
     #    io.echo("{name=} {r['value']=}", level="debug")
 
     op = libempyre.selectresource(args, "select load resource", player.resources, **kw)
-    if op.kind == "exit":
+    if op.status == "cancelled":
         return True
 
-    resourcename = op.listitem.pk
+    resourcename = op.item.pk
     #    io.echo(f"{resourcename=}", level="debug")
 
     io.echo("load")

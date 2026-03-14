@@ -25,10 +25,10 @@ def main(args, **kw):
     op = lib.selectmanifestitem(args, **kw)
     if args.debug is True:
         io.echo(f"{op=}", level="debug")
-    if op.kind == "exit":
+    if op.status == "cancelled":
         return True
 
-    resourcename = op.listitem.pk
+    resourcename = op.item.pk
     manifestentry = ship.getmanifestentry(resourcename)
     if type(manifestentry) is int:
         manifestentry = {"value": manifestentry}
