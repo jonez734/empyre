@@ -101,7 +101,7 @@ def setbottombar(args, buf, **kwargs) -> None:
 
             coinres = player.getresource("coins")
             coinres["emoji"] = ""
-            io.echo("empyre.setbottombar.rightside: trace", level="debug")
+#            io.echo("empyre.setbottombar.rightside: trace", level="debug")
             return f"empyre {{black}}|{{bottombarcolor}} {util.pluralize(turnremain, 'turn remains', 'turns remain')} {{black}}|{{bottombarcolor}} {isdirty}{player.moniker} {{black}}|{{bottombarcolor}} {util.pluralize(player.coins, **coinres)}{debug}"
         else:
             if debug is True:
