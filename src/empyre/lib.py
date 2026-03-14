@@ -17,7 +17,8 @@ class ShipKind(str, Enum):
 
 # from dateutil.tz import tzlocal
 
-from bbsengine6 import io, member, database, util, screen, module, listbox
+from bbsengine6 import io, member, database, util, module, listbox
+from bbsengine6.io import screen
 
 from . import player
 
@@ -100,6 +101,7 @@ def setbottombar(args, buf, **kwargs) -> None:
 
             coinres = player.getresource("coins")
             coinres["emoji"] = ""
+            io.echo("empyre.setbottombar.rightside: trace", level="debug")
             return f"empyre {{black}}|{{bottombarcolor}} {util.pluralize(turnremain, 'turn remains', 'turns remain')} {{black}}|{{bottombarcolor}} {isdirty}{player.moniker} {{black}}|{{bottombarcolor}} {util.pluralize(player.coins, **coinres)}{debug}"
         else:
             if debug is True:
@@ -107,7 +109,7 @@ def setbottombar(args, buf, **kwargs) -> None:
             else:
                 return ""
 
-    screen.setbottombar(buf, rightside, stack=False)
+    screen.setbottombar(buf, rightside, stack=False, **kwargs)
     # if args.debug is True:
     #    io.echo(f"empyre.setarea.100: {buf=} {stack=} {screen.areastack=}", level="debug")
     return
