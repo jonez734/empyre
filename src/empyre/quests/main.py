@@ -3,17 +3,17 @@ from bbsengine6 import io, util
 from .. import data
 from .. import lib as libempyre
 
-def init(args, **kw):
+def init(args, **kwargs):
     return True
     
-def access(args, op, **kw):
+def access(args, op, **kwargs):
     return True
 
-def buildargs(args, **kw):
+def buildargs(args, **kwargs):
     return None
 
 # @see empire6/mdl.emp.delx3.txt#L337
-def main(args, **kw):
+def main(args, **kwargs):
     player = kw["player"] if "player" in kw else None
 
     # @see empire6/emp.menu5.txt
@@ -81,7 +81,7 @@ def main(args, **kw):
             return False
         return True
 
-    def help(**kw):
+    def help(**kwargs):
         util.heading("quests")
 
 #        ttyio.echo("Quests are currently disabled pending repairs.")
@@ -107,7 +107,7 @@ def main(args, **kw):
         io.echo("q=%r" % (q), level="debug")
         callback = q["callback"] if "callback" in q else None
         io.echo("empyre.quests.100: callback=%r" % (callback), level="debug")
-        if (callback is not None and module.checkmodule(args, callback, buildargs=False, **kw) is True) is True:
+        if (callback is not None and module.checkmodule(args, callback, buildargs=False, **kwargs) is True) is True:
             io.echo("true")
             runnablequests.append(q)
             options += chr(ord("1")+index)
@@ -138,7 +138,7 @@ def main(args, **kw):
         if "intro" in quest:
             util.filedisplay(args, data.get(quest["intro"])) # bbsengine.buildfilepath(lib.QUESTDIR, quest["intro"]))  # data.get(quest["intro"]))
 
-        if module.runsubmodule(args, quest["callback"], **kw) is True:
+        if module.runsubmodule(args, quest["callback"], **kwargs) is True:
             if "win" in quest:
                 util.filedisplay(args, util.buildfilepath(libempyre.QUESTDIR, quest["win"]))
             else:

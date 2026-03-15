@@ -4,15 +4,15 @@ from bbsengine6 import io
 
 from . import lib
 
-def init(args, **kw):
+def init(args, **kwargs):
     return True
 
-def access(args, op, **kw):
+def access(args, op, **kwargs):
     return True
 
-def buildargs(args, **kw):
+def buildargs(args, **kwargs):
     return None
 
-def main(args, **kw):
+def main(args, **kwargs):
     io.echo("empyre.maint.__init__.main.100: trace", level="debug")
-    return lib.runmodule(args, "main", **kw)
+    return lib.runmodule(args, "main", **kwargs)

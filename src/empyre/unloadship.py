@@ -3,13 +3,13 @@ import bbsengine6 as bbsengine
 
 from . import lib
 
-def init(args, **kw):
+def init(args, **kwargs):
     return
 
-def access(args, op, **kw):
+def access(args, op, **kwargs):
     return True
 
-def buildargs(args, **kw):
+def buildargs(args, **kwargs):
     return None
 
 def transfercargo(args, name, anount, player, ship):
@@ -47,7 +47,7 @@ def transfercargo(args, name, anount, player, ship):
     if ship.manifest[name] < 0:
         ship.manifest[name] = 0
 
-def main(args, **kw):
+def main(args, **kwargs):
     bbsengine.util.heading("unload ship")
     # query ship name to be loaded
     # grain, serf, noble, navigator

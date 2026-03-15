@@ -5,7 +5,7 @@ from . import lib
 
 QUESTDIR = "~jam/projects/empyre/data/quests/"
 
-def init(args, **kw):
+def init(args, **kwargs):
     pass
 
 # @see https://github.com/Pinacolada64/ImageBBS/blob/e9f033af1f0b341d0d435ee23def7120821c3960/v1.2/games/empire6/mdl.emp.delx3.txt#L337

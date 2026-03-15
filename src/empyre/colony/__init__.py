@@ -1,7 +1,7 @@
 from bbsengine6 import io, util
 from .. import lib as libempyre
 
-def init(args, **kw):
+def init(args, **kwargs):
     return True
 
 def access(args, op, **kwargs):

@@ -320,7 +320,7 @@ def inputresourcename(
     oldvalue: str = "",
     multiple: bool = False,
     verify=None,
-    **kw,
+    **kwargs,
 ):
     attrs = kw["attrs"] if "attrs" in kw else None
     completer = completeResourceName(args, attrs)
@@ -332,14 +332,14 @@ def inputresourcename(
         multiple=multiple,
         completer=completer,
         returnseq=False,
-        **kw,
+        **kwargs,
     )
 
 
-def selectresource(args, title, resources, kind=None, **kw):
+def selectresource(args, title, resources, kind=None, **kwargs):
     class EmpyreResourceListboxItem(listbox.ListboxItem):
         def __init__(
-            self, name: str, resource: dict, width: int, height: int = 1, **kw: dict
+            self, name: str, resource: dict, width: int, height: int = 1, **kwargs: dict
         ):
             super().__init__(self, resource, width)
             self.pk: str = name
@@ -366,7 +366,7 @@ def selectresource(args, title, resources, kind=None, **kw):
 
     class EmpyreResourceListbox(listbox.Listbox):
         def __init__(
-            self, args, title: str = "select resource", resources: dict = {}, **kw
+            self, args, title: str = "select resource", resources: dict = {}, **kwargs
         ):
             self.player = kw["player"] if "player" in kw else None
             self.ship = kw["ship"] if "ship" in kw else None
@@ -426,12 +426,12 @@ def selectresource(args, title, resources, kind=None, **kw):
     return res
 
 
-def init(args, **kw):
+def init(args, **kwargs):
     io.setvar("empyre.highlightcolor", "{highlightcolor}")
     return True
 
 
-def buildargs(args=None, **kw: dict):
+def buildargs(args=None, **kwargs: dict):
     parser = argparse.ArgumentParser("empyre")
     parser.add_argument("--verbose", action="store_true", dest="verbose")
     parser.add_argument("--debug", action="store_true", dest="debug")

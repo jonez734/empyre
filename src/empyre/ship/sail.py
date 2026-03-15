@@ -3,20 +3,20 @@ from bbsengine6 import util, io
 # from . import lib as libship
 
 
-def init(args, **kw: dict) -> bool:
+def init(args, **kwargs: dict) -> bool:
     return True
 
 
-def access(args, op: str, **kw: dict) -> bool:
+def access(args, op: str, **kwargs: dict) -> bool:
     return True
 
 
-def buildargs(args, **kw: dict):
-    #    return lib.buildargs(args, **kw)
+def buildargs(args, **kwargs: dict):
+    #    return lib.buildargs(args, **kwargs)
     return None
 
 
-def main(args, **kw):
+def main(args, **kwargs):
     player = kw["player"] if "player" in kw else None
     if player is None:
         io.echo("You do not exist. Go Away!", level="error")

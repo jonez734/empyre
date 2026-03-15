@@ -1,19 +1,19 @@
 from bbsengine6 import io
 
 
-def init(args, **kw):
+def init(args, **kwargs):
     return True
 
 
-def access(args, op, **kw):
+def access(args, op, **kwargs):
     return True
 
 
-def buildargs(args, **kw):
+def buildargs(args, **kwargs):
     return None
 
 
-def main(args, **kw):
+def main(args, **kwargs):
     ship = kw.get("ship")
     if ship is None:
         io.echo("Ship does not exist", level="error")

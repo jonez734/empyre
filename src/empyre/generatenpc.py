@@ -5,13 +5,13 @@ import bbsengine5 as bbsengine
 
 from . import lib
 
-def init(args, **kw):
+def init(args, **kwargs):
     return True
 
-def access(args, op, **kw):
+def access(args, op, **kwargs):
     return True
 
-def main(args:object, **kw):
+def main(args:object, **kwargs):
     player = kw["player"] if "player" in kw else None
 
     bbsengine.title("generate npc")

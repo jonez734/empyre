@@ -2,16 +2,16 @@ from bbsengine6 import io, util
 
 # @since 20220731 created quests.raidpiratecamp.py
 
-def init(args, **kw):
+def init(args, **kwargs):
     return True
 
-def access(args, op, **kw):
+def access(args, op, **kwargs):
     return True
 
-def buildargs(args, **kw):
+def buildargs(args, **kwargs):
     return None
 
-def main(args, **kw):
+def main(args, **kwargs):
     player = kw["player"] if "player" in kw else None
 
     io.echo(f"{player.coins=}", level="debug")

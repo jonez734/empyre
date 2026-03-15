@@ -4,10 +4,10 @@ from bbsengine6 import io, util
 
 from . import lib
 
-def init(args, **kw):
+def init(args, **kwargs):
     return True
 
-def main(args, **kw):
+def main(args, **kwargs):
     player = kw["player"] if "player" in kw else None
     if player is None:
         return False

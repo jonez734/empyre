@@ -2,14 +2,14 @@ from bbsengine6 import io
 
 from .. import lib as libempyre
 
-def init(args, **kw):
+def init(args, **kwargs):
     return True
 
-def access(args, op, **kw):
+def access(args, op, **kwargs):
     return True
 
-def buildargs(args, **kw):
+def buildargs(args, **kwargs):
     return None
 
-def main(args, **kw):
-    return libempyre.runmodule(args, "main", **kw)
+def main(args, **kwargs):
+    return libempyre.runmodule(args, "main", **kwargs)

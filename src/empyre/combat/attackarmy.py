@@ -2,17 +2,17 @@ import random
 
 from bbsengine6 import io, util
 
-def init(args, **kw):
+def init(args, **kwargs):
     return True
 
-def access(args, op, **kw):
+def access(args, op, **kwargs):
     return True
 
-def buildargs(args, **kw):
+def buildargs(args, **kwargs):
     return None
 
 # @see https://github.com/Pinacolada64/ImageBBS/blob/e9f033af1f0b341d0d435ee23def7120821c3960/v1.2/games/empire6/plus_emp6_combat.lbl#L74
-def main(args, **kw):
+def main(args, **kwargs):
     player = kw["player"] if "player" in kw else None
     if player is None:
         io.echo("You do not exist! Go Away!")

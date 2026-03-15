@@ -2,19 +2,19 @@ from bbsengine6 import io, database, util
 from .. import lib as libempyre
 
 
-def init(args, **kw):
+def init(args, **kwargs):
     return True
 
 
-def access(args, op, **kw):
+def access(args, op, **kwargs):
     return True
 
 
-def buildargs(args, **kw):
+def buildargs(args, **kwargs):
     return None
 
 
-def main(args, **kw):
+def main(args, **kwargs):
     player = kw["player"] if "player" in kw else None
     ship = kw["ship"] if "ship" in kw else None
 
@@ -24,7 +24,7 @@ def main(args, **kw):
     #    r["value"] = getattr(player, name)
     #    io.echo("{name=} {r['value']=}", level="debug")
 
-    op = libempyre.selectresource(args, "select load resource", player.resources, **kw)
+    op = libempyre.selectresource(args, "select load resource", player.resources, **kwargs)
     if op.status == "cancelled":
         return True
 

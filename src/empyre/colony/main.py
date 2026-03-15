@@ -2,16 +2,16 @@
 
 from bbsengine6 import io, util
 
-def init(args, **kw):
+def init(args, **kwargs):
     return True
 
 def access(args, op, **kwargs):
     return True
 
-def buildargs(args, **kw):
+def buildargs(args, **kwargs):
     return None
 
-def stats(args, **kw):
+def stats(args, **kwargs):
     player = kw["player"] if "player" in kw else None
     if player is None:
         io.echo("you do not exist! go away!")
@@ -31,7 +31,7 @@ def stats(args, **kw):
     io.echo(f"Navigators: {player.navigator}")
     io.echo(f"Colonies:   {player.colonies}")
 
-def main(args, **kw):
+def main(args, **kwargs):
     player = kw["player"] if "player" in kw else None
     if player is None:
         io.echo("you do not exist! go away!", level="error")

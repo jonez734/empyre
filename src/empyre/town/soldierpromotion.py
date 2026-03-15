@@ -13,7 +13,7 @@ def access(args, op, **kwargs):
 def init(args, **kwargs):
     return True
 
-def buildargs(args, **kw):
+def buildargs(args, **kwargs):
     return None
 
 def main(args, player, **kwargs):

@@ -4,14 +4,14 @@ from bbsengine6 import io, member, util, database
 
 from .. import player as libplayer
 
-def init(args, **kw):
+def init(args, **kwargs):
 ##    io.setvariable("acscolor", "{white}")
     return True
 
-def access(args, op, **kw):
+def access(args, op, **kwargs):
     return True
 
-def buildargs(args, **kw):
+def buildargs(args, **kwargs):
     return None
 
 # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/Empire6.lbl#L69

@@ -3,26 +3,26 @@ from bbsengine6 import io
 from . import lib
 
 
-def init(args, **kw):
+def init(args, **kwargs):
     return True
 
 
-def access(args, op, **kw):
+def access(args, op, **kwargs):
     return True
 
 
-def buildargs(args=None, **kw):
+def buildargs(args=None, **kwargs):
     return None
 
 
-def main(args, **kw):
+def main(args, **kwargs):
     player = kw["player"] if "player" in kw else None
     ship = kw["ship"] if "ship" in kw else None
 
     io.echo("unload")
     if args.debug is True:
         io.echo(f"{player=} {ship=}", level="debug")
-    op = lib.selectmanifestitem(args, **kw)
+    op = lib.selectmanifestitem(args, **kwargs)
     if args.debug is True:
         io.echo(f"{op=}", level="debug")
     if op.status == "cancelled":

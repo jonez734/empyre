@@ -7,7 +7,7 @@ def init(args, **kwargs):
 def access(args, op, **kwargs):
     return True
 
-def buildargs(args, **kw):
+def buildargs(args, **kwargs):
     return None
 
 def main(args, player, **kwargs):

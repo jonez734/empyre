@@ -35,21 +35,21 @@ def displayinvestmentoptions(investmentoptions): # opts, player):
 
     return
 
-def init(args, **kw):
+def init(args, **kwargs):
     return True
 
-def investmentshelp(**kw:dict) -> None:
+def investmentshelp(**kwargs:dict) -> None:
     player = kw["player"] if "player" in kw else None
     investmentoptions = buildinvestmentoptions(player)
     return displayinvestmentoptions(investmentoptions)
 
-def access(args, op, **kw):
+def access(args, op, **kwargs):
     return True
 
-def buildargs(args, **kw):
+def buildargs(args, **kwargs):
     return None
 
-def main(args, **kw):
+def main(args, **kwargs):
     player = kw["player"] if "player" in kw else None
 
     util.heading("investments")

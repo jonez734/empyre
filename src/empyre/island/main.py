@@ -17,7 +17,7 @@ def help(**kwargs):
     io.echo("[S]et sail to mainland")
 
 # @see mdl.emp.delx3.txt#L337
-def main(args, **kw):
+def main(args, **kwargs):
     player = kw["player"] if "player" in kw else None
     
     done = False

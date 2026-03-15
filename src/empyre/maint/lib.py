@@ -1,4 +1,4 @@
 from .. import lib as libempyre
 
-def runmodule(args, modulename, **kw):
-    return libempyre.runmodule(args, f"maint.{modulename}", **kw)
+def runmodule(args, modulename, **kwargs):
+    return libempyre.runmodule(args, f"maint.{modulename}", **kwargs)

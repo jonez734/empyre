@@ -12,7 +12,7 @@ def buildargs(args, **kwargs):
     return None
 
 # @see empire6/plus_emp6_tourney.lbl#L2
-def main(args, **kw):
+def main(args, **kwargs):
     player = kw["player"] if "player" in kw else None
     if player is None:
         io.echo("You do not exist! Go Away!")

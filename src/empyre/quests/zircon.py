@@ -119,14 +119,14 @@ def zircon8(player):
         player.cannons += 6
     return gifts
 
-def init(args, **kw):
+def init(args, **kwargs):
     return True
 
-def access(args, op, **kw):
+def access(args, op, **kwargs):
     return True
 
 # @see https://github.com/Pinacolada64/ImageBBS/blob/e9f033af1f0b341d0d435ee23def7120821c3960/v1.2/games/empire6/mdl.emp.delx3.txt#L362
-def main(args, **kw):
+def main(args, **kwargs):
     player = kw["player"] if "player" in kw else None
 
 #    filepath = bbsengine.buildfilepath(lib.QUESTDIR, "zircon-intro.txt")

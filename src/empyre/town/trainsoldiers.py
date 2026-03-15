@@ -11,7 +11,7 @@ def init(args, **kwargs):
 def access(args, op, **kwargs):
     return True
 
-def buildargs(args, **kw):
+def buildargs(args, **kwargs):
     return None
 
 # @since 20200830

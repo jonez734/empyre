@@ -30,7 +30,7 @@ def removeplayer(args, player):
     else:
         io.echo("aborted.")
 
-def removeship(args, player, **kw):
+def removeship(args, player, **kwargs):
     sql = "select count(name) from empyre.ship"
     dbh = database.connect(args)
     cur = dbh.cursor()

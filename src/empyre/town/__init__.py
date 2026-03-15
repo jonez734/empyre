@@ -6,19 +6,19 @@ from . import lib
 
 from .main import *
 
-#def init(args, **kw):
+#def init(args, **kwargs):
 #    return True
 
-#def access(args, op, **kw):
+#def access(args, op, **kwargs):
 #    return True
 
-#def buildargs(args, **kw):
+#def buildargs(args, **kwargs):
 #    return None
 
-#def main(args, **kw):
+#def main(args, **kwargs):
 #    player = kw["player"] if "player" in kw else None
 #    if player is None:
 #        io.echo("You do not exist! Go Away!", level="error")
 #        return False
 
-#    return lib.runmodule(args, "main", **kw)
+#    return lib.runmodule(args, "main", **kwargs)

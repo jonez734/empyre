@@ -3,16 +3,16 @@ import bbsengine6 as bbsengine
 
 from . import lib
 
-def init(args, **kw):
+def init(args, **kwargs):
     return
 
-def access(args, op, **kw):
+def access(args, op, **kwargs):
     return True
 
-def buildargs(args, **kw):
+def buildargs(args, **kwargs):
     return None
 
-def main(args, **kw):
+def main(args, **kwargs):
     bbsengine.util.heading("load ship")
     # query ship name to be loaded
     # grain, serf, noble, navigator

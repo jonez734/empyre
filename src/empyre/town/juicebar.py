@@ -3,10 +3,10 @@ from bbsengine6 import io, database, member
 def init(args, **kwargs):
     return True
 
-def access(args, op, **kw):
+def access(args, op, **kwargs):
     return True
 
-def buildargs(args, **kw):
+def buildargs(args, **kwargs):
     return None
 
 def checkavailable(args, **kwargs):
