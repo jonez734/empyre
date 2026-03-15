@@ -239,70 +239,7 @@ Available quests:
 
 ## Database Schema
 
-### Tables
-
-**empyre.__player**
-- membermoniker (citext, FK to engine.__member)
-- moniker (citext, unique)
-- datelastplayed (timestamptz)
-- datecreated (timestamptz)
-- rank (bigint)
-- previousrank (bigint)
-- datepromoted (timestamptz)
-- turncount (bigint)
-- weatherconditions (bigint)
-- soldierpromotioncount (bigint)
-- combatvictorycount (bigint)
-- beheaded (boolean)
-- training (bigint)
-- taxrate (bigint)
-- resources (jsonb)
-
-**empyre.__ship**
-- moniker (citext, PK)
-- playermoniker (citext, FK to empyre.__player)
-- location (text)
-- status (text)
-- manifest (jsonb)
-- navigator (boolean)
-- kind (text)
-- datedocked (timestamptz)
-- datecreated (timestamptz)
-- createdbymoniker (citext)
-- dateupdated (timestamptz)
-- updatedbymoniker (citext)
-
-**empyre.__island**
-- name (citext, PK)
-- playermoniker (citext, FK)
-- resources (jsonb)
-- status (text)
-- datediscovered (timestamptz)
-- discoveredbymoniker (citext)
-
-**empyre.__colony**
-- name (text, PK)
-- foundermoniker (citext, FK)
-- islandname (citext, FK)
-- resources (jsonb)
-- datefounded (timestamptz)
-- status (text)
-
-**empyre.__newsentry**
-- id (bigserial, PK)
-- message (text)
-- status (text)
-- datecreated (timestamptz)
-- playermoniker (citext)
-- membermoniker (citext)
-
-**empyre.__mercs**
-- teammoniker (text, PK)
-- hiredbymoniker (citext, FK)
-- price (bigint)
-- quantity (bigint)
-- contractstart (timestamptz)
-- contractduration (interval)
+See [empyre-database-schema.spec](../empyre-database-schema.spec) for complete schema documentation including tables and views.
 
 ## Dependencies
 
