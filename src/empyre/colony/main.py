@@ -12,12 +12,12 @@ def buildargs(args, **kwargs):
     return None
 
 def stats(args, **kwargs):
-    player = kw["player"] if "player" in kw else None
+    player = kwargs["player"] if "player" in kwargs else None
     if player is None:
         io.echo("you do not exist! go away!")
         return False
 
-    colony = kw["colony"] if "colony" in kw else None
+    colony = kwargs["colony"] if "colony" in kwargs else None
 
     util.heading("colony stats")
     io.echo(f"{colony.moniker} (#{player.moniker})")
@@ -32,7 +32,7 @@ def stats(args, **kwargs):
     io.echo(f"Colonies:   {player.colonies}")
 
 def main(args, **kwargs):
-    player = kw["player"] if "player" in kw else None
+    player = kwargs["player"] if "player" in kwargs else None
     if player is None:
         io.echo("you do not exist! go away!", level="error")
         return False

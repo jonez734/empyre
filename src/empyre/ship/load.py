@@ -15,8 +15,8 @@ def buildargs(args, **kwargs):
 
 
 def main(args, **kwargs):
-    player = kw["player"] if "player" in kw else None
-    ship = kw["ship"] if "ship" in kw else None
+    player = kwargs["player"] if "player" in kwargs else None
+    ship = kwargs["ship"] if "ship" in kwargs else None
 
     player.save()
     # for name in player.resources.keys():

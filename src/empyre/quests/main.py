@@ -14,7 +14,7 @@ def buildargs(args, **kwargs):
 
 # @see empire6/mdl.emp.delx3.txt#L337
 def main(args, **kwargs):
-    player = kw["player"] if "player" in kw else None
+    player = kwargs["player"] if "player" in kwargs else None
 
     # @see empire6/emp.menu5.txt
     quests = {

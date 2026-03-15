@@ -11,7 +11,7 @@ def init(args=None, **kwargs):
 
 def access(args, op, **kwargs):
     if args.debug is True:
-        ttyio.echo(f"empyre.module.access.100: {args=} {op=} {kw=}", level="debug")
+        ttyio.echo(f"empyre.module.access.100: {args=} {op=} {kwargs=}", level="debug")
     return True
 
 def buildargs(args=None, **kwargs):

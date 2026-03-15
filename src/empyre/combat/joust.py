@@ -13,11 +13,11 @@ def buildargs(args, **kwargs):
 
 # @see empire6/plus_emp6_tourney.lbl#L2
 def main(args, **kwargs):
-    player = kw["player"] if "player" in kw else None
+    player = kwargs["player"] if "player" in kwargs else None
     if player is None:
         io.echo("You do not exist! Go Away!")
         return False
-    otherplayer = kw["otherplayer"] if "otherplayer" in kw else None
+    otherplayer = kwargs["otherplayer"] if "otherplayer" in kwargs else None
     if player.moniker == otherplayer.moniker:
         if io.inputboolean("You cannot joust against yourself! Big mistake! Continue?: ", "N") is True:
             loss = util.diceroll(player.land//2)

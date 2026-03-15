@@ -20,7 +20,7 @@ def buildargs(args, **kwargs):
     return None
 
 def main(args, **kwargs):
-    player = kw["player"] if "player" in kw else None
+    player = kwargs["player"] if "player" in kwargs else None
     if player is None:
         io.echo("You do not exist. Go away!", level="error")
         return False

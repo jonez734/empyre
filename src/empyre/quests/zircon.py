@@ -127,7 +127,7 @@ def access(args, op, **kwargs):
 
 # @see https://github.com/Pinacolada64/ImageBBS/blob/e9f033af1f0b341d0d435ee23def7120821c3960/v1.2/games/empire6/mdl.emp.delx3.txt#L362
 def main(args, **kwargs):
-    player = kw["player"] if "player" in kw else None
+    player = kwargs["player"] if "player" in kwargs else None
 
 #    filepath = bbsengine.buildfilepath(lib.QUESTDIR, "zircon-intro.txt")
 #    ttyio.echo("filepath=%r" % (filepath), level="debug")

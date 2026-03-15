@@ -8,11 +8,11 @@ def init(args, **kwargs):
     return True
 
 def main(args, **kwargs):
-    player = kw["player"] if "player" in kw else None
+    player = kwargs["player"] if "player" in kwargs else None
     if player is None:
         return False
 
-    otherplayer = kw["otherplayer"] if "otherplayer" in kw else None
+    otherplayer = kwargs["otherplayer"] if "otherplayer" in kwargs else None
 
     util.heading("ambush noble")
 

@@ -39,7 +39,7 @@ def init(args, **kwargs):
     return True
 
 def investmentshelp(**kwargs:dict) -> None:
-    player = kw["player"] if "player" in kw else None
+    player = kwargs["player"] if "player" in kwargs else None
     investmentoptions = buildinvestmentoptions(player)
     return displayinvestmentoptions(investmentoptions)
 
@@ -50,7 +50,7 @@ def buildargs(args, **kwargs):
     return None
 
 def main(args, **kwargs):
-    player = kw["player"] if "player" in kw else None
+    player = kwargs["player"] if "player" in kwargs else None
 
     util.heading("investments")
 

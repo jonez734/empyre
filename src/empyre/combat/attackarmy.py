@@ -13,12 +13,12 @@ def buildargs(args, **kwargs):
 
 # @see https://github.com/Pinacolada64/ImageBBS/blob/e9f033af1f0b341d0d435ee23def7120821c3960/v1.2/games/empire6/plus_emp6_combat.lbl#L74
 def main(args, **kwargs):
-    player = kw["player"] if "player" in kw else None
+    player = kwargs["player"] if "player" in kwargs else None
     if player is None:
         io.echo("You do not exist! Go Away!")
         return False
 
-    otherplayer = kw["otherplayer"] if "otherplayer" in kw else None
+    otherplayer = kwargs["otherplayer"] if "otherplayer" in kwargs else None
     if otherplayer is None:
         io.echo("Your oponent does not exist!")
         return False

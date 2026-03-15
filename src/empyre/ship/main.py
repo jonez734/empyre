@@ -84,7 +84,7 @@ def main(args, **kwargs):
             return True
 
     player = kwargs.get("player", None)
-    #    location = kw["location"] if "location" in kw else "mainland"
+    #    location = kwargs["location"] if "location" in kwargs else "mainland"
     if player is None:
         io.echo("You do not exist! Go Away!", level="error")
         return False

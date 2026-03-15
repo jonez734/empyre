@@ -12,7 +12,7 @@ def access(args, op, **kwargs):
     return True
 
 def main(args:object, **kwargs):
-    player = kw["player"] if "player" in kw else None
+    player = kwargs["player"] if "player" in kwargs else None
 
     bbsengine.title("generate npc")
     lib.setbottombar(args, player, "generate npc")

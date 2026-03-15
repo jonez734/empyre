@@ -18,7 +18,7 @@ def help(**kwargs):
 
 # @see mdl.emp.delx3.txt#L337
 def main(args, **kwargs):
-    player = kw["player"] if "player" in kw else None
+    player = kwargs["player"] if "player" in kwargs else None
     
     done = False
     while not done:

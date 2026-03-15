@@ -46,7 +46,7 @@ def main(args, **kwargs):
     #        if player is None:
     #            return False
 
-    #    player = kw["player"] if "player" in kw else None
+    #    player = kwargs["player"] if "player" in kwargs else None
     #    if player is None:
     #        io.echo("You do not exist! Go Away!")
     #        return False

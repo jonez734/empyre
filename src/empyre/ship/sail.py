@@ -17,11 +17,11 @@ def buildargs(args, **kwargs: dict):
 
 
 def main(args, **kwargs):
-    player = kw["player"] if "player" in kw else None
+    player = kwargs["player"] if "player" in kwargs else None
     if player is None:
         io.echo("You do not exist. Go Away!", level="error")
         return False
-    ship = kw["ship"] if "ship" in kw else None
+    ship = kwargs["ship"] if "ship" in kwargs else None
     if ship is None:
         io.echo("Your ship does not exist. Go Away!", level="error")
         return False

@@ -14,7 +14,7 @@ def buildargs(args, **kwargs):
 
 
 def main(args, **kwargs):
-    ship = kw.get("ship")
+    ship = kwargs.get("ship")
     if ship is None:
         io.echo("Ship does not exist", level="error")
         return False

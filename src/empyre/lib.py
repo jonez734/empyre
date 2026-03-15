@@ -109,7 +109,7 @@ def setbottombar(args, buf, **kwargs) -> None:
             else:
                 return ""
 
-    screen.setbottombar(buf, rightside, stack=False, **kwargs)
+    screen.setbottombar(buf, rightside, **kwargs)
     # if args.debug is True:
     #    io.echo(f"empyre.setarea.100: {buf=} {stack=} {screen.areastack=}", level="debug")
     return
@@ -188,7 +188,7 @@ def newsentry(
 
 def trade(args, player: object, name: str, **kwargs: dict):
     price = kwargs.get("price", None)
-    # name = kw["name"] if "name" in kw else None
+    # name = kwargs["name"] if "name" in kwargs else None
     emoji = kwargs.get("emoji", "")
     singular = kwargs.get("singular", None)
     plural = kwargs.get("plural", None)
@@ -322,7 +322,7 @@ def inputresourcename(
     verify=None,
     **kwargs,
 ):
-    attrs = kw["attrs"] if "attrs" in kw else None
+    attrs = kwargs["attrs"] if "attrs" in kwargs else None
     completer = completeResourceName(args, attrs)
     return io.inputstring(
         prompt,
@@ -368,9 +368,9 @@ def selectresource(args, title, resources, kind=None, **kwargs):
         def __init__(
             self, args, title: str = "select resource", resources: dict = {}, **kwargs
         ):
-            self.player = kw["player"] if "player" in kw else None
-            self.ship = kw["ship"] if "ship" in kw else None
-            # self.itemclass = kw["itemclass"] if "itemclass" in kw else None
+            self.player = kwargs["player"] if "player" in kwargs else None
+            self.ship = kwargs["ship"] if "ship" in kwargs else None
+            # self.itemclass = kwargs["itemclass"] if "itemclass" in kwargs else None
             self.pagesize: int = 10
             self.terminalwidth: str = io.terminal.width()
             self.title: str = title
@@ -420,7 +420,7 @@ def selectresource(args, title, resources, kind=None, **kwargs):
             )  # number of items on the page in case it doesn't equal pagesize
             return self.items
 
-    player = kw["player"] if "player" in kw else None
+    player = kwargs["player"] if "player" in kwargs else None
     lb = EmpyreResourceListbox(args, "select player resource", resources)
     res = lb.run("edit player resource: ")
     return res
