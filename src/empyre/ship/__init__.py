@@ -1,17 +1,17 @@
 from . import lib
 from bbsengine6 import io, listbox
 
-def init(args, **kwargs) -> bool:
-    return True
+from .main import *
 
-def access(args, op: str, **kwargs) -> bool:
-    return True
+#def init(args, **kwargs) -> bool:
+#    return True
 
-def buildargs(args, **kwargs):
-    return None
+#def access(args, op: str, **kwargs) -> bool:
+#    return True
 
-def main(args, **kwargs):
-    listbox.init()
+#def buildargs(args, **kwargs):
+#    return None
 
-    io.echo(f"empyre.ship.main.100: {kwargs.get('pool')=}", level="debug")
-    return lib.runmodule(args, "main", **kwargs)
+#def main(args, **kwargs):
+#    io.echo(f"empyre.ship.main.100: {kwargs.get('pool')=}", level="debug")
+#    return lib.runmodule(args, "main", **kwargs)

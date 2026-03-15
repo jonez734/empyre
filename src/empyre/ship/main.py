@@ -3,7 +3,6 @@ from bbsengine6 import io, database
 from . import lib as libship
 from .. import lib as libempyre
 
-
 def keyhandler(args, ch, lb):
     currentitem = lb.currentitem
     ship = currentitem.rec
@@ -33,7 +32,7 @@ def buildargs(args=None, **kwargs):
 def main(args, **kwargs):
     io.echo("ships")
 
-    io.echo(f"empyre.ship.main.200: {kwargs.get('pool')=}", level="debug")
+#    io.echo(f"empyre.ship.main.200: {kwargs.get('pool')=}", level="debug")
 
     def _work(conn):
         sql = "select moniker from empyre.ship where location=%s and playermoniker=%s"
@@ -48,7 +47,7 @@ def main(args, **kwargs):
             if ship is None:
                 return True
 
-            io.echo(f"{ship.moniker=}", level="debug")
+#            io.echo(f"{ship.moniker=}", level="debug")
             if ship is None:
                 io.echo("No ship selected")
                 return True
@@ -70,9 +69,7 @@ def main(args, **kwargs):
                     io.echo("Exit")
                     done = True
                 elif ch == "M":
-                    moniker = libship.inputshipname(
-                        args, "ship's moniker:", ship.moniker, **kwargs
-                    )
+                    moniker = libship.inputshipname(args, "ship's moniker:", ship.moniker, **kwargs)
                     if moniker == ship.moniker:
                         io.echo("no change")
                         continue

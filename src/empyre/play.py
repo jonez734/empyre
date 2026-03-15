@@ -77,8 +77,12 @@ def main(args, **kwargs):
     #    for x in ("dock",):# "investments"):
     for x in args.modules:
         io.echo(f"play.100: {x=} {player=}", level="debug")
-        if lib.runmodule(args, x, player=player, **kwargs) is False:
-            io.echo(f"error running submodule {x}", level="error")
+        try:
+            if lib.runmodule(args, x, player=player, **kwargs) is False:
+                io.echo(f"error running submodule {x}", level="error")
+        except Exception  as e:
+            io.echo_traceback("empyre.play.200:", level="error")
+            break
         player.adjust()
         player.save()
 

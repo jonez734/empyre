@@ -4,19 +4,21 @@ from bbsengine6 import io, util
 
 from . import lib
 
-def init(args, **kw):
-    return True
+from .main import *
 
-def access(args, op, **kw):
-    return True
+#def init(args, **kw):
+#    return True
 
-def buildargs(args, **kw):
-    return None
+#def access(args, op, **kw):
+#    return True
 
-def main(args, **kw):
-    player = kw["player"] if "player" in kw else None
-    if player is None:
-        io.echo("You do not exist! Go Away!", level="error")
-        return False
+#def buildargs(args, **kw):
+#    return None
 
-    return lib.runmodule(args, "main", **kw)
+#def main(args, **kw):
+#    player = kw["player"] if "player" in kw else None
+#    if player is None:
+#        io.echo("You do not exist! Go Away!", level="error")
+#        return False
+
+#    return lib.runmodule(args, "main", **kw)

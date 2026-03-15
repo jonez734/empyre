@@ -146,35 +146,21 @@ def _edit(args, mode, ship, **kwargs):
 
     done = False
     while not done:
-        io.echo(
-            f"{{optioncolor}}[N]{{labelcolor}}ame: {{valuecolor}}{ship.moniker}", end=""
-        )
+        io.echo(f"{{optioncolor}}[N]{{labelcolor}}ame: {{valuecolor}}{ship.moniker}", end="")
         if _ship.moniker != ship.moniker:
-            io.echo(
-                f" {{labelcolor}}(was: {{valuecolor}}{_ship.moniker}{{labelcolor}})"
-            )
+            io.echo(f" {{labelcolor}}(was: {{valuecolor}}{_ship.moniker}{{labelcolor}})")
         else:
             io.echo()
 
-        io.echo(
-            f"{{optioncolor}}[O]{{labelcolor}}wner: {{valuecolor}}{ship.player.moniker}",
-            end="",
-        )
+        io.echo(f"{{optioncolor}}[O]{{labelcolor}}wner: {{valuecolor}}{ship.player.moniker}", end="",)
         if _ship.player.moniker != ship.player.moniker:
-            io.echo(
-                f" {{labelcolor}}(was: {{valuecolor}}{_ship.player.moniker}{{labelcolor}})"
-            )
+            io.echo(f" {{labelcolor}}(was: {{valuecolor}}{_ship.player.moniker}{{labelcolor}})")
         else:
             io.echo()
 
-        io.echo(
-            f"{{optioncolor}}[A]{{labelcolor}} Navigator: {{valuecolor}}{ship.navigator}",
-            end="",
-        )
+        io.echo(f"{{optioncolor}}[A]{{labelcolor}} Navigator: {{valuecolor}}{ship.navigator}",end="",)
         if _ship.navigator != ship.navigator:
-            io.echo(
-                f" {{labelcolor}}(was: {{valuecolor}}{_ship.navigator}{{labelcolor}})"
-            )
+            io.echo(f" {{labelcolor}}(was: {{valuecolor}}{_ship.navigator}{{labelcolor}})")
         else:
             io.echo()
 
@@ -191,7 +177,7 @@ def _edit(args, mode, ship, **kwargs):
                 verify=verifyShipNameNotFound,
                 **kwargs,
             )
-            if ship.moniker is None or ship.moniker == "":
+            if moniker is None or ship.moniker == "":
                 io.echo("You must enter a ship name")
                 continue
             ship.moniker = moniker
@@ -208,11 +194,7 @@ def _edit(args, mode, ship, **kwargs):
                 io.echo("'navigator' is not a valid resource.", level="error")
                 continue
             if player.coins < nav["price"]:
-                io.echo(
-                    "You need {} to purchase a navigator".format(
-                        util.pluralize(nav["price"], "coin", "coins", **nav)
-                    )
-                )
+                io.echo("You need {} to purchase a navigator".format(util.pluralize(nav["price"], "coin", "coins", **nav)))
             else:
                 player.coins -= nav["price"]
                 ship.navigator = True
