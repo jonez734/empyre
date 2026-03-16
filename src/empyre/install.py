@@ -1,10 +1,10 @@
-from bbsengine6 import io, database, util
+from bbsengine6 import io, database, util, member
 
 def init(args, **kwargs):
     return True
 
 def access(args, op, **kwargs):
-    return True
+    return member.checkflag(args, "SYSOP", **kwargs)
 
 def buildargs(args, **kwargs):
     return None
@@ -18,7 +18,7 @@ def main(args, **kwargs):
             if database.schemaexists(args, "empyre") is False:
                 io.echo(" FAIL ", level="error")
                 return False
-            for f in ("player", "ships", "colony", "island":
+            for f in ("player", "ships", "colony", "island"):
                 if database.importsql(args, f) is False:
                     io.echo(" FAIL ", level="error")
                     return False

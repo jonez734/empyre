@@ -328,13 +328,51 @@ class Player(object):
     # @since 20240706 new
     def setresourcevalue(self, name: str, value) -> bool:
         if name in self.resources:
+            res = self.resources[name]
+            if "value" in res:
+                expected_type = type(res["value"])
+            elif "default" in res:
+                expected_type = type(res["default"])
+            else:
+                expected_type = int
+
+            if expected_type in (int, float) and value is not None:
+                try:
+                    value = int(value)
+                except (ValueError, TypeError):
+                    io.echo(f"invalid value for {name}: must be a number", level="error")
+                    return False
+                if value < 0:
+                    io.echo(f"negative values not allowed for {name}", level="error")
+                    value = 0
+
             self.resources[name]["value"] = value
+            setattr(self, name, value)
             return True
         return False
 
     def setattributevalue(self, name: str, value) -> bool:
         if name in self.attributes:
+            attr = self.attributes[name]
+            if "value" in attr:
+                expected_type = type(attr["value"])
+            elif "default" in attr:
+                expected_type = type(attr["default"])
+            else:
+                expected_type = int
+
+            if expected_type in (int, float) and value is not None:
+                try:
+                    value = int(value)
+                except (ValueError, TypeError):
+                    io.echo(f"invalid value for {name}: must be a number", level="error")
+                    return False
+                if value < 0:
+                    io.echo(f"negative values not allowed for {name}", level="error")
+                    value = 0
+
             self.attributes[name]["value"] = value
+            setattr(self, name, value)
             return True
         return False
 
@@ -369,7 +407,12 @@ class Player(object):
                 f = io.inputstring
                 t = "str"
             val = f(f"{{var:promptcolor}}{pk} ({t}): {{var:inputcolor}}", val)
-            setattr(self, pk, val)
+            if pk in self.resources:
+                self.setresourcevalue(pk, val)
+            elif pk in self.attributes:
+                self.setattributevalue(pk, val)
+            else:
+                io.echo(f"invalid attribute: {pk}", level="error")
         return
 
     def buildrec(self, **kwargs):
@@ -470,12 +513,22 @@ class Player(object):
                 f"{{var:labelcolor}}saving {{var:valuecolor}}{self.moniker}{{var:labelcolor}}: ",
                 end="",
             )
-            with database.connect(self.args, pool=self.pool) as conn:
-                self.sync()
-                self.update(conn)
-                conn.commit()
-            io.echo(" ok ", level="ok")
-            return True
+            conn = None
+            try:
+                conn = database.connect(self.args, pool=self.pool)
+                with conn:
+                    self.sync()
+                    self.update(conn)
+                io.echo(" ok ", level="ok")
+                return True
+            except Exception as e:
+                io.echo(f" save failed: {e}", level="error")
+                if conn is not None:
+                    try:
+                        conn.rollback()
+                    except Exception:
+                        pass
+                return False
 
     def status(self):
         MAX_LABEL_WIDTH = 12
@@ -605,10 +658,10 @@ class Player(object):
         ) // 40  # py
 
         a = 0
-        if soldierpay < 1 and soldiers >= 500:
+        if soldierpay < 1 and self.soldiers >= 500:
             io.echo("soldierpay < 1, soldiers >= 500", level="debug")
-            a += soldiers // 5
-            io.echo("adjust.100: a=%d soldiers=%d" % (a, soldiers), level="debug")
+            a += self.soldiers // 5
+            io.echo("adjust.100: a=%d soldiers=%d" % (a, self.soldiers), level="debug")
         #        io.echo("adjust.160: a=%d" % (a), level="debug")
 
         if self.nobles < 1:

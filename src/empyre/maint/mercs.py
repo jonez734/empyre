@@ -6,7 +6,7 @@ def init(args, **kwargs):
     return True
 
 def access(args, op, **kwargs):
-    return True
+    return member.checkflag(args, "SYSOP", **kwargs)
 
 def buildargs(args, **kwargs):
     return None

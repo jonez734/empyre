@@ -244,6 +244,9 @@ def trade(args, player: object, name: str, **kwargs: dict):
             io.echo("{/all}")
             if newvalue < 0:
                 newvalue = 0
+            if name not in player.resources:
+                io.echo(f"invalid resource: {name}", level="error")
+                continue
             setattr(player, name, newvalue)
             io.echo(f"player.{name}={newvalue}{{/all}}", level="debug")
         elif ch == "C":
@@ -274,6 +277,9 @@ def trade(args, player: object, name: str, **kwargs: dict):
             v = getattr(player, name)
             v += quantity
 
+            if name not in player.resources:
+                io.echo(f"invalid resource: {name}", level="error")
+                continue
             setattr(player, name, int(v))
             player.coins -= quantity * price
             player.save()
@@ -288,6 +294,9 @@ def trade(args, player: object, name: str, **kwargs: dict):
                 break
             v = getattr(player, name)
             v -= quantity
+            if name not in player.resources:
+                io.echo(f"invalid resource: {name}", level="error")
+                continue
             setattr(player, name, int(v))
             player.coins += quantity * price
             io.echo("Sold!", level="success")

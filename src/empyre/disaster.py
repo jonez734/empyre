@@ -18,6 +18,10 @@ def _handle_damage(player, resourcename, amount):
         io.echo(f"Player {player.moniker} does not have the resource {resourcename}", level="warn")
         return False
 
+    if resourcename not in player.resources:
+        io.echo(f"Invalid resource: {resourcename}", level="error")
+        return False
+
     current_value = getattr(player, resourcename)
     new_value = current_value - amount
     setattr(player, resourcename, new_value)

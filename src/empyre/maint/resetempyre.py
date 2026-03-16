@@ -1,10 +1,10 @@
-from bbsengine6 import io, database, util
+from bbsengine6 import io, database, util, member
 
 def init(args, **kwargs):
     return True
 
 def access(args, op, **kwargs):
-    return True
+    return member.checkflag(args, "SYSOP", **kwargs)
 
 def buildargs(args=None, **kwargs):
     return None

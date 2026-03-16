@@ -1,6 +1,12 @@
-from bbsengine6 import io, database
+from bbsengine6 import io, database, member
 
 from . import lib
+
+def init(args, **kwargs):
+    return True
+
+def access(args, op, **kwargs):
+    return member.checkflag(args, "SYSOP", **kwargs)
 
 def main(args, player):
     dbh = database.connect(args)
