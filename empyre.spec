@@ -239,7 +239,7 @@ Available quests:
 
 ## Database Schema
 
-See [empyre-database-schema.spec](../empyre-database-schema.spec) for complete schema documentation including tables and views.
+See [empyre-database-schema.spec](empyre-database-schema.spec) for complete schema documentation including tables and views.
 
 ## Dependencies
 
