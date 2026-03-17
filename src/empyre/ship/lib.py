@@ -442,6 +442,7 @@ def selectship(args: argparse.Namespace, **kwargs: Any) -> Any:
 
         def _decomm_ship(self) -> Optional[ListboxResult]:
             if self.currentitem is None:
+                io.echo(f"{{bell}}")
                 return ListboxResult("cancelled")
             ship = self.currentitem.data["ship"]
             if ship.status == "decommissioned":
