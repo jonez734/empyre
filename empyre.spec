@@ -17,6 +17,7 @@ empyre/src/empyre/
 ├── play.py                 # Main game loop - turn processing
 ├── startup.py              # Initialization and database setup
 ├── instructions.py         # Display game instructions
+├── NEW_PLAYER_QUICKSTART.md # New player quickstart guide
 ├── playerstatus.py         # Display player status
 ├── shownews.py             # Display game news
 ├── weather.py              # Weather system module
