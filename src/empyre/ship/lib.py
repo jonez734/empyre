@@ -11,7 +11,6 @@ from bbsengine6.database import _table_identifier
 from bbsengine6.listbox import Listbox, ListboxItem, ListboxResult
 from bbsengine6.listboxcursor import ListboxCursor
 from .. import lib as libempyre
-from ..player import inputplayername, verifyPlayerNameNotFound
 from . import manifest
 
 MAXSHIPYARDS: int = 10
@@ -97,7 +96,7 @@ def load(args: argparse.Namespace, moniker: str, **kwargs) -> Optional[Any]:
                 io.echo(f"empyre.ship.load.200: {moniker=} not found", level="info")
                 return None
             rec = cur.fetchone()
-            ship = Ship(args, moniker, **kwargs)
+            ship = Ship(args, **kwargs)
             for f in (
                 "moniker",
                 "kind",
