@@ -1,9 +1,10 @@
 # @since 20250226
-import copy
 import argparse
+import copy
 import random
 from datetime import datetime
 
+import dateutil.tz
 from bbsengine6 import database, io, member, util
 from bbsengine6.listboxcursor import ListboxCursor
 from bbsengine6.listbox import ListboxItem
@@ -339,7 +340,9 @@ class Player(object):
                 try:
                     value = int(value)
                 except (ValueError, TypeError):
-                    io.echo(f"invalid value for {name}: must be a number", level="error")
+                    io.echo(
+                        f"invalid value for {name}: must be a number", level="error"
+                    )
                     return False
                 if value < 0:
                     io.echo(f"negative values not allowed for {name}", level="error")
@@ -364,7 +367,9 @@ class Player(object):
                 try:
                     value = int(value)
                 except (ValueError, TypeError):
-                    io.echo(f"invalid value for {name}: must be a number", level="error")
+                    io.echo(
+                        f"invalid value for {name}: must be a number", level="error"
+                    )
                     return False
                 if value < 0:
                     io.echo(f"negative values not allowed for {name}", level="error")
@@ -1072,13 +1077,13 @@ def create(args, **kwargs):
         p = Player(args, pool=pool)
         p.moniker = playermoniker
         p.membermoniker = membermoniker
-        p.datecreated = "now()"
+        p.datecreated = datetime.now(dateutil.tz.tzlocal())
 
         io.echo(f"empyre.player.create.100: {p.attributes=}", level="debug")
         rec = p.buildrec()
         rec["moniker"] = playermoniker
         rec["membermoniker"] = membermoniker
-        rec["datecreated"] = "now()"
+        rec["datecreated"] = datetime.now(dateutil.tz.tzlocal())
         io.echo(f"{rec=}", level="debug")
 
         database.insert(

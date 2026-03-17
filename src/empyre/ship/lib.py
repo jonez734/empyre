@@ -1,7 +1,9 @@
 import argparse
 import copy
+from datetime import datetime
 from typing import Any, Optional
 
+import dateutil.tz
 from psycopg import sql
 
 from bbsengine6 import database, io, member, util
@@ -19,11 +21,11 @@ ATTRIBUTES = {
     "moniker": {"default": None},
     "navigator": {"default": False},
     "membermoniker": {"default": None},
-    "datedocked" : {"default":None},
-    "datecreated": {"default":None},
-    "status":      {"default":None},
-    "manifest":    {"default":{}},
-    "kind":        {"default":"cargo"},
+    "datedocked": {"default": None},
+    "datecreated": {"default": None},
+    "status": {"default": None},
+    "manifest": {"default": {}},
+    "kind": {"default": "cargo"},
 }
 
 
@@ -78,6 +80,7 @@ class Ship:
             self.player.save()
         return True
 
+
 def load(args: argparse.Namespace, moniker: str, **kwargs) -> Optional[Any]:
 
     def _work(conn: Any) -> Optional[Any]:
@@ -116,6 +119,7 @@ def load(args: argparse.Namespace, moniker: str, **kwargs) -> Optional[Any]:
             return _work(conn)
     return _work(conn)
 
+
 def build(args: argparse.Namespace, **kwargs: Any) -> Any:
     io.echo(f"empyre.ship.lib.build.100: {kwargs=}", level="debug")
     player = kwargs.get("player", None)
@@ -150,9 +154,9 @@ def build(args: argparse.Namespace, **kwargs: Any) -> Any:
         s["playermoniker"] = player.moniker
         for k in ("manifest", "location", "status", "kind", "navigator"):
             s[k] = getattr(ship, k)
-        s["datecreated"] = "now()"
+        s["datecreated"] = datetime.now(dateutil.tz.tzlocal())
         s["createdbymoniker"] = member.getcurrentmoniker(args, **kwargs)
-        s["datedocked"] = "now()"
+        s["datedocked"] = datetime.now(dateutil.tz.tzlocal())
         res = database.insert(
             args,
             "empyre.__ship",
@@ -385,7 +389,9 @@ def selectship(args: argparse.Namespace, **kwargs: Any) -> Any:
                 create(self.args, player=self.player, pool=self.pool)
                 return ListboxResult("added")
             else:
-                io.echo(f"You need more shipyards to build another ship. You have {maxships} capacity ({totalships} ships).")
+                io.echo(
+                    f"You need more shipyards to build another ship. You have {maxships} capacity ({totalships} ships)."
+                )
                 return ListboxResult("cancelled")
 
         def _edit_ship(self) -> Optional[ListboxResult]:
@@ -426,7 +432,9 @@ def selectship(args: argparse.Namespace, **kwargs: Any) -> Any:
             if not ship.manifest:
                 io.echo("That ship has nothing to unload.")
                 return ListboxResult("cancelled")
-            runmodule(self.args, "unload", ship=ship, player=self.player, pool=self.pool)
+            runmodule(
+                self.args, "unload", ship=ship, player=self.player, pool=self.pool
+            )
             return ListboxResult("selected", self.currentitem)
 
         def _decomm_ship(self) -> Optional[ListboxResult]:
@@ -587,8 +595,8 @@ def create(args: argparse.Namespace, **kwargs: Any) -> Optional[Ship]:
     ship.navigator = kwargs.get("navigator", False)
     ship.location = kwargs.get("location", "mainland")
     ship.status = kwargs.get("status", "build")
-    ship.datedocked = "now()"
-    ship.datecreated = "now()"
+    ship.datedocked = datetime.now(dateutil.tz.tzlocal())
+    ship.datecreated = datetime.now(dateutil.tz.tzlocal())
 
     s = {}
     s["moniker"] = ship.moniker
@@ -598,9 +606,9 @@ def create(args: argparse.Namespace, **kwargs: Any) -> Optional[Ship]:
     s["status"] = ship.status
     s["kind"] = ship.kind
     s["navigator"] = ship.navigator
-    s["datecreated"] = "now()"
+    s["datecreated"] = datetime.now(dateutil.tz.tzlocal())
     s["createdbymoniker"] = member.getcurrentmoniker(args, **kwargs)
-    s["datedocked"] = "now()"
+    s["datedocked"] = datetime.now(dateutil.tz.tzlocal())
 
     try:
         conn = kwargs.get("conn", None)

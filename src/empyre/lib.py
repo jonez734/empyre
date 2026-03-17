@@ -4,7 +4,9 @@ import math
 import random
 import argparse
 from argparse import Namespace
+from datetime import datetime
 
+import dateutil.tz
 from enum import Enum
 
 from . import player as libplayer
@@ -101,7 +103,7 @@ def setbottombar(args, buf, **kwargs) -> None:
 
             coinres = player.getresource("coins")
             coinres["emoji"] = ""
-#            io.echo("empyre.setbottombar.rightside: trace", level="debug")
+            #            io.echo("empyre.setbottombar.rightside: trace", level="debug")
             return f"empyre {{black}}|{{bottombarcolor}} {util.pluralize(turnremain, 'turn remains', 'turns remain')} {{black}}|{{bottombarcolor}} {isdirty}{player.moniker} {{black}}|{{bottombarcolor}} {util.pluralize(player.coins, **coinres)}{debug}"
         else:
             if debug is True:
@@ -176,7 +178,7 @@ def newsentry(
     #    ne["playerid"] = player.id
     ne["playermoniker"] = player.moniker
     ne["membermoniker"] = player.membermoniker
-    ne["datecreated"] = "now()"
+    ne["datecreated"] = datetime.now(dateutil.tz.tzlocal())
     if args.debug is True:
         io.echo(f"{ne=}", level="debug")
     neid = database.insert(args, "empyre.__newsentry", ne, returnid=True)
@@ -396,8 +398,11 @@ def selectresource(args, title, resources, kind=None, **kwargs):
                     continue
                 self.data.append(
                     EmpyreResourceListboxItem(
-                        name, resource, width=self.terminalwidth,
-                        player=self.player, ship=self.ship
+                        name,
+                        resource,
+                        width=self.terminalwidth,
+                        player=self.player,
+                        ship=self.ship,
                     )
                 )
 
