@@ -1,6 +1,6 @@
 from bbsengine6 import io
 
-from . import lib
+from . import manifest
 
 
 def init(args, **kwargs):
@@ -22,14 +22,14 @@ def main(args, **kwargs):
     io.echo("unload")
     if args.debug is True:
         io.echo(f"{player=} {ship=}", level="debug")
-    op = lib.selectmanifestitem(args, **kwargs)
+    op = manifest.select_item(args, ship, player, **kwargs)
     if args.debug is True:
         io.echo(f"{op=}", level="debug")
-    if op.status == "cancelled":
+    if op.status == "cancelled" or op.status == "noitems":
         return True
 
     resourcename = op.item.pk
-    manifestentry = ship.getmanifestentry(resourcename)
+    manifestentry = manifest.get_entry(ship, resourcename)
     if type(manifestentry) is int:
         manifestentry = {"value": manifestentry}
     manifestentryvalue = manifestentry["value"]

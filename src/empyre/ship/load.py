@@ -25,7 +25,8 @@ def main(args, **kwargs):
     #    io.echo("{name=} {r['value']=}", level="debug")
 
     op = libempyre.selectresource(args, "select load resource", player.resources, **kwargs)
-    if op.status == "cancelled":
+    io.echo(f"empyre.ship.load.100: {op=}", level="debug")
+    if op.status == "cancelled" or op.status == "noitems":
         return True
 
     resourcename = op.item.pk

@@ -355,15 +355,19 @@ def selectresource(args, title, resources, kind=None, **kwargs):
             self.height: int = height
             self.width: int = width
             self.resource: dict = resource
-            value = resource.get("value", resource.get("default"))
+            player = kwargs.get("player")
+            ship = kwargs.get("ship")
+            player_qty = getattr(player, name, 0) if player else 0
+            ship_qty = ship.manifest.get(name, {}).get("value", 0) if ship else 0
+            value = player_qty
             left: str = f"{self.pk}"
-            #            io.echo(f"{self.res=}", level="debug")
-            if isinstance(value, int) is True:
-                right: str = f"{value:>6n}"  # {util.pluralize(value, **self.res)}"
+            if isinstance(value, (int, float)) is True:
+                right: str = f"{player_qty:>4n}/{ship_qty:>4n}"
             else:
                 right: str = f"{value:>6s}"
             rightlen: int = len(right)
-            self.label: str = f"{left.ljust(self.width - rightlen - 10)}{right}"  # %s%s {{/all}}{{var:acscolor}}{{acs:vline}}" % (left.ljust(width-rightlen-4), right)
+            self.label: str = f"{left.ljust(self.width - rightlen - 10)}{right}"
+            self.disabled = player_qty == 0
 
         def display(self):
             io.echo(
@@ -388,24 +392,14 @@ def selectresource(args, title, resources, kind=None, **kwargs):
 
             self.data = []
             for name, resource in self.resources.items():
-                # io.echo(f"{name=} {resource=}", level="debug")
-                if self.filter is None:
-                    self.data.append(
-                        EmpyreResourceListboxItem(
-                            name, resource, width=self.terminalwidth
-                        )
+                if resource.get("ship") is None:
+                    continue
+                self.data.append(
+                    EmpyreResourceListboxItem(
+                        name, resource, width=self.terminalwidth,
+                        player=self.player, ship=self.ship
                     )
-                else:
-                    ship = res["ship"] if "ship" in res else None
-                    if ship is not None:
-                        self.data.append(
-                            EmpyreResourceListboxItem(
-                                name,
-                                res=res,
-                                width=self.terminalwidth,
-                                player=self.player,
-                            )
-                        )
+                )
 
             super().__init__(
                 args,

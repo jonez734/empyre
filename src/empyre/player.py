@@ -168,7 +168,7 @@ RESOURCES = {
         "emoji": ":dragon:",
     },
     "horses": {
-        "default": 50,
+        "default": 0,
         "emoji": ":horse:",
         "ship": "cargo",
         "singular": "horse",
@@ -231,7 +231,6 @@ class Player(object):
 
             self.attributes = copy.copy(ATTRIBUTES)
             for name, data in self.attributes.items():
-                # io.echo(f"attribute {name} {data['default']=}", level="debug")
                 setattr(self, name, data["default"])
                 self.attributes[name]["value"] = data["default"]
 

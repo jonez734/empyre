@@ -1,4 +1,5 @@
 import argparse
+import copy
 from typing import Any, Optional
 
 from psycopg import sql
@@ -8,59 +9,47 @@ from bbsengine6.database import _table_identifier
 from bbsengine6.listbox import Listbox, ListboxItem, ListboxResult
 from bbsengine6.listboxcursor import ListboxCursor
 from .. import lib as libempyre
+from . import manifest
+
+
+from datetime import datetime
 
 MAXSHIPYARDS: int = 10
 SHIPSPERSHIPYARD: int = 10
+
+ATTRIBUTES = {
+    "moniker": {"default": None},
+    "navigator": {"default": False},
+    "membermoniker": {"default": None},
+    "datedocked" : {"default":None},
+    "datecreated": {"default":None},
+    "status":      {"default":None},
+    "manifest":    {"default":{}},
+    "kind":        {"default":"cargo"},
+}
 
 
 class Ship:
     def __init__(self, args: argparse.Namespace, **kwargs: Any) -> None:
         self.args: argparse.Namespace = args
         self.player: Any = kwargs.get("player", None)
-        self.location: str = kwargs.get("location", "mainland")
-        self.moniker: Optional[str] = None
-        self.kind: str = "cargo"
-        self.manifest: dict = {}
-        self.navigator: bool = False
-        self.status: Optional[str] = None
-        self.datecreated: Optional[str] = None
-        self.createdbymoniker: Optional[str] = None
-        self.datedocked: Optional[str] = None
-        self.datedockedlocal: Optional[str] = None
-        self.playermoniker: Optional[str] = None
+#        self.location: str = kwargs.get("location", "mainland")
+#        self.moniker: Optional[str] = None
+#        self.kind: str = "cargo"
+#        self.manifest: dict = {}
+#        self.navigator: bool = False
+#        self.status: Optional[str] = None
+#        self.datecreated: Optional[str] = None
+#        self.createdbymoniker: Optional[str] = None
+#        self.datedocked: Optional[datetime] = None
+#        self.datedockedlocal: Optional[datetime] = None
+#        self.playermoniker: Optional[str] = None
         self.pool: Any = kwargs.get("pool", None)
 
-    def load(self, moniker: str) -> bool:
-        def _work(conn: Any) -> bool:
-            with database.cursor(conn) as cur:
-                query = sql.SQL("select * from {} where moniker=%s").format(
-                    _table_identifier("empyre.ship")
-                )
-                dat = (moniker,)
-                cur.execute(query, dat)
-                if cur.rowcount == 0:
-                    return False
-                rec = cur.fetchone()
-                for f in (
-                    "moniker",
-                    "kind",
-                    "manifest",
-                    "navigator",
-                    "location",
-                    "status",
-                    "datedocked",
-                    "datedockedlocal",
-                    "playermoniker",
-                ):
-                    setattr(self, f, rec[f])
-                return True
-
-        pool = self.pool
-        if pool is None:
-            io.echo(f"Ship.load.100: {pool=}", level="error")
-            return False
-        with database.connect(self.args, pool=pool) as conn:
-            return _work(conn)
+        self.attributes = copy.copy(ATTRIBUTES)
+        for name, data in self.attributes.items():
+            setattr(self, name, data["default"])
+            self.attributes[name]["value"] = data["default"]
 
     def save(self, commit: bool = True, moniker: Optional[str] = None) -> bool:
         io.echo(f"saving ship {self.moniker}", level="debug")
@@ -93,13 +82,6 @@ class Ship:
             database.commit(self.args, pool=self.pool)
         return True
 
-    def unload(self) -> bool:
-        io.echo("Ship unload not yet implemented", level="debug")
-        return True
-
-    def getmanifestentry(self, name: str) -> Optional[Any]:
-        return self.manifest[name] if name in self.manifest else None
-
     def adjust(self) -> bool:
         c = count(self.args, self.player.moniker, pool=self.pool)
 
@@ -109,6 +91,57 @@ class Ship:
             self.player.save()
         return True
 
+def load(args: argparse.Namespace, moniker: str, **kwargs) -> Optional[Any]:
+    pool = kwargs.get("pool", None)
+    if pool is None:
+        io.echo(f"empyre.ship.load.100: {pool=}", level="error")
+        return None
+
+    def _work(conn: Any) -> Optional[Any]:
+        with database.cursor(conn) as cur:
+            query = sql.SQL("select * from {} where moniker=%s").format(
+                _table_identifier("empyre.ship")
+            )
+            dat = (moniker,)
+            cur.execute(query, dat)
+            if cur.rowcount == 0:
+                io.echo(f"empyre.ship.load.200: {moniker=} not found", level="info")
+                return None
+            rec = cur.fetchone()
+            ship = Ship(args, pool=pool)
+            for f in (
+                "moniker",
+                "kind",
+                "manifest",
+                "navigator",
+                "location",
+                "status",
+                "datedocked",
+                "datedockedlocal",
+                "playermoniker",
+            ):
+                setattr(ship, f, rec.get(f))
+            return ship
+
+    with database.connect(args, pool=pool) as conn:
+        return _work(conn)
+
+def build(args, rec: dict, **kwargs) -> Ship:
+    s = Ship(args, **kwargs)  # Player(args, **kwargs)
+    for name, data in s.attributes.items():
+        v = rec.get(name, data["default"])
+        if v is None:
+            v = data["default"]
+        setattr(p, name, v)
+
+    for name, data in p.resources.items():
+        v = rec["resources"].get(name, data["default"])["value"]
+        if v is None:
+            v = data["default"]
+
+        setattr(s, name, v)
+
+    return s
 
 def build(args: argparse.Namespace, **kwargs: Any) -> Any:
     io.echo(f"empyre.ship.lib.build.100: {kwargs=}", level="debug")
@@ -228,10 +261,10 @@ def _edit(args: argparse.Namespace, mode: str, ship: Ship, **kwargs: Any) -> Shi
             ship.moniker = moniker
         elif ch == "L":
             io.echo("Load")
-            ship.load()
+            runmodule(args, "load", ship=ship, player=player, pool=kwargs.get("pool"))
         elif ch == "U":
             io.echo("Unload")
-            ship.unload()
+            runmodule(args, "unload", ship=ship, player=player, pool=kwargs.get("pool"))
         elif ch == "A":
             io.echo("Navigator")
             nav = player.getresource("navigators")
@@ -356,7 +389,13 @@ def selectship(args: argparse.Namespace, **kwargs: Any) -> Any:
         def __init__(self, args: argparse.Namespace, title: str, **kwargs: Any) -> None:
             self.player = kwargs.get("player", None)
             self.pool = kwargs.get("pool", None)
-            custom_keys = {"KEY_INSERT": self._add_ship}
+            custom_keys = {
+                "KEY_INSERT": self._add_ship,
+                "e": self._edit_ship,
+                "KEY_DELETE": self._decomm_ship,
+                "s": self._sail_ship,
+                "l": self._load_ship,
+            }
             super().__init__(args, title=title, custom_keys=custom_keys, **kwargs)
 
         def _add_ship(self) -> Optional[ListboxResult]:
@@ -371,10 +410,62 @@ def selectship(args: argparse.Namespace, **kwargs: Any) -> Any:
                 build(self.args, player=self.player, pool=self.pool)
                 return ListboxResult("added")
             else:
-                io.echo(
-                    f"You need more shipyards to build another ship. You have {maxships} capacity ({totalships} ships)."
-                )
+                io.echo(f"You need more shipyards to build another ship. You have {maxships} capacity ({totalships} ships).")
                 return ListboxResult("cancelled")
+
+        def _edit_ship(self) -> Optional[ListboxResult]:
+            if self.currentitem is None:
+                return ListboxResult("cancelled")
+            ship = self.currentitem.data["ship"]
+            _edit(self.args, "edit", ship, player=self.player, pool=self.pool)
+            ship.save()
+            return ListboxResult("refresh")
+
+        def _sail_ship(self) -> Optional[ListboxResult]:
+            if self.currentitem is None:
+                return ListboxResult("cancelled")
+            ship = self.currentitem.data["ship"]
+            if ship.status == "decommissioned":
+                io.echo("That ship is decommissioned.")
+                return ListboxResult("cancelled")
+            runmodule(self.args, "sail", ship=ship, player=self.player, pool=self.pool)
+            return ListboxResult("selected", self.currentitem)
+
+        def _load_ship(self) -> Optional[ListboxResult]:
+            if self.currentitem is None:
+                return ListboxResult("cancelled")
+            ship = self.currentitem.data["ship"]
+            if ship.status == "decommissioned":
+                io.echo("That ship is decommissioned.")
+                return ListboxResult("cancelled")
+            runmodule(self.args, "load", ship=ship, player=self.player, pool=self.pool)
+            return ListboxResult("selected", self.currentitem)
+
+        def _unload_ship(self) -> Optional[ListboxResult]:
+            if self.currentitem is None:
+                return ListboxResult("cancelled")
+            ship = self.currentitem.data["ship"]
+            if ship.status == "decommissioned":
+                io.echo("That ship is decommissioned.")
+                return ListboxResult("cancelled")
+            if not ship.manifest:
+                io.echo("That ship has nothing to unload.")
+                return ListboxResult("cancelled")
+            runmodule(self.args, "unload", ship=ship, player=self.player, pool=self.pool)
+            return ListboxResult("selected", self.currentitem)
+
+        def _decomm_ship(self) -> Optional[ListboxResult]:
+            if self.currentitem is None:
+                return ListboxResult("cancelled")
+            ship = self.currentitem.data["ship"]
+            if ship.status == "decommissioned":
+                io.echo("That ship is already decommissioned.")
+                return ListboxResult("cancelled")
+            ship.status = "decommissioned"
+            ship.save()
+            self.currentitem.disabled = True
+            io.echo(f"Ship {ship.moniker} has been decommissioned.")
+            return ListboxResult("refresh")
 
     class EmpyreShipListboxItem(ListboxItem):
         pool: Any = None
@@ -382,8 +473,7 @@ def selectship(args: argparse.Namespace, **kwargs: Any) -> Any:
         def __init__(self, rec: dict, width: int) -> None:
             super().__init__()
             pool = EmpyreShipListboxItem.pool
-            self.ship = Ship(args, player=player, pool=pool)
-            self.ship.load(rec["moniker"])
+            self.ship = load(args, rec["moniker"], pool=pool)
 
             left = f"{self.ship.moniker}"
             datedocked = util.datestamp(
@@ -395,10 +485,12 @@ def selectship(args: argparse.Namespace, **kwargs: Any) -> Any:
             self.pk = self.ship.moniker
             self.data = {"ship": self.ship, "rec": rec}
             self.width = width
-            self.disabled = False
+            self.disabled = self.ship.status == "decommissioned"
 
         def help(self) -> None:
-            io.echo("use KEY_ENTER to select one of your ships")
+            io.echo(
+                "ENT: Select | INS: Add | E: Edit | DEL: Decommission | S: Sail | L: Load | U: Unload"
+            )
             return
 
     totalships = count(args, player.moniker, pool=pool)
@@ -423,13 +515,13 @@ def selectship(args: argparse.Namespace, **kwargs: Any) -> Any:
     if totalships < maxships:
         libempyre.setbottombar(
             args,
-            f"select ship | INS: Add Ship | capacity: {totalships}/{maxships}",
+            f"select ship | ENT: Select | INS: Add | E: Edit | DEL: Decom | S: Sail | L: Load | capacity: {totalships}/{maxships}",
             player=player,
         )
     else:
         libempyre.setbottombar(
             args,
-            f"select ship | capacity: {totalships}/{maxships} (need shipyard)",
+            f"select ship | ENT: Select | INS: Add | E: Edit | DEL: Decom | S: Sail | L: Load | capacity: {totalships}/{maxships} (need shipyard)",
             player=player,
         )
     op = lb.run("select ship: ")
@@ -458,8 +550,7 @@ def getship(args: argparse.Namespace, moniker: str, **kwargs: Any) -> Optional[S
             cur.execute(query, dat)
             if cur.rowcount == 0:
                 return None
-            ship = Ship(args, player=player, pool=pool)
-            ship.load(moniker)
+            ship = load(args, moniker, pool=pool)
             return ship
 
 
@@ -467,74 +558,21 @@ def empyshipkeyhandler(args: argparse.Namespace, ch: str, lb: Any) -> bool:
     io.echo("inside empyreshipkeyhandler", level="debug")
     currentitem = lb.currentitem
     if ch == "KEY_ENTER":
-        io.setvar("cic", "{currentitemcolor}")
-        currentitem.display()
-        io.echo("{restorecursor}", end="", flush=True)
-        io.echo(f"{currentitem.player.moniker}")
+#        io.setvar("cic", "{currentitemcolor}")
+#        currentitem.display()
+#        io.echo("{restorecursor}", end="", flush=True)
+        io.echo(f"{currentitem.ship.moniker}")
         return False
     return True
-
-
-def selectmanifestitem(args: argparse.Namespace, **kwargs: Any) -> Any:
-    class EmpyreShipManifestListboxItem(ListboxItem):
-        def __init__(self, resourcename: str, width: int, **kwargs):
-            super().__init__()
-            self.ship = kwargs.get("ship")
-            self.player = kwargs.get("player")
-            self.pk = resourcename
-            self.res = self.player.getresource(resourcename) if self.player else {}
-            self.width = width
-
-            manifestitem = (
-                self.ship.manifest[self.pk]
-                if self.ship and self.pk in self.ship.manifest
-                else {}
-            )
-            value = manifestitem.get("value", 0)
-
-            left = f"{self.pk}"
-            right = f"{value:>6n}"
-            rightlen = len(right)
-            self.content = f"{left.ljust(width - rightlen - 10)}{right}"
-            self.data = {"resource": resourcename, "value": value}
-            self.disabled = False
-
-        def help(self):
-            io.echo("use KEY_ENTER to select a ship resource")
-            return
-
-    ship = kwargs.get("ship")
-    if ship is None:
-        io.echo("ship not defined!")
-        return False
-
-    player = kwargs.get("player")
-    if player is None:
-        io.echo("player not defined")
-        return False
-
-    width = kwargs.get("width", io.terminal.width())
-
-    items = []
-    for k, v in ship.manifest.items():
-        items.append(
-            EmpyreShipManifestListboxItem(k, width=width, ship=ship, player=player)
-        )
-
-    lb = Listbox(
-        args, "select ship resource", itemsperpage=10, itemheight=1, items=items
-    )
-    op = lb.run("ship resource: ")
-    if op.status == "selected" and op.item:
-        io.echo(f"{op.item.pk}")
-    return op
 
 
 def runmodule(args: argparse.Namespace, modulename: str, **kwargs: Any) -> Any:
     return libempyre.runmodule(args, f"ship.{modulename}", **kwargs)
 
 
-def count(args: argparse.Namespace, playermoniker: Optional[str] = None, **kwargs: Any) -> int:
+def count(
+    args: argparse.Namespace, playermoniker: Optional[str] = None, **kwargs: Any
+) -> int:
     def _work(conn: Any) -> int:
         with database.cursor(conn) as cur:
             query = sql.SQL(
@@ -553,3 +591,54 @@ def count(args: argparse.Namespace, playermoniker: Optional[str] = None, **kwarg
         with database.connect(args, pool=pool) as conn:
             return _work(conn)
     return _work(conn)
+
+def create(args, **kwargs):
+
+    def _work(conn, playermoniker, membermoniker) -> str:
+        s = Ship(args, pool=pool)
+        s.moniker = playermoniker
+        s.membermoniker = membermoniker
+        s.datecreated = "now()"
+
+        io.echo(f"empyre.ship.create.100: {s.attributes=}", level="debug")
+        rec = p.buildrec()
+        rec["moniker"] = playermoniker
+        rec["membermoniker"] = membermoniker
+        rec["datecreated"] = "now()"
+        io.echo(f"{rec=}", level="debug")
+
+        database.insert(args, "empyre.__ship", rec, primarykey="moniker", mogrify=True, conn=conn)
+        return p
+
+    #    io.echo(f"player.new.100: {currentmembermoniker=}", level="debug")
+
+    currentmembermoniker = member.getcurrentmoniker(args, **kwargs)
+    playermoniker = inputplayername(
+        "new player moniker: ",
+        currentmembermoniker,
+        verify=verifyPlayerNameNotFound,
+        multiple=False,
+        args=args,
+        returnseq=False,
+        **kwargs,
+    )
+    if playermoniker == "":
+        io.echo("aborted.")
+        return None
+
+    try:
+        conn = kwargs.get("conn", None)
+        if conn is None:
+            pool = kwargs.get("pool", None)
+            if pool is None:
+                io.echo(f"empyre.lib.create.140: {pool=}", level="error")
+                return False
+            with database.connect(args, pool=pool) as conn:
+                return _work(conn, playermoniker, currentmembermoniker)
+        return _work(conn, playermoniker, currentmembermoniker)
+    except Exception as e:
+        io.echo(f"empyre.lib.create.100: exception {e}", level="error")
+        raise
+
+    io.echo(f"player.create.100: {self.moniker=}", level="debug")
+    return p
