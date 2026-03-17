@@ -9,10 +9,8 @@ from bbsengine6.database import _table_identifier
 from bbsengine6.listbox import Listbox, ListboxItem, ListboxResult
 from bbsengine6.listboxcursor import ListboxCursor
 from .. import lib as libempyre
+from ..player import inputplayername, verifyPlayerNameNotFound
 from . import manifest
-
-
-from datetime import datetime
 
 MAXSHIPYARDS: int = 10
 SHIPSPERSHIPYARD: int = 10
@@ -33,17 +31,6 @@ class Ship:
     def __init__(self, args: argparse.Namespace, **kwargs: Any) -> None:
         self.args: argparse.Namespace = args
         self.player: Any = kwargs.get("player", None)
-#        self.location: str = kwargs.get("location", "mainland")
-#        self.moniker: Optional[str] = None
-#        self.kind: str = "cargo"
-#        self.manifest: dict = {}
-#        self.navigator: bool = False
-#        self.status: Optional[str] = None
-#        self.datecreated: Optional[str] = None
-#        self.createdbymoniker: Optional[str] = None
-#        self.datedocked: Optional[datetime] = None
-#        self.datedockedlocal: Optional[datetime] = None
-#        self.playermoniker: Optional[str] = None
         self.pool: Any = kwargs.get("pool", None)
 
         self.attributes = copy.copy(ATTRIBUTES)
@@ -92,10 +79,6 @@ class Ship:
         return True
 
 def load(args: argparse.Namespace, moniker: str, **kwargs) -> Optional[Any]:
-    pool = kwargs.get("pool", None)
-    if pool is None:
-        io.echo(f"empyre.ship.load.100: {pool=}", level="error")
-        return None
 
     def _work(conn: Any) -> Optional[Any]:
         with database.cursor(conn) as cur:
@@ -108,7 +91,7 @@ def load(args: argparse.Namespace, moniker: str, **kwargs) -> Optional[Any]:
                 io.echo(f"empyre.ship.load.200: {moniker=} not found", level="info")
                 return None
             rec = cur.fetchone()
-            ship = Ship(args, pool=pool)
+            ship = Ship(args, moniker, **kwargs)
             for f in (
                 "moniker",
                 "kind",
@@ -123,25 +106,15 @@ def load(args: argparse.Namespace, moniker: str, **kwargs) -> Optional[Any]:
                 setattr(ship, f, rec.get(f))
             return ship
 
-    with database.connect(args, pool=pool) as conn:
-        return _work(conn)
-
-def build(args, rec: dict, **kwargs) -> Ship:
-    s = Ship(args, **kwargs)  # Player(args, **kwargs)
-    for name, data in s.attributes.items():
-        v = rec.get(name, data["default"])
-        if v is None:
-            v = data["default"]
-        setattr(p, name, v)
-
-    for name, data in p.resources.items():
-        v = rec["resources"].get(name, data["default"])["value"]
-        if v is None:
-            v = data["default"]
-
-        setattr(s, name, v)
-
-    return s
+    conn = kwargs.get("conn")
+    if conn is None:
+        pool = kwargs.get("pool", None)
+        if pool is None:
+            io.echo(f"empyre.ship.load.100: {pool=}", level="error")
+            return None
+        with database.connect(args, pool=pool) as conn:
+            return _work(conn)
+    return _work(conn)
 
 def build(args: argparse.Namespace, **kwargs: Any) -> Any:
     io.echo(f"empyre.ship.lib.build.100: {kwargs=}", level="debug")
@@ -259,6 +232,8 @@ def _edit(args: argparse.Namespace, mode: str, ship: Ship, **kwargs: Any) -> Shi
                 io.echo("You must enter a ship name")
                 continue
             ship.moniker = moniker
+            if ship.status == "build":
+                ship.status = "docked"
         elif ch == "L":
             io.echo("Load")
             runmodule(args, "load", ship=ship, player=player, pool=kwargs.get("pool"))
@@ -407,7 +382,7 @@ def selectship(args: argparse.Namespace, **kwargs: Any) -> Any:
             maxships = self.player.shipyards * SHIPSPERSHIPYARD
 
             if totalships < maxships:
-                build(self.args, player=self.player, pool=self.pool)
+                create(self.args, player=self.player, pool=self.pool)
                 return ListboxResult("added")
             else:
                 io.echo(f"You need more shipyards to build another ship. You have {maxships} capacity ({totalships} ships).")
@@ -558,9 +533,6 @@ def empyshipkeyhandler(args: argparse.Namespace, ch: str, lb: Any) -> bool:
     io.echo("inside empyreshipkeyhandler", level="debug")
     currentitem = lb.currentitem
     if ch == "KEY_ENTER":
-#        io.setvar("cic", "{currentitemcolor}")
-#        currentitem.display()
-#        io.echo("{restorecursor}", end="", flush=True)
         io.echo(f"{currentitem.ship.moniker}")
         return False
     return True
@@ -592,53 +564,68 @@ def count(
             return _work(conn)
     return _work(conn)
 
-def create(args, **kwargs):
 
-    def _work(conn, playermoniker, membermoniker) -> str:
-        s = Ship(args, pool=pool)
-        s.moniker = playermoniker
-        s.membermoniker = membermoniker
-        s.datecreated = "now()"
-
-        io.echo(f"empyre.ship.create.100: {s.attributes=}", level="debug")
-        rec = p.buildrec()
-        rec["moniker"] = playermoniker
-        rec["membermoniker"] = membermoniker
-        rec["datecreated"] = "now()"
-        io.echo(f"{rec=}", level="debug")
-
-        database.insert(args, "empyre.__ship", rec, primarykey="moniker", mogrify=True, conn=conn)
-        return p
-
-    #    io.echo(f"player.new.100: {currentmembermoniker=}", level="debug")
-
-    currentmembermoniker = member.getcurrentmoniker(args, **kwargs)
-    playermoniker = inputplayername(
-        "new player moniker: ",
-        currentmembermoniker,
-        verify=verifyPlayerNameNotFound,
-        multiple=False,
-        args=args,
-        returnseq=False,
-        **kwargs,
-    )
-    if playermoniker == "":
-        io.echo("aborted.")
+def create(args: argparse.Namespace, **kwargs: Any) -> Optional[Ship]:
+    pool = kwargs.get("pool", None)
+    if pool is None:
+        io.echo("empyre.ship.create.100: {pool=}", level="error")
         return None
+
+    player = kwargs.get("player", None)
+    if player is None:
+        io.echo("You do not exist! Go Away!", level="error")
+        return None
+
+    if player.ships + 1 > player.shipyards * SHIPSPERSHIPYARD:
+        io.echo("You need to build a shipyard before you can build a ship.")
+        return None
+
+    ship = Ship(args, player=player, pool=pool)
+    ship.moniker = kwargs.get("moniker", "Unnamed Ship")
+    ship.kind = kwargs.get("kind", "cargo")
+    ship.manifest = kwargs.get("manifest", {})
+    ship.navigator = kwargs.get("navigator", False)
+    ship.location = kwargs.get("location", "mainland")
+    ship.status = kwargs.get("status", "build")
+    ship.datedocked = "now()"
+    ship.datecreated = "now()"
+
+    s = {}
+    s["moniker"] = ship.moniker
+    s["playermoniker"] = player.moniker
+    s["manifest"] = ship.manifest
+    s["location"] = ship.location
+    s["status"] = ship.status
+    s["kind"] = ship.kind
+    s["navigator"] = ship.navigator
+    s["datecreated"] = "now()"
+    s["createdbymoniker"] = member.getcurrentmoniker(args, **kwargs)
+    s["datedocked"] = "now()"
 
     try:
         conn = kwargs.get("conn", None)
         if conn is None:
-            pool = kwargs.get("pool", None)
-            if pool is None:
-                io.echo(f"empyre.lib.create.140: {pool=}", level="error")
-                return False
             with database.connect(args, pool=pool) as conn:
-                return _work(conn, playermoniker, currentmembermoniker)
-        return _work(conn, playermoniker, currentmembermoniker)
+                database.insert(
+                    args,
+                    "empyre.__ship",
+                    s,
+                    mogrify=True,
+                    primarykey="moniker",
+                    conn=conn,
+                )
+                database.commit(args, pool=pool)
+        else:
+            database.insert(
+                args,
+                "empyre.__ship",
+                s,
+                mogrify=True,
+                primarykey="moniker",
+                conn=conn,
+            )
     except Exception as e:
-        io.echo(f"empyre.lib.create.100: exception {e}", level="error")
+        io.echo(f"empyre.ship.create.200: exception {e}", level="error")
         raise
 
-    io.echo(f"player.create.100: {self.moniker=}", level="debug")
-    return p
+    return ship
