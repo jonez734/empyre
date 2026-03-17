@@ -17,12 +17,12 @@ from . import manifest
 MAXSHIPYARDS: int = 10
 SHIPSPERSHIPYARD: int = 10
 
-ATTRIBUTES = {
+ATTRIBUTES: dict = {
     "moniker": {"default": None},
     "navigator": {"default": False},
     "membermoniker": {"default": None},
-    "datedocked": {"default": None},
-    "datecreated": {"default": None},
+    "datedocked": {"default": None, "type": datetime},
+    "datecreated": {"default": None, "type": datetime},
     "status": {"default": None},
     "manifest": {"default": {}},
     "kind": {"default": "cargo"},
@@ -30,6 +30,9 @@ ATTRIBUTES = {
 
 
 class Ship:
+    datedocked: Optional[datetime] = None
+    datecreated: Optional[datetime] = None
+
     def __init__(self, args: argparse.Namespace, **kwargs: Any) -> None:
         self.args: argparse.Namespace = args
         self.player: Any = kwargs.get("player", None)

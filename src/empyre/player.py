@@ -3,6 +3,7 @@ import argparse
 import copy
 import random
 from datetime import datetime
+from typing import Optional
 
 import dateutil.tz
 from bbsengine6 import database, io, member, util
@@ -197,19 +198,19 @@ RESOURCES = {
     },
 }
 
-ATTRIBUTES = {
+ATTRIBUTES: dict = {
     "moniker": {"default": None},
     "membermoniker": {"default": None},
     "rank": {"default": 0},
     "previousrank": {"default": 0},
     "turncount": {"default": 0},
     "soldierpromotioncount": {"default": 0},
-    "datepromoted": {"default": None},
+    "datepromoted": {"default": None, "type": datetime},
     "combatvictorycount": {"default": 0},
     "weatherconditions": {"default": 0},
     "beheaded": {"default": False},
-    "datelastplayed": {"default": None},
-    "datelastplayedlocal": {"default": None},
+    "datelastplayed": {"default": None, "type": datetime},
+    "datelastplayedlocal": {"default": None, "type": datetime},
     # "coins":                {"default":COINS},
     "taxrate": {"default": TAXRATE},
     "training": {"default": 1},
@@ -217,6 +218,10 @@ ATTRIBUTES = {
 
 
 class Player(object):
+    datepromoted: Optional[datetime] = None
+    datelastplayed: Optional[datetime] = None
+    datelastplayedlocal: Optional[datetime] = None
+
     def __init__(self, args, **kwargs):
         def _work(conn):
             ###            currentmoniker = member.getcurrentmoniker(args, conn=conn)
