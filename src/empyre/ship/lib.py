@@ -74,9 +74,9 @@ class Ship:
         return True
 
     def adjust(self) -> bool:
-        c = count(self.args, self.player.moniker, pool=self.pool)
+        c = count(self.args, self.playermoniker, pool=self.pool)
 
-        if self.player.ships != c:
+        if self.player is not None and self.player.ships != c:
             io.echo(f"adjusting {self.player.ships=} to {c=}", level="debug")
             self.player.ships = c
             self.player.save()
