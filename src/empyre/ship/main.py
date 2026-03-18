@@ -64,6 +64,7 @@ def main(args, **kwargs):
                 io.echo("{optioncolor}[S]{labelcolor} Sail")
                 io.echo("{optioncolor}[X]{labelcolor} Exit to dock")
 
+                libempyre.setbottombar(args, f"ship: {ship.moniker}", player=player)
                 ch = io.inputchar("ship: {inputcolor}", "ULMSXQ", "X")
                 if ch == "Q" or ch == "X":
                     io.echo("Exit")

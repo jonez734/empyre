@@ -512,6 +512,7 @@ def selectship(args: argparse.Namespace, **kwargs: Any) -> Any:
             player=player,
         )
     op = lb.run("select ship: ")
+    libempyre.setbottombar(args, "dock", player=player)
     if op.status == "selected" and op.item:
         return op.item.data["ship"]
     return None
