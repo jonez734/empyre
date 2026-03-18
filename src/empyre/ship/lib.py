@@ -186,6 +186,7 @@ def _edit(args: argparse.Namespace, mode: str, ship: Ship, **kwargs: Any) -> Shi
     _ship.navigator = ship.navigator
     _ship.location = ship.location
     _ship.status = ship.status
+    _ship.playermoniker = ship.playermoniker
 
     done = False
     while not done:
@@ -199,14 +200,14 @@ def _edit(args: argparse.Namespace, mode: str, ship: Ship, **kwargs: Any) -> Shi
         else:
             io.echo()
 
+        owner = ship.playermoniker if ship.playermoniker else "(none)"
         io.echo(
-            f"{{optioncolor}}[O]{{labelcolor}}wner: {{valuecolor}}{ship.player.moniker}",
+            f"{{optioncolor}}[O]{{labelcolor}}wner: {{valuecolor}}{owner}",
             end="",
         )
-        if _ship.player.moniker != ship.player.moniker:
-            io.echo(
-                f" {{labelcolor}}(was: {{valuecolor}}{_ship.player.moniker}{{labelcolor}})"
-            )
+        if _ship.playermoniker != ship.playermoniker:
+            was_owner = _ship.playermoniker if _ship.playermoniker else "(none)"
+            io.echo(f" {{labelcolor}}(was: {{valuecolor}}{was_owner}{{labelcolor}})")
         else:
             io.echo()
 
