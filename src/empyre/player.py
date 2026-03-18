@@ -3,7 +3,7 @@ import argparse
 import copy
 import random
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 import dateutil.tz
 from bbsengine6 import database, io, member, util
@@ -218,6 +218,14 @@ ATTRIBUTES: dict = {
 
 
 class Player(object):
+    args: argparse.Namespace
+    pool: Any
+    conn: Any
+    moniker: Optional[str]
+    membermoniker: Optional[str]
+    debug: bool
+    resources: dict
+    attributes: dict
     datepromoted: Optional[datetime] = None
     datelastplayed: Optional[datetime] = None
     datelastplayedlocal: Optional[datetime] = None
@@ -361,12 +369,15 @@ class Player(object):
     def setattributevalue(self, name: str, value) -> bool:
         if name in self.attributes:
             attr = self.attributes[name]
-            if "value" in attr:
-                expected_type = type(attr["value"])
-            elif "default" in attr:
-                expected_type = type(attr["default"])
-            else:
-                expected_type = int
+            # Check if attribute definition has a type hint first
+            expected_type = attr.get("type", None)
+            if expected_type is None:
+                if "value" in attr:
+                    expected_type = type(attr["value"])
+                elif "default" in attr:
+                    expected_type = type(attr["default"])
+                else:
+                    expected_type = int
 
             if expected_type in (int, float) and value is not None:
                 try:
@@ -379,6 +390,15 @@ class Player(object):
                 if value < 0:
                     io.echo(f"negative values not allowed for {name}", level="error")
                     value = 0
+
+            # Handle datetime type conversion
+            if expected_type is datetime and isinstance(value, str):
+                try:
+                    from dateutil.parser import parse
+
+                    value = parse(value)
+                except Exception:
+                    pass  # Keep original value if parsing fails
 
             self.attributes[name]["value"] = value
             setattr(self, name, value)
@@ -429,11 +449,13 @@ class Player(object):
         for name, data in self.attributes.items():
             if name == "datelastplayedlocal":
                 continue
-            v = data.get("value", data["default"])
+            # Create clean copy without 'type' key to avoid "Object of type type" error
+            clean_data = {k: v for k, v in data.items() if k != "type"}
+            v = clean_data.get("value", clean_data.get("default"))
             if isinstance(v, datetime):
-                # io.echo(f"buildrec.attributes.datetime!", level="debug")
+                io.echo(f"buildrec.attributes.datetime: {name}={v}", level="debug")
                 v = v.isoformat()
-            rec[name] = v  # data.get("value", data["default"])
+            rec[name] = v
         resources = copy.copy(self.resources)
         for name, data in resources.items():
             v = data.get("value", data["default"])
@@ -496,6 +518,19 @@ class Player(object):
         for name, data in self.attributes.items():
             curval = getattr(self, name)
             oldval = data.get("value", data.get("default"))
+            # Normalize datetime comparison: convert datetime to ISO string
+            if isinstance(curval, datetime):
+                if isinstance(oldval, str):
+                    # Compare as ISO strings
+                    try:
+                        from dateutil.parser import parse
+                        oldval = parse(oldval)
+                    except Exception:
+                        oldval = curval  # Can't compare, skip
+                elif isinstance(oldval, datetime):
+                    pass  # Both are datetime, compare directly
+                else:
+                    oldval = curval  # Can't compare, skip
             if self.debug is True:
                 io.echo(f"{name=} {curval=} {oldval=}", level="debug")
             if curval != oldval:
