@@ -1083,8 +1083,7 @@ def count(args, membermoniker: str, **kwargs) -> int:
         if pool is None:
             io.echo(f"empyre.player.count.160: {pool=}")
             return None
-        conn = database.connect(args, pool=pool)
-        with conn:
+        with database.connect(args, pool=pool) as conn:
             return _work(conn)
     else:
         return _work(conn)
