@@ -260,7 +260,7 @@ class Player(object):
             with database.connect(args, pool=self.pool) as conn:
                 return _work(conn)
         else:
-            return _work(conn)
+            return _work(self.conn)
 
     #        tz=0:i1=self.palaces:i2=self.markets:i3=self.mills:i4=self.foundries:i5=self.shipyards:i6=self.diplomats
     def sync(self):
