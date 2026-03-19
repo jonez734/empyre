@@ -583,8 +583,9 @@ def count(
         if pool is None:
             io.echo(f"empyre.ship.count.100: {pool=}", level="error")
             return 0
-        return database.with_connection(args, pool, _work)
-    return database.with_connection(args, None, _work, conn=conn)
+        with database.connect(args, pool=pool) as conn:
+            return _work(conn)
+    return _work(conn)
 
 
 def create(args: argparse.Namespace, **kwargs: Any) -> Optional[Ship]:
