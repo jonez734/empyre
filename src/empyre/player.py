@@ -931,7 +931,9 @@ def load(args, moniker: str, **kwargs) -> Player:
         return False
 
     with database.connect(args, pool=pool) as conn:
-        return _work(conn)
+        result = _work(conn)
+        conn.commit()
+        return result
 
 
 def exists(moniker, *, args):
@@ -955,10 +957,14 @@ def exists(moniker, *, args):
         io.echo("player.exists.120: pool not passed", level="debug")
         with database.getpool(args) as pool:
             with database.connect(args, pool=pool) as conn:
-                return _work(conn)
+                result = _work(conn)
+                conn.commit()
+                return result
     else:
-        with database.connect(args, pool=pool) as conn:
-            return _work(conn)
+        with database.connect(args, pool=args.pool) as conn:
+            result = _work(conn)
+            conn.commit()
+            return result
 
 
 def select(
@@ -1069,7 +1075,9 @@ def count(args, membermoniker: str, **kwargs) -> int:
             io.echo(f"empyre.player.count.160: {pool=}")
             return None
         with database.connect(args, pool=pool) as conn:
-            return _work(conn)
+            result = _work(conn)
+            conn.commit()
+            return result
     else:
         return _work(conn)
 
@@ -1110,7 +1118,13 @@ def create(args, **kwargs):
         io.echo(f"{rec=}", level="debug")
 
         database.insert(
-            args, "empyre.__player", rec, primarykey="moniker", mogrify=True, conn=conn
+            args,
+            "empyre.__player",
+            rec,
+            primarykey="moniker",
+            mogrify=True,
+            conn=conn,
+            commit=True,
         )
         return p
 
@@ -1138,7 +1152,9 @@ def create(args, **kwargs):
                 io.echo(f"empyre.lib.create.140: {pool=}", level="error")
                 return False
             with database.connect(args, pool=pool) as conn:
-                return _work(conn, playermoniker, currentmembermoniker)
+                result = _work(conn, playermoniker, currentmembermoniker)
+                conn.commit()
+                return result
         else:
             return _work(conn, playermoniker, currentmembermoniker)
     except Exception as e:
