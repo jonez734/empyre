@@ -557,22 +557,11 @@ class Player(object):
                 f"{{var:labelcolor}}saving {{var:valuecolor}}{self.moniker}{{var:labelcolor}}: ",
                 end="",
             )
-            conn = None
-            try:
-                conn = database.connect(self.args, pool=self.pool)
-                with conn:
-                    self.sync()
-                    self.update(conn)
-                io.echo(" ok ", level="ok")
-                return True
-            except Exception as e:
-                io.echo(f" save failed: {e}", level="error")
-                if conn is not None:
-                    try:
-                        conn.rollback()
-                    except Exception:
-                        pass
-                return False
+            with database.connect(self.args, pool=self.pool) as conn:
+                self.sync()
+                self.update(conn)
+            io.echo(" ok ", level="ok")
+            return True
 
     def status(self):
         MAX_LABEL_WIDTH = 12
@@ -869,22 +858,21 @@ class Player(object):
 
 
 class completePlayerName(object):
-    def __init__(self, args):
+    def __init__(self, args, pool=None):
         self.args = args
+        self.pool = pool
         self.matches = []
         self.debug = args.debug if "debug" in args else False
 
     def complete(self: object, text: str, state: int):
-        dbh = database.connect(self.args)
-
-        vocab = []
-        sql: str = "select name from empyre.player"
-        dat: tuple = ()
-        cur = dbh.cursor()
-        cur.execute(sql, dat)
-        for rec in database.resultiter(cur):
-            vocab.append(rec["name"])
-        results = [x for x in vocab if x.startswith(text)] + [None]
+        with database.connect(self.args, pool=self.pool) as conn:
+            with database.cursor(conn) as cur:
+                sql: str = "select name from empyre.player"
+                dat: tuple = ()
+                cur.execute(sql, dat)
+                for rec in database.resultiter(cur):
+                    self.matches.append(rec["name"])
+        results = [x for x in self.matches if x.startswith(text)] + [None]
         return results[state]
 
 
@@ -1092,13 +1080,14 @@ def count(args, membermoniker: str, **kwargs) -> int:
 def inputplayername(prompt: str = "player name: ", oldvalue: str = "", **kwargs: dict):
     multiple: bool = kwargs.get("multiple", False)
     args = kwargs["args"] if "args" in kwargs else argparse.Namespace()
+    pool = kwargs.get("pool", None)
     noneok: bool = kwargs.get("noneok", True)
     verify = kwargs.pop("verify", verifyPlayerNameFound)
     name = io.inputstring(
         prompt,
         oldvalue,
         verify=verify,
-        completer=completePlayerName(args),
+        completer=completePlayerName(args, pool=pool),
         completerdelims="",
         **kwargs,
     )
@@ -1256,35 +1245,35 @@ def generate(self, rank=0):
 
 
 class completePlayerName(object):
-    def __init__(self, args):
+    def __init__(self, args, pool=None):
         self.args = args
+        self.pool = pool
         self.matches = []
         self.debug = args.debug if "debug" in args else False
 
     def complete(self: object, text: str, state: int):
-        dbh = database.connect(self.args)
-
-        vocab = []
-        sql: str = "select name from empyre.player"
-        dat: tuple = ()
-        cur = dbh.cursor()
-        cur.execute(sql, dat)
-        for rec in database.resultiter(cur):
-            vocab.append(rec["name"])
-        results = [x for x in vocab if x.startswith(text)] + [None]
+        with database.connect(self.args, pool=self.pool) as conn:
+            with database.cursor(conn) as cur:
+                sql: str = "select name from empyre.player"
+                dat: tuple = ()
+                cur.execute(sql, dat)
+                for rec in database.resultiter(cur):
+                    self.matches.append(rec["name"])
+        results = [x for x in self.matches if x.startswith(text)] + [None]
         return results[state]
 
 
 def inputplayername(prompt: str = "player name: ", oldvalue: str = "", **kwargs: dict):
     multiple: bool = kwargs.get("multiple", False)
     args = kwargs["args"] if "args" in kwargs else argparse.Namespace()
+    pool = kwargs.get("pool", None)
     noneok: bool = kwargs.get("noneok", True)
     verify = kwargs.pop("verify", verifyPlayerNameFound)
     name = io.inputstring(
         prompt,
         oldvalue,
         verify=verify,
-        completer=completePlayerName(args),
+        completer=completePlayerName(args, pool=pool),
         completerdelims="",
         **kwargs,
     )
