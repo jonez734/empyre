@@ -125,6 +125,7 @@ def clean_tables(db_conn):
         "empyre.__colony",
         "empyre.__ship",
         "empyre.__island",
+        "empyre.__mercs",
     ]:
         try:
             with database.cursor(db_conn) as cur:
