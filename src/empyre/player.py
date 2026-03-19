@@ -448,7 +448,11 @@ class Player(object):
             # Create clean copy without 'type' key to avoid "Object of type type" error
             clean_data = {k: v for k, v in data.items() if k != "type"}
             v = clean_data.get("value", clean_data.get("default"))
-            if isinstance(v, datetime):
+            # Handle datetime type (not just instances) - convert to ISO format string
+            if v is datetime or (isinstance(v, type) and issubclass(v, datetime)):
+                io.echo(f"buildrec.attributes.datetime: {name}={v}", level="debug")
+                v = v.now().isoformat() if v is datetime else v().isoformat()
+            elif isinstance(v, datetime):
                 io.echo(f"buildrec.attributes.datetime: {name}={v}", level="debug")
                 v = v.isoformat()
             rec[name] = v

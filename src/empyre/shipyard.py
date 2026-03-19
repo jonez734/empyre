@@ -26,7 +26,7 @@ def main(args, **kwargs):
         return False
 
     if currentplayer.shipyards > 0:
-        if io.inputboolean("{promptcolor}visit shipyard?: {inputcolor}") is False:
+        if io.inputboolean(f"{{promptcolor}}visit shipyard? {{optioncolor}}[yN]{{promptcolor}}: {{inputcolor}}", "N") is False:
             io.echo("no shipyard visit")
             return True
 
