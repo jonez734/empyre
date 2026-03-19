@@ -8,10 +8,9 @@ from psycopg import sql
 
 from bbsengine6 import database, io, member, util
 from bbsengine6.database import _table_identifier
-from bbsengine6.listbox import Listbox, ListboxItem, ListboxResult
+from bbsengine6.listbox import ListboxItem, ListboxResult
 from bbsengine6.listboxcursor import ListboxCursor
 from .. import lib as libempyre
-from . import manifest
 
 MAXSHIPYARDS: int = 10
 SHIPSPERSHIPYARD: int = 10
@@ -69,8 +68,6 @@ class Ship:
             updatepk=True,
             pool=self.pool,
         )
-        if commit is True:
-            database.commit(self.args, pool=self.pool)
         return True
 
     def adjust(self) -> bool:
@@ -171,7 +168,6 @@ def build(args: argparse.Namespace, **kwargs: Any) -> Any:
         if res is False:
             io.echo("failed to insert ship", level="error")
             return None
-        database.commit(args, pool=pool)
         return s
     return True
 
@@ -627,7 +623,6 @@ def create(args: argparse.Namespace, **kwargs: Any) -> Optional[Ship]:
                     primarykey="moniker",
                     conn=conn,
                 )
-                database.commit(args, pool=pool)
         else:
             database.insert(
                 args,
@@ -636,6 +631,7 @@ def create(args: argparse.Namespace, **kwargs: Any) -> Optional[Ship]:
                 mogrify=True,
                 primarykey="moniker",
                 conn=conn,
+                commit=False,
             )
     except Exception as e:
         io.echo(f"empyre.ship.create.200: exception {e}", level="error")

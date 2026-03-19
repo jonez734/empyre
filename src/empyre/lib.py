@@ -1,9 +1,5 @@
-import time
-import copy
-import math
 import random
 import argparse
-from argparse import Namespace
 from datetime import datetime
 
 import dateutil.tz
@@ -22,7 +18,6 @@ class ShipKind(str, Enum):
 from bbsengine6 import io, member, database, util, module, listbox
 from bbsengine6.io import screen
 
-from . import player
 
 # TURNSPERDAY:int = 10
 PACKAGENAME: str = "empyre"
@@ -181,10 +176,9 @@ def newsentry(
     ne["datecreated"] = datetime.now(dateutil.tz.tzlocal())
     if args.debug is True:
         io.echo(f"{ne=}", level="debug")
-    neid = database.insert(args, "empyre.__newsentry", ne, returnid=True)
+    neid = database.insert(args, "empyre.__newsentry", ne, returnid=True, commit=True)
     if args.debug is True:
         io.echo(f"{neid=}", level="debug")
-    database.commit(args)
     return
 
 
