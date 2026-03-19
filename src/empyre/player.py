@@ -237,8 +237,6 @@ class Player(object):
             # @see empire6/mdl.emp.delx2.txt#L25
             self.resources = copy.copy(RESOURCES)
             for name, data in self.resources.items():
-                val = data["default"]
-                # io.echo(f"empyre.Player.100: resource {name=} {val=}", level="debug")
                 setattr(self, name, data["default"])
                 self.resources[name]["value"] = data["default"]
                 # io.echo(f"Player.__init__.100: {name=} {res=} {getattr(self, name)=}", level="debug")
@@ -317,7 +315,7 @@ class Player(object):
             io.echo(f"getresource.100: {name=}")
         if name in self.resources:
             _r = self.resources.get(name)
-            r = copy.copy(_r)
+            r = copy.deepcopy(_r)
             v = getattr(self, name)
             if isinstance(v, int):
                 if v is None:
@@ -338,72 +336,70 @@ class Player(object):
             return r
         return None
 
-    # @since 20240706 new
+    def _validate_value(self, value, expected_type):
+        if expected_type in (int, float) and value is not None:
+            try:
+                value = int(value)
+            except (ValueError, TypeError):
+                io.echo(f"invalid value: must be a number", level="error")
+                return None, False
+            if value < 0:
+                io.echo("negative values not allowed", level="error")
+                value = 0
+        return value, True
+
+    def _parse_datetime(self, value):
+        if isinstance(value, str):
+            try:
+                from dateutil.parser import parse
+
+                return parse(value)
+            except Exception:
+                pass
+        return value
+
     def setresourcevalue(self, name: str, value) -> bool:
-        if name in self.resources:
-            res = self.resources[name]
-            if "value" in res:
-                expected_type = type(res["value"])
-            elif "default" in res:
-                expected_type = type(res["default"])
+        if name not in self.resources:
+            return False
+        res = self.resources[name]
+        if "value" in res:
+            expected_type = type(res["value"])
+        elif "default" in res:
+            expected_type = type(res["default"])
+        else:
+            expected_type = int
+
+        value, valid = self._validate_value(value, expected_type)
+        if not valid:
+            return False
+
+        self.resources[name]["value"] = value
+        setattr(self, name, value)
+        return True
+
+    def setattributevalue(self, name: str, value) -> bool:
+        if name not in self.attributes:
+            return False
+        attr = self.attributes[name]
+        expected_type = attr.get("type")
+        if expected_type is None:
+            if "value" in attr:
+                expected_type = type(attr["value"])
+            elif "default" in attr:
+                expected_type = type(attr["default"])
             else:
                 expected_type = int
 
-            if expected_type in (int, float) and value is not None:
-                try:
-                    value = int(value)
-                except (ValueError, TypeError):
-                    io.echo(
-                        f"invalid value for {name}: must be a number", level="error"
-                    )
-                    return False
-                if value < 0:
-                    io.echo(f"negative values not allowed for {name}", level="error")
-                    value = 0
+        value, valid = self._validate_value(value, expected_type)
+        if not valid:
+            return False
 
-            self.resources[name]["value"] = value
-            setattr(self, name, value)
-            return True
-        return False
+        if expected_type is datetime:
+            value = self._parse_datetime(value)
 
-    def setattributevalue(self, name: str, value) -> bool:
-        if name in self.attributes:
-            attr = self.attributes[name]
-            # Check if attribute definition has a type hint first
-            expected_type = attr.get("type", None)
-            if expected_type is None:
-                if "value" in attr:
-                    expected_type = type(attr["value"])
-                elif "default" in attr:
-                    expected_type = type(attr["default"])
-                else:
-                    expected_type = int
-
-            if expected_type in (int, float) and value is not None:
-                try:
-                    value = int(value)
-                except (ValueError, TypeError):
-                    io.echo(
-                        f"invalid value for {name}: must be a number", level="error"
-                    )
-                    return False
-                if value < 0:
-                    io.echo(f"negative values not allowed for {name}", level="error")
-                    value = 0
-
-            # Handle datetime type conversion
-            if expected_type is datetime and isinstance(value, str):
-                try:
-                    from dateutil.parser import parse
-
-                    value = parse(value)
-                except Exception:
-                    pass  # Keep original value if parsing fails
-
-            self.attributes[name]["value"] = value
-            setattr(self, name, value)
-            return True
-        return False
+        self.attributes[name]["value"] = value
+        setattr(self, name, value)
+        return True
 
     # @since 20200901
     # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_maint.lbl#L22
@@ -524,6 +520,7 @@ class Player(object):
                     # Compare as ISO strings
                     try:
                         from dateutil.parser import parse
+
                         oldval = parse(oldval)
                     except Exception:
                         oldval = curval  # Can't compare, skip
@@ -568,7 +565,6 @@ class Player(object):
         DATETIME_FMT = "%m/%d@%H%M%Z"
         TRUNCATED_LABEL_SUFFIX = ".."
         TRUNCATED_LABEL_WIDTH = MAX_LABEL_WIDTH
-        LABEL_DISPLAY_WIDTH = MAX_LABEL_WIDTH + len(TRUNCATED_LABEL_SUFFIX)
 
         LAYOUT = "column"
 
@@ -576,7 +572,6 @@ class Player(object):
 
         TRUNCATED_STR_SUFFIX = ".."
         TRUNCATED_STR_WIDTH = MAX_STR_VALUE_WIDTH
-        STR_DISPLAY_WIDTH = MAX_STR_VALUE_WIDTH + len(TRUNCATED_STR_SUFFIX)
 
         COLUMN_SEPARATOR = "  "
 
@@ -711,7 +706,7 @@ class Player(object):
         if self.soldiers > (self.nobles * SOLDIERSPERNOBLE) + 1:
             a += abs(self.nobles * SOLDIERSPERNOBLE - self.soldiers)
             io.echo(
-                f"Not enough nobles for your {util.pluralize(soldiers, **soldierres)}!"
+                f"Not enough nobles for your {util.pluralize(self.soldiers, **soldierres)}!"
             )  # "soldier", "soldiers", emoji=":military-helmet:")))
         self.soldiers -= a
 
@@ -721,7 +716,7 @@ class Player(object):
             )
 
         if self.land < 0:
-            landres = player.getresource("land")
+            landres = self.getresource("land")
             io.echo(f"You lost {util.pluralize(abs(self.land), **landres)}.")
             self.land = 0
 
@@ -783,6 +778,7 @@ class Player(object):
         if self.foundries > MAXFOUNDRIES:
             a = self.foundries // 3
             self.foundries -= a
+            foundryres = self.getresource("foundries")
             io.echo(
                 f"{{green}}{{empyre.highlightcolor}} MAJOR EXPLOSION! {{/all}}{{valuecolor}}{util.pluralize(a, 'foundry is', 'foundries are', **foundryres)} destroyed."
             )
@@ -800,7 +796,7 @@ class Player(object):
         if self.mills > MAXMILLS:
             a = self.mills // 4
             self.mills -= a
-            millres = player.getresource("mills")
+            millres = self.getresource("mills")
             if a == 1:
                 io.echo(
                     f"{{normalcolor}}The mill is overworked! {util.pluralize(a, 'The mill has a broken millstone and is closed', '', quantity=False, **millres)}"
@@ -813,7 +809,7 @@ class Player(object):
 
         if self.coins < 0:
             io.echo(
-                f"{lightred}You are overdrawn by {util.pluralize(abs(self.coins), **coinres)}"
+                f"{{lightred}}You are overdrawn by {util.pluralize(abs(self.coins), **coinsres)}"
             )
             self.coins = 1
 
@@ -835,12 +831,12 @@ class Player(object):
             if value < 0:
                 lost.append(
                     util.pluralize(
-                        abs(val),
+                        abs(value),
                         data.get("singular", "FIXME"),
                         data.get("plural", "FIXME"),
                     )
                 )
-                setattr(player, name, 0)
+                setattr(self, name, 0)
 
         if len(lost) > 0:
             io.echo(f"You have lost {util.oxfordcomma(lost)}")
@@ -952,7 +948,7 @@ def exists(moniker, *, args):
             return True
 
     if hasattr(args, "conn") is True:
-        return _work(conn)
+        return _work(args.conn)
 
     if hasattr(args, "pool") is False:
         io.echo("player.exists.120: pool not passed", level="debug")
@@ -1078,10 +1074,8 @@ def count(args, membermoniker: str, **kwargs) -> int:
 
 
 def inputplayername(prompt: str = "player name: ", oldvalue: str = "", **kwargs: dict):
-    multiple: bool = kwargs.get("multiple", False)
     args = kwargs["args"] if "args" in kwargs else argparse.Namespace()
     pool = kwargs.get("pool", None)
-    noneok: bool = kwargs.get("noneok", True)
     verify = kwargs.pop("verify", verifyPlayerNameFound)
     name = io.inputstring(
         prompt,
@@ -1150,23 +1144,6 @@ def create(args, **kwargs):
         io.echo(f"empyre.lib.create.100: exception {e}", level="error")
         raise
 
-    io.echo(f"player.create.100: {self.moniker=}", level="debug")
-    return p
-
-
-def generate(self, rank=0):
-    # http://donjon.bin.sh/fantasy/name/#type=me;me=english_male -- ty ryan
-    #        namelist = ("Richye", "Gerey", "Andrew", "Ryany", "Mathye Burne", "Enryn", "Andes", "Piersym Jordye", "Vyncis", "Gery Aryn", "Hone Sharcey", "Kater", "Erix", "Abell", "Wene Noke", "Jane Folcey", "Abel", "Bilia", "Cilia", "Joycie")
-    self.moniker = generatename(
-        self.args
-    )  # namelist[random.randint(0, len(namelist)-1)]
-    if rank == 1:
-        self.markets = random.randint(10, 15)
-        self.mills = random.randint(6, 9)
-        self.diplomats = random.randint(1, 2)
-        # self.serfs = random.randint()
-    return
-
 
 def getranktitle(args, rank: int):
     if args.debug is True:
@@ -1228,57 +1205,6 @@ def calculaterank(args: object, player: Player) -> int:
         rank = 1  # prince
 
     return rank
-
-
-def generate(self, rank=0):
-    # http://donjon.bin.sh/fantasy/name/#type=me;me=english_male -- ty ryan
-    #        namelist = ("Richye", "Gerey", "Andrew", "Ryany", "Mathye Burne", "Enryn", "Andes", "Piersym Jordye", "Vyncis", "Gery Aryn", "Hone Sharcey", "Kater", "Erix", "Abell", "Wene Noke", "Jane Folcey", "Abel", "Bilia", "Cilia", "Joycie")
-    self.moniker = generatename(
-        self.args
-    )  # namelist[random.randint(0, len(namelist)-1)]
-    if rank == 1:
-        self.markets = random.randint(10, 15)
-        self.mills = random.randint(6, 9)
-        self.diplomats = random.randint(1, 2)
-        # self.serfs = random.randint()
-    return
-
-
-class completePlayerName(object):
-    def __init__(self, args, pool=None):
-        self.args = args
-        self.pool = pool
-        self.matches = []
-        self.debug = args.debug if "debug" in args else False
-
-    def complete(self: object, text: str, state: int):
-        with database.connect(self.args, pool=self.pool) as conn:
-            with database.cursor(conn) as cur:
-                sql: str = "select name from empyre.player"
-                dat: tuple = ()
-                cur.execute(sql, dat)
-                for rec in database.resultiter(cur):
-                    self.matches.append(rec["name"])
-        results = [x for x in self.matches if x.startswith(text)] + [None]
-        return results[state]
-
-
-def inputplayername(prompt: str = "player name: ", oldvalue: str = "", **kwargs: dict):
-    multiple: bool = kwargs.get("multiple", False)
-    args = kwargs["args"] if "args" in kwargs else argparse.Namespace()
-    pool = kwargs.get("pool", None)
-    noneok: bool = kwargs.get("noneok", True)
-    verify = kwargs.pop("verify", verifyPlayerNameFound)
-    name = io.inputstring(
-        prompt,
-        oldvalue,
-        verify=verify,
-        completer=completePlayerName(args, pool=pool),
-        completerdelims="",
-        **kwargs,
-    )
-    io.echo(f"inputplayername.160: {name=}", level="debug")
-    return name
 
 
 #    playerid = getplayerid(args, name)
