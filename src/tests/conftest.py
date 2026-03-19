@@ -72,13 +72,59 @@ def db_conn(test_args, test_pool, test_engine_member):
 
 
 @pytest.fixture(scope="function")
+def test_player(test_args, test_pool, db_conn):
+    class DummyPlayer:
+        pass
+
+    player = DummyPlayer()
+    player.args = test_args
+    player.pool = test_pool
+    player.moniker = "test_player"
+    player.membermoniker = TEST_MEMBER_MONIKER
+    player.shipyards = 1
+    player.ships = 0
+    player.resources = {}
+    player.attributes = {}
+
+    def dummy_save(force=False, commit=True):
+        if commit and db_conn:
+            db_conn.commit()
+
+    player.save = dummy_save
+
+    rec = {
+        "moniker": "test_player",
+        "membermoniker": TEST_MEMBER_MONIKER,
+        "rank": 0,
+        "previousrank": 0,
+        "turncount": 0,
+        "soldierpromotioncount": 0,
+        "combatvictorycount": 0,
+        "weatherconditions": 0,
+        "beheaded": False,
+        "taxrate": 15,
+        "training": 1,
+        "resources": database.Jsonb({}),
+    }
+    database.insert(
+        test_args,
+        "empyre.__player",
+        rec,
+        primarykey="moniker",
+        conn=db_conn,
+        commit=True,
+    )
+    db_conn.commit()
+    yield player
+
+
+@pytest.fixture(scope="function")
 def clean_tables(db_conn):
     for table in [
         "empyre.__newsentry",
         "empyre.__colony",
         "empyre.__ship",
         "empyre.__island",
-        "empyre.__player",
     ]:
         try:
             with database.cursor(db_conn) as cur:
@@ -86,4 +132,16 @@ def clean_tables(db_conn):
             db_conn.commit()
         except psycopg.errors.UndefinedTable:
             db_conn.rollback()
+    try:
+        with database.cursor(db_conn) as cur:
+            cur.execute("delete from empyre.__player where moniker = %s", ("test_player",))
+        db_conn.commit()
+    except psycopg.errors.UndefinedTable:
+        db_conn.rollback()
+    try:
+        with database.cursor(db_conn) as cur:
+            cur.execute("delete from empyre.__player;")
+        db_conn.commit()
+    except psycopg.errors.UndefinedTable:
+        db_conn.rollback()
     yield

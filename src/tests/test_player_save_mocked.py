@@ -289,7 +289,7 @@ class TestPlayerCount(unittest.TestCase):
             mock_db.connect.return_value.__exit__ = MagicMock(return_value=False)
 
             mock_cur = mock_cursor.return_value.__enter__.return_value
-            mock_cur.rowcount = 0
+            mock_cur.fetchone.return_value = None
 
             result = empyre.player.count(self.args, "member1", pool=self.mock_pool)
 

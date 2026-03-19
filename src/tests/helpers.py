@@ -2,7 +2,10 @@ import argparse
 from datetime import datetime
 from typing import Any, Optional
 
+import dateutil.tz
+
 from empyre.player import Player
+from empyre.ship.lib import Ship
 from bbsengine6 import database
 
 
@@ -57,3 +60,49 @@ def create_test_player(
         )
 
     return p
+
+
+def create_test_ship(
+    args: argparse.Namespace,
+    pool: Any,
+    moniker: str,
+    playermoniker: str,
+    conn: Optional[Any] = None,
+    insert: bool = True,
+    createdbymoniker: Optional[str] = None,
+    player: Optional[Any] = None,
+    **attrs: Any,
+) -> Ship:
+    if createdbymoniker is None:
+        createdbymoniker = playermoniker
+
+    ship = Ship(args, pool=pool, player=player)
+    ship.pool = pool
+    ship.moniker = moniker
+    ship.playermoniker = playermoniker
+    ship.kind = attrs.get("kind", "cargo")
+    ship.manifest = attrs.get("manifest", {})
+    ship.navigator = attrs.get("navigator", False)
+    ship.location = attrs.get("location", "mainland")
+    ship.status = attrs.get("status", "build")
+    ship.datedocked = attrs.get("datedocked", datetime.now(dateutil.tz.tzlocal()))
+    ship.datecreated = attrs.get("datecreated", datetime.now(dateutil.tz.tzlocal()))
+
+    if insert and conn is not None:
+        s = {
+            "moniker": ship.moniker,
+            "playermoniker": ship.playermoniker,
+            "manifest": ship.manifest,
+            "location": ship.location,
+            "status": ship.status,
+            "kind": ship.kind,
+            "navigator": ship.navigator,
+            "datecreated": ship.datecreated,
+            "createdbymoniker": createdbymoniker,
+            "datedocked": ship.datedocked,
+        }
+        database.insert(
+            args, "empyre.__ship", s, primarykey="moniker", conn=conn, commit=True
+        )
+
+    return ship

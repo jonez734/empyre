@@ -289,7 +289,7 @@ class TestPlayerCountIntegration:
         self, test_args, test_pool, db_conn, clean_tables
     ):
         result = count(test_args, TEST_MEMBER_MONIKER, pool=test_pool)
-        assert result is None
+        assert result == 0
 
     def test_count_returns_none_when_pool_is_none(self, test_args):
         result = count(test_args, TEST_MEMBER_MONIKER, pool=None)

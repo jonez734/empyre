@@ -1060,11 +1060,11 @@ def count(args, membermoniker: str, **kwargs) -> int:
         dat: tuple = (membermoniker,)
         with database.cursor(conn) as cur:
             cur.execute(sql, dat)
-            if cur.rowcount == 0:
+            rec = cur.fetchone()
+            if rec is None:
                 io.echo(f"empyre.player.count.160: returning None", level="debug")
                 return None
-            rec = cur.fetchone()
-            count = rec["count"] if rec["count"] > 0 else None
+            count = rec["count"]
             io.echo(f"empyre.player.count.120: {count=}", level="debug")
             return count
 

@@ -43,6 +43,9 @@ class Ship:
 
     def save(self, commit: bool = True, moniker: Optional[str] = None) -> bool:
         io.echo(f"saving ship {self.moniker}", level="debug")
+        if self.pool is None:
+            io.echo("pool is None", level="error")
+            return False
         ship = {}
         for f in (
             "moniker",
@@ -59,15 +62,17 @@ class Ship:
         if moniker is not None:
             if moniker != ship["moniker"]:
                 ship["moniker"] = moniker
-        database.update(
-            self.args,
-            "empyre.__ship",
-            pk,
-            ship,
-            primarykey="moniker",
-            updatepk=True,
-            pool=self.pool,
-        )
+        with database.connect(self.args, pool=self.pool) as conn:
+            database.update(
+                self.args,
+                "empyre.__ship",
+                pk,
+                ship,
+                primarykey="moniker",
+                updatepk=True,
+                conn=conn,
+                commit=commit,
+            )
         return True
 
     def adjust(self) -> bool:
@@ -106,6 +111,12 @@ def load(args: argparse.Namespace, moniker: str, **kwargs) -> Optional[Any]:
                 "playermoniker",
             ):
                 setattr(ship, f, rec.get(f))
+            for f in ship.attributes:
+                if f in rec:
+                    v = rec[f]
+                    if isinstance(v, datetime) and v is not None:
+                        v = v.isoformat()
+                    ship.attributes[f]["value"] = v
             return ship
 
     conn = kwargs.get("conn")
@@ -557,11 +568,14 @@ def count(
     def _work(conn: Any) -> int:
         with database.cursor(conn) as cur:
             query = sql.SQL(
-                "select count(moniker) from {} where playermoniker=%s"
+                "select count(moniker) as cnt from {} where playermoniker=%s"
             ).format(_table_identifier("empyre.ship"))
             dat = (playermoniker,)
             cur.execute(query, dat)
-            return cur.rowcount
+            row = cur.fetchone()
+            if row is None:
+                return 0
+            return row["cnt"]
 
     conn = kwargs.get("conn")
     if conn is None:
@@ -591,6 +605,7 @@ def create(args: argparse.Namespace, **kwargs: Any) -> Optional[Ship]:
 
     ship = Ship(args, player=player, pool=pool)
     ship.moniker = kwargs.get("moniker", "Unnamed Ship")
+    ship.playermoniker = player.moniker
     ship.kind = kwargs.get("kind", "cargo")
     ship.manifest = kwargs.get("manifest", {})
     ship.navigator = kwargs.get("navigator", False)
