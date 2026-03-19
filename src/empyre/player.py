@@ -463,7 +463,7 @@ class Player(object):
         rec["resources"] = database.Jsonb(resources)
         return rec
 
-    def update(self, conn):
+    def update(self, conn, commit=True):
         def _work(conn):
             database.update(
                 self.args,
@@ -473,6 +473,7 @@ class Player(object):
                 primarykey="moniker",
                 conn=conn,
                 mogrify=True,
+                commit=commit,
             )
             return True
 
@@ -556,7 +557,7 @@ class Player(object):
             )
             with database.connect(self.args, pool=self.pool) as conn:
                 self.sync()
-                self.update(conn)
+                self.update(conn, commit=commit)
             io.echo(" ok ", level="ok")
             return True
 
