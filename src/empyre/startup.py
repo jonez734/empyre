@@ -45,7 +45,6 @@ def main(args, **kwargs):
                 return False
             else:
                 io.echo(" ok ", level="ok")
-                conn.commit()
         
             classlist = (
                 ("empyre.player",    "player.sql"),
@@ -85,7 +84,6 @@ def main(args, **kwargs):
 
             if failcount == 0:
                 io.echo(" ok ", level="ok")
-                conn.commit()
             else:
                 io.echo("fail", level="error")
                 conn.rollback()
