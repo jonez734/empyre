@@ -3,7 +3,7 @@ import argparse
 import copy
 import random
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 import dateutil.tz
 from bbsengine6 import database, io, member, util
@@ -970,15 +970,25 @@ def select(
     title: str = "select player",
     prompt: str = "player: ",
     membermoniker: str = None,
+    allowcreate: bool = True,
     **kwargs,
 ) -> Player:
     pool = kwargs.get("pool", None)
     if pool is None:
         io.echo(f"empyre.player.select.300: {pool=}", level="error")
+        return None
 
     class EmpyrePlayerListbox(ListboxCursor):
         def __init__(self, args, **kwargs):
             super().__init__(args, **kwargs)
+            self._create_new_item = None
+
+        def fetchitems(self) -> List[ListboxItem]:
+            items = []
+            if self._create_new_item is not None:
+                items.append(self._create_new_item)
+            items.extend(super().fetchitems())
+            return items
 
     class EmpyrePlayerListboxItem(ListboxItem):
         def __init__(self, rec: dict, width: int):
@@ -1024,7 +1034,8 @@ def select(
         sql: str = "select moniker from empyre.player where membermoniker=%s order by datelastplayed desc"
         dat: tuple = (membermoniker,)
 
-        totalitems = count(args, membermoniker, conn=conn)
+        existingcount = count(args, membermoniker, conn=conn)
+        totalitems = existingcount + (1 if allowcreate else 0)
         with database.cursor(conn) as cur:
             if args.debug is True:
                 io.echo(
@@ -1032,9 +1043,6 @@ def select(
                     level="debug",
                 )
             cur.execute(sql, dat)
-            if cur.rowcount == 0:
-                io.echo("no player record.")
-                return None
 
             EmpyrePlayerListboxItem.pool = pool
             lb = EmpyrePlayerListbox(
@@ -1044,8 +1052,21 @@ def select(
                 cur=cur,
                 itemclass=EmpyrePlayerListboxItem,
             )
+
+            if allowcreate:
+                create_new = ListboxItem(
+                    content="*** Create New Player ***",
+                    pk="__create_new__",
+                    data={"action": "create"},
+                )
+                lb._create_new_item = create_new
+
             op = lb.run(prompt)
             if op.status == "selected" and op.item:
+                if op.item.data.get("action") == "create":
+                    io.echo("Creating new player...")
+                    newplayer = create(args, pool=pool, conn=conn)
+                    return newplayer
                 io.echo(f"{op.item.data['player'].moniker}")
                 return op.item.data["player"]
             elif op.status == "cancelled":

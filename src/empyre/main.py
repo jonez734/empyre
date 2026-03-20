@@ -73,23 +73,10 @@ def main(args, **kwargs):
             io.echo("empyre.main.200: you do not exist! go away!", level="error")
             return False
 
-        currentplayer = None
-
-        playercount = libplayer.count(args, currentmembermoniker, pool=pool, **kwargs)
-        io.echo(f"empyre.main.100: {playercount=}", level="debug")
-        if playercount is None:
-            currentplayer = libplayer.create(args, pool=pool)
-            if currentplayer is None:
-                io.echo("empyre.main.200: unable to create new player!", level="error")
-                return False
-        elif playercount > 1:
-            currentplayer = libplayer.select(args, currentmoniker, pool=pool, **kwargs)
-            if currentplayer is None:
-                io.echo(f"empyre.main.220: error selecting player", level="error")
-                return False
-        else:
-            io.echo(f"empyre.main.300: calling libplayer.load {currentmembermoniker=}", level="debug")
-            currentplayer = libplayer.load(args, currentmembermoniker, pool=pool)
+        currentplayer = libplayer.select(args, membermoniker=currentmembermoniker, pool=pool, **kwargs)
+        if currentplayer is None:
+            io.echo(f"empyre.main.220: no player selected", level="info")
+            return True
 
         done = False
         while not done:
