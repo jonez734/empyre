@@ -24,6 +24,11 @@ ATTRIBUTES: dict = {
     "status": {"default": None},
     "manifest": {"default": {}},
     "kind": {"default": "cargo"},
+    "location": {"default": "mainland"},
+    "playermoniker": {"default": None},
+    "createdbymoniker": {"default": None},
+    "dateupdated": {"default": None, "type": datetime},
+    "updatedbymoniker": {"default": None},
 }
 
 
