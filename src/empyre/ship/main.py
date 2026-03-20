@@ -3,23 +3,6 @@ from bbsengine6 import io, database
 from . import lib as libship
 from .. import lib as libempyre
 
-def keyhandler(args, ch, lb):
-    currentitem = lb.currentitem
-    ship = currentitem.rec
-
-    keys = {}
-    keys["KEY_INS"] = "insertship"
-
-    if ch in ("KEY_INS"):
-        io.setvar("cic", "{currentitemcolor}")
-        currentitem.display()
-        io.echo("{restorecursor}new ship")
-        ship = libship.build(args)
-        libship.insert(args, "__ship", ship)
-        return True  # key has been handled
-    return False
-
-
 def init(args, **kwargs):
     return True
 
@@ -89,13 +72,6 @@ def main(args, **kwargs):
     if player is None:
         io.echo("You do not exist! Go Away!", level="error")
         return False
-    n = libship.count(args, player.moniker, **kwargs)
-    player.ships = n
-    if n == 0:
-        io.echo("You have no ships!")
-        libship.build(args, **kwargs)
-        return False
-
     if player.ships > player.shipyards * libship.SHIPSPERSHIPYARD:
         shipyardres = player.getresource("shipyards")
         libempyre.trade(args, player, "shipyards", **shipyardres)

@@ -563,15 +563,6 @@ def getship(args: argparse.Namespace, moniker: str, **kwargs: Any) -> Optional[S
             return ship
 
 
-def empyshipkeyhandler(args: argparse.Namespace, ch: str, lb: Any) -> bool:
-    io.echo("inside empyreshipkeyhandler", level="debug")
-    currentitem = lb.currentitem
-    if ch == "KEY_ENTER":
-        io.echo(f"{currentitem.ship.moniker}")
-        return False
-    return True
-
-
 def runmodule(args: argparse.Namespace, modulename: str, **kwargs: Any) -> Any:
     return libempyre.runmodule(args, f"ship.{modulename}", **kwargs)
 
