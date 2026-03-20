@@ -233,7 +233,7 @@ class TestShipSaveIntegration:
         db_conn.commit()
 
         ship.kind = "carrier"
-        ship.save(commit=False)
+        ship.save(commit=False, conn=db_conn)
         db_conn.rollback()
 
         loaded = load(test_args, "rollback_ship", pool=test_pool)

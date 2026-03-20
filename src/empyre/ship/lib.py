@@ -41,9 +41,11 @@ class Ship:
             setattr(self, name, data["default"])
             self.attributes[name]["value"] = data["default"]
 
-    def save(self, commit: bool = True, moniker: Optional[str] = None) -> bool:
+    def save(
+        self, commit: bool = True, moniker: Optional[str] = None, conn: Any = None
+    ) -> bool:
         io.echo(f"saving ship {self.moniker}", level="debug")
-        if self.pool is None:
+        if self.pool is None and conn is None:
             io.echo("pool is None", level="error")
             return False
         ship = {}
@@ -62,7 +64,8 @@ class Ship:
         if moniker is not None:
             if moniker != ship["moniker"]:
                 ship["moniker"] = moniker
-        with database.connect(self.args, pool=self.pool) as conn:
+
+        def _do_save(c):
             database.update(
                 self.args,
                 "empyre.__ship",
@@ -70,9 +73,15 @@ class Ship:
                 ship,
                 primarykey="moniker",
                 updatepk=True,
-                conn=conn,
+                conn=c,
                 commit=commit,
             )
+
+        if conn is not None:
+            _do_save(conn)
+        else:
+            with database.connect(self.args, pool=self.pool) as c:
+                _do_save(c)
         return True
 
     def adjust(self) -> bool:

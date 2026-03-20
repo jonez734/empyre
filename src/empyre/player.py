@@ -455,6 +455,10 @@ class Player(object):
             elif isinstance(v, datetime):
                 io.echo(f"buildrec.attributes.datetime: {name}={v}", level="debug")
                 v = v.isoformat()
+            elif isinstance(v, type):
+                # Handle any remaining type objects - convert to string
+                io.echo(f"buildrec.attributes.type: {name}={v}", level="debug")
+                v = str(v)
             rec[name] = v
         resources = copy.copy(self.resources)
         for name, data in resources.items():
@@ -462,6 +466,10 @@ class Player(object):
             if isinstance(v, datetime):
                 # io.echo("buildrec.resources.datetime!", level="debug")
                 v = v.isoformat()
+            elif isinstance(v, type):
+                # Handle any remaining type objects in resources
+                io.echo(f"buildrec.resources.type: {name}={v}", level="debug")
+                v = str(v)
             resources[name]["value"] = v
         # io.echo(f"empyre.Player.buildrec.200: {resources=}", level="debug")
         rec["resources"] = database.Jsonb(resources)
@@ -877,17 +885,34 @@ class completePlayerName(object):
         return results[state]
 
 
-def verifyPlayerNameFound(buffer: str, *, args, **kwargs) -> bool:
-    if exists(buffer, args=args) is True:
-        return True
-    return False
+def verifyPlayerNameFound(args, moniker: str, **kwargs) -> bool:
+    pool = kwargs.get("pool", None)
+    if pool is None:
+        io.echo("verifyPlayerNameFound.100: no pool", level="error")
+        return False
+    with database.connect(args, pool=pool) as conn:
+        with database.cursor(conn) as cur:
+            sql = "select 1 from empyre.player where moniker=%s"
+            dat = (moniker,)
+            cur.execute(sql, dat)
+            if cur.rowcount == 0:
+                return False
+            return True
 
 
-def verifyPlayerNameNotFound(buffer: str, *, args, **kwargs) -> bool:
-    if exists(buffer, args=args) is False:
-        return True
-    io.echo("verifyPlayerNameNotFound.100: returning False", level="debug")
-    return False
+def verifyPlayerNameNotFound(args, moniker: str, **kwargs) -> bool:
+    pool = kwargs.get("pool", None)
+    if pool is None:
+        io.echo("verifyPlayerNameNotFound.100: no pool", level="error")
+        return False
+    with database.connect(args, pool=pool) as conn:
+        with database.cursor(conn) as cur:
+            sql = "select 1 from empyre.player where moniker=%s"
+            dat = (moniker,)
+            cur.execute(sql, dat)
+            if cur.rowcount == 0:
+                return True
+            return False
 
 
 def build(args, rec: dict, **kwargs) -> Player:

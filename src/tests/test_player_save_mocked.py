@@ -202,7 +202,9 @@ class TestPlayerLoad(unittest.TestCase):
             mock_db.connect.return_value.__enter__ = MagicMock(
                 return_value=self.mock_conn
             )
-            mock_db.connect.return_value.__exit__ = MagicMock(return_value=False)
+            mock_db.connect.return_value.__exit__ = MagicMock(
+                side_effect=lambda *args: self.mock_conn.commit() or False
+            )
 
             mock_cur = mock_cursor.return_value.__enter__.return_value
             mock_cur.rowcount = 1
@@ -230,7 +232,9 @@ class TestPlayerLoad(unittest.TestCase):
             mock_db.connect.return_value.__enter__ = MagicMock(
                 return_value=self.mock_conn
             )
-            mock_db.connect.return_value.__exit__ = MagicMock(return_value=False)
+            mock_db.connect.return_value.__exit__ = MagicMock(
+                side_effect=lambda *args: self.mock_conn.commit() or False
+            )
 
             mock_cur = mock_cursor.return_value.__enter__.return_value
             mock_cur.rowcount = 0
@@ -265,7 +269,9 @@ class TestPlayerCount(unittest.TestCase):
             mock_db.connect.return_value.__enter__ = MagicMock(
                 return_value=self.mock_conn
             )
-            mock_db.connect.return_value.__exit__ = MagicMock(return_value=False)
+            mock_db.connect.return_value.__exit__ = MagicMock(
+                side_effect=lambda *args: self.mock_conn.commit() or False
+            )
 
             mock_cur = mock_cursor.return_value.__enter__.return_value
             mock_cur.rowcount = 1
@@ -286,7 +292,9 @@ class TestPlayerCount(unittest.TestCase):
             mock_db.connect.return_value.__enter__ = MagicMock(
                 return_value=self.mock_conn
             )
-            mock_db.connect.return_value.__exit__ = MagicMock(return_value=False)
+            mock_db.connect.return_value.__exit__ = MagicMock(
+                side_effect=lambda *args: self.mock_conn.commit() or False
+            )
 
             mock_cur = mock_cursor.return_value.__enter__.return_value
             mock_cur.fetchone.return_value = None
@@ -355,6 +363,7 @@ class TestPlayerExists(unittest.TestCase):
         self.mock_conn.autocommit = False
 
     def test_exists_returns_true_when_player_found(self):
+        self.args.pool = self.mock_pool
         with (
             patch("empyre.player.database") as mock_db,
             patch("empyre.player.database.cursor") as mock_cursor,
@@ -364,7 +373,9 @@ class TestPlayerExists(unittest.TestCase):
             mock_db.connect.return_value.__enter__ = MagicMock(
                 return_value=self.mock_conn
             )
-            mock_db.connect.return_value.__exit__ = MagicMock(return_value=False)
+            mock_db.connect.return_value.__exit__ = MagicMock(
+                side_effect=lambda *args: self.mock_conn.commit() or False
+            )
 
             mock_cur = mock_cursor.return_value.__enter__.return_value
             mock_cur.rowcount = 1
@@ -384,7 +395,9 @@ class TestPlayerExists(unittest.TestCase):
             mock_db.connect.return_value.__enter__ = MagicMock(
                 return_value=self.mock_conn
             )
-            mock_db.connect.return_value.__exit__ = MagicMock(return_value=False)
+            mock_db.connect.return_value.__exit__ = MagicMock(
+                side_effect=lambda *args: self.mock_conn.commit() or False
+            )
 
             mock_cur = mock_cursor.return_value.__enter__.return_value
             mock_cur.rowcount = 0
