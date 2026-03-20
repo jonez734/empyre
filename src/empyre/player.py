@@ -877,14 +877,14 @@ class completePlayerName(object):
         return results[state]
 
 
-def verifyPlayerNameFound(moniker: str, *, args, **kwargs) -> bool:
-    if exists(moniker, args=args) is True:
+def verifyPlayerNameFound(buffer: str, *, args, **kwargs) -> bool:
+    if exists(buffer, args=args) is True:
         return True
     return False
 
 
-def verifyPlayerNameNotFound(moniker: str, *, args, **kwargs) -> bool:
-    if exists(moniker, args=args) is False:
+def verifyPlayerNameNotFound(buffer: str, *, args, **kwargs) -> bool:
+    if exists(buffer, args=args) is False:
         return True
     io.echo("verifyPlayerNameNotFound.100: returning False", level="debug")
     return False
