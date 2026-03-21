@@ -523,42 +523,56 @@ def selectship(args: argparse.Namespace, **kwargs: Any) -> Any:
             )
             return
 
-    totalships = count(args, player.moniker, pool=pool)
+    def _set_bottombar(totalships: int) -> None:
+        maxships = player.shipyards * SHIPSPERSHIPYARD
+        if totalships < maxships:
+            libempyre.setbottombar(
+                args,
+                f"select ship | ENT: Select | INS: Add | E: Edit | DEL: Decom | S: Sail | L: Load | capacity: {totalships}/{maxships}",
+                player=player,
+            )
+        else:
+            libempyre.setbottombar(
+                args,
+                f"select ship | ENT: Select | INS: Add | E: Edit | DEL: Decom | S: Sail | L: Load | capacity: {totalships}/{maxships} (need shipyard)",
+                player=player,
+            )
+
+    query = sql.SQL("select * from {} where playermoniker=%s").format(
+        _table_identifier("empyre.ship")
+    )
+    dat = (player.moniker,)
 
     with database.connect(args, pool=pool) as conn:
         with database.cursor(conn) as cur:
-            query = sql.SQL("select * from {} where playermoniker=%s").format(
-                _table_identifier("empyre.ship")
-            )
-            dat = (player.moniker,)
             cur.execute(query, dat)
+            totalships = count(args, player.moniker, conn=conn)
+            EmpyreShipListboxItem.pool = pool
+            lb = EmpyreShipListbox(
+                args,
+                "select ship",
+                totalitems=totalships,
+                itemclass=EmpyreShipListboxItem,
+                cur=cur,
+                **kwargs,
+            )
+            _set_bottombar(totalships)
 
-    EmpyreShipListboxItem.pool = pool
-    lb = EmpyreShipListbox(
-        args,
-        "select ship",
-        totalitems=totalships,
-        itemclass=EmpyreShipListboxItem,
-        **kwargs,
-    )
-    maxships = player.shipyards * SHIPSPERSHIPYARD
-    if totalships < maxships:
-        libempyre.setbottombar(
-            args,
-            f"select ship | ENT: Select | INS: Add | E: Edit | DEL: Decom | S: Sail | L: Load | capacity: {totalships}/{maxships}",
-            player=player,
-        )
-    else:
-        libempyre.setbottombar(
-            args,
-            f"select ship | ENT: Select | INS: Add | E: Edit | DEL: Decom | S: Sail | L: Load | capacity: {totalships}/{maxships} (need shipyard)",
-            player=player,
-        )
-    op = lb.run("select ship: ")
-    libempyre.setbottombar(args, "dock", player=player)
-    if op.status == "selected" and op.item:
-        return op.item.data["ship"]
-    return None
+            while True:
+                op = lb.run("select ship: ")
+                if op.status == "selected" and op.item:
+                    libempyre.setbottombar(args, "dock", player=player)
+                    return op.item.data["ship"]
+                if op.status == "cancelled":
+                    libempyre.setbottombar(args, "dock", player=player)
+                    return None
+                if op.status in ("added", "refresh"):
+                    cur.execute(query, dat)
+                    lb._totalitems = count(args, player.moniker, conn=conn)
+                    lb._curpage = 0
+                    lb._cursor_position = 0
+                    _set_bottombar(lb._totalitems)
+                    continue
 
 
 def getship(args: argparse.Namespace, moniker: str, **kwargs: Any) -> Optional[Ship]:
