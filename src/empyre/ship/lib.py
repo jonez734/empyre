@@ -414,6 +414,7 @@ def selectship(args: argparse.Namespace, **kwargs: Any) -> Any:
         def __init__(self, args: argparse.Namespace, title: str, **kwargs: Any) -> None:
             self.player = kwargs.get("player", None)
             self.pool = kwargs.get("pool", None)
+            kwargs.pop("cur", None)
             custom_keys = {
                 "KEY_INSERT": self._add_ship,
                 "e": self._edit_ship,
