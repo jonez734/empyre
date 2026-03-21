@@ -1086,6 +1086,11 @@ def select(
                     return op.item.data["player"]
                 if op.status == "cancelled":
                     return None
+                if op.status == "added":
+                    cur.execute(sql, dat)
+                    lb._totalitems = count(args, membermoniker, conn=conn)
+                    lb._curpage = 0
+                    lb._cursor_position = 0
 
 
 def count(args, membermoniker: str, **kwargs) -> int:
