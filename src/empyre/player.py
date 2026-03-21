@@ -1079,12 +1079,13 @@ def select(
                 pool=pool,
             )
 
-            op = lb.run(prompt)
-            if op.status == "selected" and op.item:
-                io.echo(f"{op.item.data['player'].moniker}")
-                return op.item.data["player"]
-            elif op.status == "cancelled":
-                return None
+            while True:
+                op = lb.run(prompt)
+                if op.status == "selected" and op.item:
+                    io.echo(f"{op.item.data['player'].moniker}")
+                    return op.item.data["player"]
+                if op.status == "cancelled":
+                    return None
 
 
 def count(args, membermoniker: str, **kwargs) -> int:
