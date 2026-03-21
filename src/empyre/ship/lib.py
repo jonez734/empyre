@@ -414,7 +414,6 @@ def selectship(args: argparse.Namespace, **kwargs: Any) -> Any:
         def __init__(self, args: argparse.Namespace, title: str, **kwargs: Any) -> None:
             self.player = kwargs.get("player", None)
             self.pool = kwargs.get("pool", None)
-            kwargs.pop("cur", None)
             custom_keys = {
                 "KEY_INSERT": self._add_ship,
                 "e": self._edit_ship,
@@ -539,12 +538,13 @@ def selectship(args: argparse.Namespace, **kwargs: Any) -> Any:
                 player=player,
             )
 
-    query = sql.SQL("select * from {} where playermoniker=%s").format(
+    location = kwargs.get("location", "mainland")
+    query = sql.SQL("select * from {} where playermoniker=%s and location=%s").format(
         _table_identifier("empyre.ship")
     )
-    dat = (player.moniker,)
+    dat = (player.moniker, location)
 
-    with database.connect(args, pool=pool) as conn:
+    def _run(conn):
         with database.cursor(conn) as cur:
             cur.execute(query, dat)
             totalships = count(args, player.moniker, conn=conn)
@@ -574,6 +574,12 @@ def selectship(args: argparse.Namespace, **kwargs: Any) -> Any:
                     lb._cursor_position = 0
                     _set_bottombar(lb._totalitems)
                     continue
+
+    conn = kwargs.get("conn", None)
+    if conn is None:
+        with database.connect(args, pool=pool) as conn:
+            return _run(conn)
+    return _run(conn)
 
 
 def getship(args: argparse.Namespace, moniker: str, **kwargs: Any) -> Optional[Ship]:
