@@ -4,14 +4,18 @@
 
 from . import lib
 
+
 def init(args, **kwargs):
     return True
+
 
 def access(args, op, **kwargs):
     return True
 
-def buildargs(args, **kwargs):
+
+def buildargs(args=None, subparser=None, **kwargs):
     return None
+
 
 def main(args, **kwargs):
     player = kwargs["player"] if "player" in kwargs else None

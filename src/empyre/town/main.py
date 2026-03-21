@@ -2,14 +2,26 @@ from bbsengine6 import io, util
 from .. import lib as libempyre
 from . import lib
 
+
 def init(args, **kwargs):
     return True
+
 
 def access(args, op, **kwargs):
     return True
 
-def buildargs(args, **kwargs):
+
+def buildargs(args=None, subparser=None, **kwargs):
+    if subparser is not None:
+        subparser.add_argument(
+            "--choice",
+            type=str,
+            default=None,
+            help="Town menu hotkey (C/L/P/R/T/X/Y) to auto-select",
+        )
+        return None
     return None
+
 
 def main(args, **kwargs):
     player = kwargs.get("player", None)
@@ -19,32 +31,34 @@ def main(args, **kwargs):
 
     optiontable = (
         ("C", "Cyclone's Natural Disaster Bank :bank:", "naturaldisasterbank"),
-        ("L", "Lucifer's Den :fire:", "lucifersden"), # lucifersden),
+        ("L", "Lucifer's Den :fire:", "lucifersden"),  # lucifersden),
         ("P", "Soldier Promotion to Noble :prince:", "soldierpromotion"),
         ("R", "Realtor's Advice :house:", "realtorsadvice"),
-#        ("J", "Juicebar", "juicebar"),
-#        ("S", "   Slave Market", None),
+        #        ("J", "Juicebar", "juicebar"),
+        #        ("S", "   Slave Market", None),
         ("T", "Change Tax Rate :receipt:", "changetaxrate"),
-#        ("U", "   Utopia's Auction", None),
-#        ("W", "   Buy Soldiers", None),
+        #        ("U", "   Utopia's Auction", None),
+        #        ("W", "   Buy Soldiers", None),
         ("X", "Train Serfs to Soldiers :military-helmet:", "trainsoldiers"),
-        ("Y", "Your Status", "playerstatus")
+        ("Y", "Your Status", "playerstatus"),
     )
 
     def townhelp(**kwargs):
         for hotkey, description, func in optiontable:
             if callable(func) is True or lib.checkmodule(args, func) is True:
                 io.echo(f"{{optioncolor}}[{hotkey}]{{labelcolor}} {description}")
-    
+
     # @see https://github.com/Pinacolada64/ImageBBS/blob/master/v1.2/games/empire6/plus_emp6_town.lbl#L130
     # @since 20200830
     def menu():
         util.heading("town menu")
 
         townhelp()
-        
-        io.echo("{/all}{optioncolor}[Q]{/all} {labelcolor}Return to the Empyre :door:{/all}{f6}")
-    
+
+        io.echo(
+            "{/all}{optioncolor}[Q]{/all} {labelcolor}Return to the Empyre :door:{/all}{f6}"
+        )
+
     terminalwidth = io.terminal.width()
 
     hotkeys = "Q"

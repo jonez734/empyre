@@ -13,7 +13,16 @@ def access(args, op, **kwargs):
     return True
 
 
-def buildargs(args=None, **kwargs):
+def buildargs(args=None, subparser=None, **kwargs):
+    if subparser is not None:
+        subparser.add_argument(
+            "--roll",
+            type=int,
+            choices=range(1, 13),
+            default=None,
+            help="Set disaster roll (1-12), overriding random roll",
+        )
+        return None
     return None
 
 

@@ -1,3 +1,4 @@
+import pytest
 from unittest.mock import patch, MagicMock, PropertyMock
 
 from empyre.lib import (
@@ -56,17 +57,30 @@ class TestBuildargs:
         ns = parser.parse_args(["--verbose"])
         assert ns.verbose is True
 
-    def test_parser_has_modules_option(self, test_args):
+    def test_subcommand_disaster_sets_subparser(self, test_args):
         parser = buildargs()
-        ns = parser.parse_args([])
-        assert isinstance(ns.modules, tuple)
-        assert "town" in ns.modules
-        assert "shipyard" in ns.modules
+        ns = parser.parse_args(["disaster"])
+        assert ns._subparser == "disaster"
 
-    def test_parser_default_modules_includes_weather(self, test_args):
+    def test_subcommand_town_sets_subparser(self, test_args):
+        parser = buildargs()
+        ns = parser.parse_args(["town"])
+        assert ns._subparser == "town"
+
+    def test_no_subcommand_leaves_subparser_none(self, test_args):
         parser = buildargs()
         ns = parser.parse_args([])
-        assert "weather" in ns.modules
+        assert ns._subparser is None
+
+    def test_disaster_subparser_accepts_roll_arg(self, test_args):
+        parser = buildargs()
+        ns = parser.parse_args(["disaster", "--roll", "5"])
+        assert ns.roll == 5
+
+    def test_town_subparser_accepts_choice_arg(self, test_args):
+        parser = buildargs()
+        ns = parser.parse_args(["town", "--choice", "C"])
+        assert ns.choice == "C"
 
 
 class TestCheckmodule:

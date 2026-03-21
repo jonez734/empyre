@@ -1,23 +1,28 @@
 # @since 20220803 created 'drydock' module @see mdl.emp.delx2.txt#50277
 # @since 20231222 renamed 'drydock' to 'dock'
-#import bbsengine6 as bbsengine
+# import bbsengine6 as bbsengine
 from bbsengine6 import io, util
 
 from . import lib as libempyre
 from .ship import lib as libship
 
+
 def scanshiplocations(args, location):
     sql = "select * from empyre.ship where ownerid=%s and location=%s"
     dat = (currentplayerid, location)
 
+
 def init(args, **kwargs):
     return True
+
 
 def access(args, op, **kwargs):
     return True
 
-def buildargs(args, **kwargs):
+
+def buildargs(args=None, subparser=None, **kwargs):
     return None
+
 
 def dockhelp(**kwargs):
     io.echo("{var:optioncolor}[T]{var:labelcolor} Trade")
@@ -25,20 +30,22 @@ def dockhelp(**kwargs):
     io.echo("{var:optioncolor}[X]{var:labelcolor} Exit{var:normalcolor} :door:")
     return True
 
+
 def trade(args, **kwargs):
     player = kwargs.get("player", None)
 
     yrd = player.getresource("shipyards")
     libempyre.trade(args, player, "shipyards", **yrd)
 
-#    shp = player.getresource("ships")
-#    libempyre.trade(args, player, "ships", **shp)
+    #    shp = player.getresource("ships")
+    #    libempyre.trade(args, player, "ships", **shp)
 
     nav = player.getresource("navigators")
     libempyre.trade(args, player, "navigators", **nav)
 
     player.adjust()
     player.save()
+
 
 def main(args, **kwargs):
     player = kwargs.get("player", None)
@@ -64,8 +71,12 @@ def main(args, **kwargs):
         shp = player.getresource("ships")
         nav = player.getresource("navigators")
         yrd = player.getresource("shipyards")
-        io.echo(f"You have {util.pluralize(player.ships, **shp)}, {util.pluralize(player.shipyards, **yrd)}, and {util.pluralize(player.navigators, **nav)}")
-        ch = io.inputchar("{var:promptcolor}dock: {var:inputcolor}", "STQX", "X", help=dockhelp)
+        io.echo(
+            f"You have {util.pluralize(player.ships, **shp)}, {util.pluralize(player.shipyards, **yrd)}, and {util.pluralize(player.navigators, **nav)}"
+        )
+        ch = io.inputchar(
+            "{var:promptcolor}dock: {var:inputcolor}", "STQX", "X", help=dockhelp
+        )
         if ch == "Q" or ch == "X":
             io.echo("exit")
             done = True
@@ -79,9 +90,11 @@ def main(args, **kwargs):
             elif player.navigators <= player.ships and player.ships > 0:
                 need = abs(player.ships - player.navigators)
                 if need > 0:
-#                    nav = player.getresource("navigators")
-#                    shp = player.getresource("ships")
-                    io.echo(f"You need {util.pluralize(need, **nav)} to outfit your {util.pluralize(player.ships, **shp)}.")
+                    #                    nav = player.getresource("navigators")
+                    #                    shp = player.getresource("ships")
+                    io.echo(
+                        f"You need {util.pluralize(need, **nav)} to outfit your {util.pluralize(player.ships, **shp)}."
+                    )
                     libempyre.trade(args, player, "navigators", "navigators", **nav)
         elif ch == "S":
             io.echo("Ships{/all}")

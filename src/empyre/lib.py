@@ -433,26 +433,25 @@ def init(args, **kwargs):
     return True
 
 
+SUBCOMMANDS = (
+    "weather",
+    "disaster",
+    "harvest",
+    "town",
+    "combat",
+    "shipyard",
+    "dock",
+    "investments",
+    "yearlyreport",
+)
+
+DEFAULT_MODULES = SUBCOMMANDS
+
+
 def buildargs(args=None, **kwargs: dict):
     parser = argparse.ArgumentParser("empyre")
     parser.add_argument("--verbose", action="store_true", dest="verbose")
     parser.add_argument("--debug", action="store_true", dest="debug")
-    parser.add_argument(
-        "--modules",
-        nargs="+",
-        default=(
-            "weather",
-            "disaster",
-            "harvest",
-            "town",
-            "combat",
-            "shipyard",
-            "dock",
-            "investments",
-            "yearlyreport",
-        ),
-        dest="modules",
-    )
 
     defaults = {
         "databasename": "zoid6",
@@ -462,6 +461,14 @@ def buildargs(args=None, **kwargs: dict):
         "databasepassword": None,
     }
     database.buildargs(parser, defaults, suppress=True)
+
+    subparsers = parser.add_subparsers(dest="_subparser", help="Available subcommands")
+
+    for modname in SUBCOMMANDS:
+        sp = subparsers.add_parser(modname, help=f"Run the {modname} module")
+        x = f"{PACKAGENAME}.{modname}"
+        mod = __import__(x, fromlist=["buildargs"])
+        mod.buildargs(subparser=sp)
 
     return parser
 

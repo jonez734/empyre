@@ -3,14 +3,18 @@
 from bbsengine6 import io, util
 from . import lib as libempyre
 
+
 def init(args, **kwargs):
     return True
+
 
 def access(args, op, **kwargs):
     return True
 
-def buildargs(args=None, **kwargs):
+
+def buildargs(args=None, subparser=None, **kwargs):
     return None
+
 
 def main(args, **kwargs):
     player = kwargs["player"] if "player" in kwargs else None
@@ -20,9 +24,9 @@ def main(args, **kwargs):
 
     # if you are a KING, you only get average weather and below
     if player.rank == 2:
-        weathercondition = util.diceroll(4) # random.randint(1, 4)
+        weathercondition = util.diceroll(4)  # random.randint(1, 4)
     else:
-        weathercondition = util.diceroll(6) # random.randint(1, 6)
+        weathercondition = util.diceroll(6)  # random.randint(1, 6)
 
     io.echo("{cyan}", end="")
     if weathercondition == libempyre.Weather.POOR:
@@ -37,7 +41,7 @@ def main(args, **kwargs):
         io.echo("Fine Weather. Long Summer")
     elif weathercondition == libempyre.Weather.FANTASTIC:
         io.echo(":sun: Fantastic Weather! Great Year!")
-        
+
     io.echo("{/all}", end="", flush=True)
     player.weathercondition = weathercondition
 
