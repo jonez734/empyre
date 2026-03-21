@@ -3,12 +3,12 @@ import argparse
 import copy
 import random
 from datetime import datetime
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 import dateutil.tz
 from bbsengine6 import database, io, member, util
 from bbsengine6.listboxcursor import ListboxCursor
-from bbsengine6.listbox import ListboxItem
+from bbsengine6.listbox import ListboxItem, ListboxResult
 
 from .ship import lib as libship
 from . import lib as libempyre
@@ -1005,15 +1005,16 @@ def select(
 
     class EmpyrePlayerListbox(ListboxCursor):
         def __init__(self, args, **kwargs):
-            super().__init__(args, **kwargs)
-            self._create_new_item = None
+            self.pool = kwargs.get("pool", None)
+            custom_keys = {
+                "KEY_INSERT": self._add_player,
+            }
+            super().__init__(args, custom_keys=custom_keys, **kwargs)
 
-        def fetchitems(self) -> List[ListboxItem]:
-            items = []
-            if self._create_new_item is not None:
-                items.append(self._create_new_item)
-            items.extend(super().fetchitems())
-            return items
+        def _add_player(self) -> Optional[ListboxResult]:
+            with database.connect(self.args, pool=self.pool) as conn:
+                create(self.args, pool=self.pool, conn=conn)
+            return ListboxResult("added")
 
     class EmpyrePlayerListboxItem(ListboxItem):
         def __init__(self, rec: dict, width: int):
@@ -1045,7 +1046,7 @@ def select(
 
         def help(self):
             io.echo(
-                f"{{var:labelcolor}}use {{var:valuecolor}}KEY_ENTER{{var:labelcolor}} to select one of your players"
+                f"{{var:labelcolor}}use {{var:valuecolor}}KEY_ENTER{{var:labelcolor}} to select one of your players, {{var:valuecolor}}KEY_INSERT{{var:labelcolor}} to create a new player"
             )
             return
 
@@ -1060,7 +1061,6 @@ def select(
         dat: tuple = (membermoniker,)
 
         existingcount = count(args, membermoniker, conn=conn)
-        totalitems = existingcount + (1 if allowcreate else 0)
         with database.cursor(conn) as cur:
             if args.debug is True:
                 io.echo(
@@ -1073,25 +1073,14 @@ def select(
             lb = EmpyrePlayerListbox(
                 args,
                 title=title,
-                totalitems=totalitems,
+                totalitems=existingcount,
                 cur=cur,
                 itemclass=EmpyrePlayerListboxItem,
+                pool=pool,
             )
-
-            if allowcreate:
-                create_new = ListboxItem(
-                    content="*** Create New Player ***",
-                    pk="__create_new__",
-                    data={"action": "create"},
-                )
-                lb._create_new_item = create_new
 
             op = lb.run(prompt)
             if op.status == "selected" and op.item:
-                if op.item.data.get("action") == "create":
-                    io.echo("Creating new player...")
-                    newplayer = create(args, pool=pool, conn=conn)
-                    return newplayer
                 io.echo(f"{op.item.data['player'].moniker}")
                 return op.item.data["player"]
             elif op.status == "cancelled":
