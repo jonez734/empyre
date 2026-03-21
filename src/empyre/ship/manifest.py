@@ -49,8 +49,7 @@ def save(ship) -> bool:
             query = sql.SQL("update {} set manifest=%s where moniker=%s").format(
                 _table_identifier("empyre.ship")
             )
-            dat = (ship.manifest, ship.moniker)
-            cur.execute(query, dat)
+            database.execute(cur, query, ship.manifest, ship.moniker)
             return cur.rowcount > 0
 
     pool = getattr(ship, "pool", None)

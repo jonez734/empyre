@@ -445,33 +445,13 @@ class Player(object):
         for name, data in self.attributes.items():
             if name == "datelastplayedlocal":
                 continue
-            # Create clean copy without 'type' key to avoid "Object of type type" error
             clean_data = {k: v for k, v in data.items() if k != "type"}
             v = clean_data.get("value", clean_data.get("default"))
-            # Handle datetime type (not just instances) - convert to ISO format string
-            if v is datetime or (isinstance(v, type) and issubclass(v, datetime)):
-                io.echo(f"buildrec.attributes.datetime: {name}={v}", level="debug")
-                v = v.now().isoformat() if v is datetime else v().isoformat()
-            elif isinstance(v, datetime):
-                io.echo(f"buildrec.attributes.datetime: {name}={v}", level="debug")
-                v = v.isoformat()
-            elif isinstance(v, type):
-                # Handle any remaining type objects - convert to string
-                io.echo(f"buildrec.attributes.type: {name}={v}", level="debug")
-                v = str(v)
-            rec[name] = v
+            rec[name] = database.convert_for_jsonb(v)
         resources = copy.copy(self.resources)
         for name, data in resources.items():
             v = data.get("value", data["default"])
-            if isinstance(v, datetime):
-                # io.echo("buildrec.resources.datetime!", level="debug")
-                v = v.isoformat()
-            elif isinstance(v, type):
-                # Handle any remaining type objects in resources
-                io.echo(f"buildrec.resources.type: {name}={v}", level="debug")
-                v = str(v)
-            resources[name]["value"] = v
-        # io.echo(f"empyre.Player.buildrec.200: {resources=}", level="debug")
+            resources[name]["value"] = database.convert_for_jsonb(v)
         rec["resources"] = database.Jsonb(resources)
         return rec
 
