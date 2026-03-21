@@ -66,7 +66,7 @@ def plague(player):
         res = _handle_damage(player, "nobles", x)
         damage.append(res)
 
-    if len(res) > 0:
+    if len(damage) > 0:
         io.echo(f"P L A G U E ! {util.oxfordcomma(damage)} died")
 
 
@@ -141,21 +141,24 @@ def tidalwave(player):
 
 def main(args, **kwargs) -> bool:
     player = kwargs.get("player", None)
-    disaster = kwargs.get("disaster", util.diceroll(12))
+    roll = (
+        args.roll
+        if hasattr(args, "roll") and args.roll is not None
+        else util.diceroll(12)
+    )
     save = kwargs.get("save", True)
-    #    io.echo(f"disaster.200: {disaster=}", level="debug")
 
     lib.setbottombar(args, "disaster", **kwargs)
 
-    if disaster == 2:
+    if roll == 2:
         plague(player)
-    elif disaster == 3:
+    elif roll == 3:
         rats(player)
-    elif disaster == 4:
+    elif roll == 4:
         earthquake(player)
-    elif disaster == 5:
+    elif roll == 5:
         volcano(player)
-    elif disaster == 6:
+    elif roll == 6:
         tidalwave(player)
     io.echo("{/all}", end="", flush=True)
 
