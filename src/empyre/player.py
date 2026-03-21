@@ -67,6 +67,7 @@ RESOURCES = {
         "singular": "soldier",
         "plural": "soldiers",
         "ship": "millitary passenger",
+        "emoji": ":military-helmet:",
     },
     "nobles": {
         "default": 3,
