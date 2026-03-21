@@ -276,9 +276,7 @@ def _edit(args: argparse.Namespace, mode: str, ship: Ship, **kwargs: Any) -> Shi
                 continue
             if player.coins < nav["price"]:
                 io.echo(
-                    "You need {} to purchase a navigator".format(
-                        util.pluralize(nav["price"], "coin", "coins", **nav)
-                    )
+                    f"You need {util.pluralize(nav['price'], 'coin', 'coins', **nav)} to purchase a navigator"
                 )
             else:
                 player.coins -= nav["price"]
@@ -323,6 +321,29 @@ class completeShipName:
     def complete(self, text: str, state: int) -> Optional[str]:
         results = [x for x in self.names if x.startswith(text)] + [None]
         return results[state]
+
+
+def _generateuniqueshipname(args: argparse.Namespace, **kwargs: Any) -> str:
+    pool = kwargs.get("pool")
+    conn = kwargs.get("conn")
+
+    def _work(c: Any) -> str:
+        n = 1
+        while True:
+            name = f"Unknown Ship {n}"
+            with database.cursor(c) as cur:
+                query = sql.SQL("select 1 from {} where moniker=%s").format(
+                    _table_identifier("empyre.ship")
+                )
+                cur.execute(query, (name,))
+                if cur.rowcount == 0:
+                    return name
+                n += 1
+
+    if conn is None:
+        with database.connect(args, pool=pool) as conn:
+            return _work(conn)
+    return _work(conn)
 
 
 def _verifyshipname(args: argparse.Namespace, moniker: str, **kwargs: Any) -> bool:
@@ -609,7 +630,7 @@ def create(args: argparse.Namespace, **kwargs: Any) -> Optional[Ship]:
         return None
 
     ship = Ship(args, player=player, pool=pool)
-    ship.moniker = kwargs.get("moniker", "Unnamed Ship")
+    ship.moniker = kwargs.get("moniker", _generateuniqueshipname(args, pool=pool))
     ship.playermoniker = player.moniker
     ship.kind = kwargs.get("kind", "cargo")
     ship.manifest = kwargs.get("manifest", {})
