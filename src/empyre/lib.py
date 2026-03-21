@@ -452,6 +452,13 @@ def buildargs(args=None, **kwargs: dict):
     parser = argparse.ArgumentParser("empyre")
     parser.add_argument("--verbose", action="store_true", dest="verbose")
     parser.add_argument("--debug", action="store_true", dest="debug")
+    parser.add_argument(
+        "--modules",
+        nargs="+",
+        default=DEFAULT_MODULES,
+        dest="modules",
+        help="Modules to run (default: all modules)",
+    )
 
     defaults = {
         "databasename": "zoid6",

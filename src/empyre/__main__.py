@@ -9,6 +9,9 @@ def main():
     parser = libempyre.buildargs()
     args = parser.parse_args()
 
+    if args._subparser is not None:
+        args.modules = [args._subparser]
+
     screen.init()
     libempyre.init(args)
 
@@ -16,15 +19,13 @@ def main():
     time.tzset()
 
     try:
+        subkwargs = {}
         if args._subparser is not None:
-            subkwargs = {}
             for key in ("roll", "choice"):
                 val = getattr(args, key, None)
                 if val is not None:
                     subkwargs[key] = val
-            libempyre.runmodule(args, args._subparser, **subkwargs)
-        else:
-            libempyre.runmodule(args, "main")
+        libempyre.runmodule(args, "main", **subkwargs)
     except KeyboardInterrupt:
         io.echo("{/all}*INTR*")
     except EOFError:
