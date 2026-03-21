@@ -193,6 +193,7 @@ def build(args: argparse.Namespace, **kwargs: Any) -> Any:
         if res is False:
             io.echo("failed to insert ship", level="error")
             return None
+        ship.adjust()
         return s
     return True
 
@@ -678,4 +679,5 @@ def create(args: argparse.Namespace, **kwargs: Any) -> Optional[Ship]:
         io.echo(f"empyre.ship.create.200: exception {e}", level="error")
         raise
 
+    ship.adjust()
     return ship
