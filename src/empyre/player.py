@@ -989,6 +989,7 @@ def select(
             self.pool = kwargs.get("pool", None)
             custom_keys = {
                 "KEY_INSERT": self._add_player,
+                "e": self._edit_player,
             }
             super().__init__(args, custom_keys=custom_keys, **kwargs)
 
@@ -996,6 +997,15 @@ def select(
             with database.connect(self.args, pool=self.pool) as conn:
                 create(self.args, pool=self.pool, conn=conn)
             return ListboxResult("added")
+
+        def _edit_player(self) -> Optional[ListboxResult]:
+            item = self.currentitem
+            if item is None or item.player is None:
+                return None
+            p = item.data["player"]
+            p.edit()
+            p.save()
+            return ListboxResult("edited")
 
     class EmpyrePlayerListboxItem(ListboxItem):
         def __init__(self, rec: dict, width: int):
@@ -1027,7 +1037,7 @@ def select(
 
         def help(self):
             io.echo(
-                f"{{var:labelcolor}}use {{var:valuecolor}}KEY_ENTER{{var:labelcolor}} to select one of your players, {{var:valuecolor}}KEY_INSERT{{var:labelcolor}} to create a new player"
+                f"{{var:labelcolor}}use {{var:valuecolor}}KEY_ENTER{{var:labelcolor}} to select, {{var:valuecolor}}e{{var:labelcolor}} to edit, {{var:valuecolor}}KEY_INSERT{{var:labelcolor}} to create"
             )
             return
 
@@ -1072,6 +1082,154 @@ def select(
                     lb._totalitems = count(args, membermoniker, conn=conn)
                     lb._curpage = 0
                     lb._cursor_position = 0
+                if op.status == "edited":
+                    cur.execute(sql, dat)
+                    lb._totalitems = cur.rowcount
+                    lb._curpage = 0
+                    lb._cursor_position = 0
+
+
+def edit(args, **kwargs) -> Optional[Player]:
+    pool = kwargs.get("pool", None)
+    if pool is None:
+        io.echo(f"empyre.player.edit.100: {pool=}", level="error")
+        return None
+
+    class MaintenancePlayerListbox(ListboxCursor):
+        def __init__(self, args, **kwargs):
+            self.pool = kwargs.get("pool", None)
+            self.isediting = False
+            custom_keys = {
+                "KEY_INSERT": self._add_player,
+                "e": self._edit_player,
+            }
+            super().__init__(args, custom_keys=custom_keys, **kwargs)
+
+        def _add_player(self) -> Optional[ListboxResult]:
+            with database.connect(self.args, pool=self.pool) as conn:
+                create(self.args, pool=self.pool, conn=conn)
+            return ListboxResult("added")
+
+        def _edit_player(self) -> Optional[ListboxResult]:
+            self.isediting = True
+            return ListboxResult("edit")
+
+    class MaintenancePlayerListboxItem(ListboxItem):
+        def __init__(self, rec: dict, width: int):
+            super().__init__()
+            pool = getattr(MaintenancePlayerListboxItem, "pool", None)
+            self.player = load(args, rec["moniker"], pool=pool)
+            if self.player is None:
+                io.echo(f"empyre.player.edit.200: {self.player=}", level="error")
+                return
+
+            left: str = f"{self.player.moniker}"
+            right: str = (
+                f"{self.player.land:>6n} acres  {self.player.membermoniker or '(none)'}"
+            )
+            rightlen: int = len(right)
+            self.content = f"{left.ljust(width - rightlen - 10)}{right}"
+
+            self.pk = self.player.moniker
+            self.data = {"player": self.player, "rec": rec}
+            self.width = width
+            self.disabled = False
+
+        def help(self):
+            io.echo(
+                f"{{var:labelcolor}}use {{var:valuecolor}}KEY_ENTER{{var:labelcolor}} or {{var:valuecolor}}e{{var:labelcolor}} to edit selected player, {{var:valuecolor}}KEY_INSERT{{var:labelcolor}} to create a new player, {{var:valuecolor}}Q{{var:labelcolor}} to quit"
+            )
+            return
+
+    def _edit_player_moniker(p: Player) -> bool:
+        io.echo(f"{{labelcolor}}Current moniker: {{valuecolor}}{p.moniker}")
+        newmoniker = io.inputstring(
+            f"{{promptcolor}}New moniker: {{inputcolor}}",
+            p.moniker,
+        )
+        if newmoniker is None or newmoniker == "":
+            io.echo("cancelled")
+            return False
+        if newmoniker == p.moniker:
+            io.echo("unchanged")
+            return False
+        if exists(newmoniker, args=args):
+            io.echo(f"player {newmoniker!r} already exists", level="error")
+            return False
+        p.moniker = newmoniker
+        p.save()
+        io.echo(f"moniker updated to {newmoniker!r}")
+        return True
+
+    def _edit_player_admin(p: Player) -> bool:
+        p.edit()
+        p.save()
+        return True
+
+    with database.connect(args, pool=pool) as conn:
+        currentmember = member.getcurrentmoniker(args, conn=conn)
+        isadmin = member.checkflag(args, "SYSOP", conn=conn, **kwargs)
+        io.echo(f"empyre.player.edit.300: {currentmember=} {isadmin=}", level="debug")
+
+        sql: str = "select moniker, membermoniker from empyre.player order by (resources->'land'->>'value') desc"
+        dat: tuple = ()
+
+        existingcount = 0
+        with database.cursor(conn) as cur:
+            cur.execute(sql, dat)
+            existingcount = cur.rowcount
+
+            MaintenancePlayerListboxItem.pool = pool
+            lb = MaintenancePlayerListbox(
+                args,
+                title="maint: edit players",
+                totalitems=existingcount,
+                cur=cur,
+                itemclass=MaintenancePlayerListboxItem,
+                pool=pool,
+            )
+
+            while True:
+                op = lb.run("player: ")
+                if op.status == "cancelled" or op.status == "noitems":
+                    return None
+                if op.status == "added":
+                    cur.execute(sql, dat)
+                    lb._totalitems = cur.rowcount
+                    lb._curpage = 0
+                    lb._cursor_position = 0
+                    continue
+                if op.status == "edit" or (op.status == "selected" and op.item):
+                    if op.status == "selected":
+                        lb.isediting = False
+                    item = op.item if op.item else lb.currentitem
+                    if item is None:
+                        continue
+                    p = item.data["player"]
+                    if p is None:
+                        io.echo("unable to load player", level="error")
+                        continue
+
+                    if isadmin or p.membermoniker == currentmember:
+                        if isadmin:
+                            io.echo(
+                                f"{{labelcolor}}Admin mode - editing player: {{valuecolor}}{p.moniker}"
+                            )
+                            _edit_player_admin(p)
+                        else:
+                            io.echo(
+                                f"{{labelcolor}}Member mode - editing moniker for: {{valuecolor}}{p.moniker}"
+                            )
+                            _edit_player_moniker(p)
+
+                        cur.execute(sql, dat)
+                        lb._totalitems = cur.rowcount
+                    else:
+                        io.echo(f"you can only edit your own players", level="error")
+                    continue
+
+                if lb.isediting:
+                    lb.isediting = False
 
 
 def count(args, membermoniker: str, **kwargs) -> int:
