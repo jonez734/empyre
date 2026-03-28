@@ -106,7 +106,7 @@ def setbottombar(args, buf, **kwargs) -> None:
                 from bbsengine6 import member, notify
                 moniker = member.getcurrentmoniker(args, **kwargs)
                 if moniker:
-                    count = notify.get_notification_count(moniker)
+                    count = notify.count(moniker)
                     if count > 0:
                         notify_str = f" {{black}}|{{bottombarcolor}} notify ({count})"
             except Exception:
