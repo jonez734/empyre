@@ -109,8 +109,8 @@ def setbottombar(args, buf, **kwargs) -> None:
                     count = notify.count(moniker)
                     if count > 0:
                         notify_str = f" {{black}}|{{bottombarcolor}} notify ({count})"
-            except Exception:
-                pass
+            except Exception as e:
+                io.echo_traceback("empyre.lib.setbottombar.100:")
             
             return f"empyre {{black}}|{{bottombarcolor}} {util.pluralize(turnremain, 'turn remains', 'turns remain')} {{black}}|{{bottombarcolor}} {isdirty}{player.moniker} {{black}}|{{bottombarcolor}} {util.pluralize(player.coins, **coinres)}{debug}{notify_str}"
         else:
