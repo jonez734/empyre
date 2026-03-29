@@ -94,6 +94,7 @@ def main(args: object, player=None, **kwargs):
         io.inputboolean(
             "{{var:promptcolor}}generate teams? {{var:optioncolor}}[yN]{{var:promptcolor}}: {{var:inputcolor}}",
             "N",
+            **kwargs,
         )
         is True
     ):

@@ -13,7 +13,7 @@ def buildargs(args=None, **kwargs):
     return None
 
 
-def removeplayer(args, player):
+def removeplayer(args, player, **kwargs):
     sql = "select count(id) from empyre.player"
     dbh = database.connect(args)
     cur = dbh.cursor()
@@ -28,7 +28,7 @@ def removeplayer(args, player):
 
     if (
         io.inputboolean(
-            "{promptcolor}proceed? {optioncolor}[yN]{promptcolor}: {inputcolor}", "N"
+            "{promptcolor}proceed? {optioncolor}[yN]{promptcolor}: {inputcolor}", "N", **kwargs
         )
         is True
     ):
@@ -57,6 +57,7 @@ def removeship(args, player, **kwargs):
         io.inputboolean(
             "{promptcolor}remove ships? {optioncolor}[yN]{promptcolor}: {inputcolor}",
             "N",
+            **kwargs,
         )
         is True
     ):
@@ -67,7 +68,7 @@ def removeship(args, player, **kwargs):
         io.echo("{} deleted.".format(bbsutil.pluralize(cur.rowcount, **shipres)))
 
 
-def removeisland(args, player):
+def removeisland(args, player, **kwargs):
     sql = "select count(name) from empyre.island"
     dbh = database.connect(args)
     cur = dbh.cursor()
@@ -79,7 +80,7 @@ def removeisland(args, player):
             bbsutil.pluralize(cur.rowcount, "island", "islands"), cur.rowcount
         )
     )
-    if io.inputboolean("remove islands? [yN]: {inputcolor}", "N") is True:
+    if io.inputboolean("remove islands? [yN]: {inputcolor}", "N", **kwargs) is True:
         sql = "delete from empyre.__island"
         cur.execute(sql)
         dbh.commit()
@@ -91,6 +92,7 @@ def main(args, player, **kwargs):
         io.inputboolean(
             "{promptcolor}reset empyre? {optioncolor}[yN]{promptcolor}: {inputcolor}",
             "N",
+            **kwargs,
         )
         is True
     ):

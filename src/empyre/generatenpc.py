@@ -31,6 +31,7 @@ def main(args: object, **kwargs):
         ttyio.inputboolean(
             "{var:promptcolor}add this npc? {var:optioncolor}[yN]{var:normalcolor}: {var:inputcolor}",
             "N",
+            **kwargs,
         )
         is False
     ):

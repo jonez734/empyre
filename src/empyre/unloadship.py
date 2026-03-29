@@ -26,7 +26,7 @@ def transfercargo(args, name, anount, player, ship):
         ttyio.echo(f"The ship does not have {name!r}")
         ship.manifest[name] = 0
 
-    x = ttyio.inputinteger(f"{{var:promptcolor}}{name}: {{var:inputcolor}}", ship.manifest[name])
+    x = ttyio.inputinteger(f"{{var:promptcolor}}{name}: {{var:inputcolor}}", ship.manifest[name], **kwargs)
     if x > ship.manifest[name]:
         emoji = res["emoji"] if "emoji" in res else ""
         ttyio.echo("The manifest does not contain {x} {bbsengine.util.pluralize(x, res['singular'], res['plural'], emoji)}", level="error")
@@ -55,7 +55,7 @@ def main(args, **kwargs):
         ttyio.echo("You do not have any ships!")
         return True
     
-    grain = ttyio.inputinteger("grain: ", player.grain)
+    grain = ttyio.inputinteger("grain: ", player.grain, **kwargs)
     if grain > player.grain:
         ttyio.echo("You only have {bbsengine.util.pluralize(player.grain, 'bushel', 'bushels', emoji=':crop:')}!")
     else:
@@ -65,7 +65,7 @@ def main(args, **kwargs):
             ship.manifest["grain"] = grain
         player.grain += grain
 
-    serfs = ttyio.inputinteger("serfs: ", ship.manifest["serfs"])
+    serfs = ttyio.inputinteger("serfs: ", ship.manifest["serfs"], **kwargs)
         
     if serfs > player.serfs or serfs < 0:
         ttyio.echo("You only have {bbsengine.util.pluralize(player.serfs, 'serf', 'serf'}!")
@@ -78,7 +78,7 @@ def main(args, **kwargs):
             ship.manifest["serfs"] = 0
         player.serfs += serfs
 
-    logs = ttyio.inputinteger("logs: ", ship.manifest["logs"])
+    logs = ttyio.inputinteger("logs: ", ship.manifest["logs"], **kwargs)
         
     if logs > player.timber or timber < 0:
         ttyio.echo("You only have {bbsengine.util.pluralize(player.timber, 'board', 'boards'}!")

@@ -22,7 +22,7 @@ def main(args, **kwargs):
         ttyio.echo("You do not have any ships!")
         return True
 
-    grain = ttyio.inputinteger("grain: ", player.grain)
+    grain = ttyio.inputinteger("grain: ", player.grain, **kwargs)
     if grain > player.grain:
         ttyio.echo(
             "You only have {bbsengine.util.pluralize(player.grain, 'bushel', 'bushels', emoji=':crop:')}!"
@@ -34,7 +34,7 @@ def main(args, **kwargs):
             ship.manifest["grain"] = grain
         player.grain -= grain
 
-    serfs = ttyio.inputinteger("serfs: ", player.serfs)
+    serfs = ttyio.inputinteger("serfs: ", player.serfs, **kwargs)
     if serfs > player.serfs:
         ttyio.echo(
             "You only have {bbsengine.util.pluralize(player.serfs, 'serf', 'serf'}!"

@@ -11,7 +11,7 @@ def access(args, op, **kwargs):
     return member.checkflag(args, "SYSOP", **kwargs)
 
 
-def main(args, player):
+def main(args, player, **kwargs):
     dbh = database.connect(args)
     cur = dbh.cursor()
     sql = "select count(id) from empyre.newsentry"
@@ -28,6 +28,7 @@ def main(args, player):
             "{promptcolor}scratch {valuecolor}%s{promptcolor}? {optioncolor}[yN]{promptcolor}: {inputcolor}"
             % (util.pluralize(newsentries, "news entry", "news entries")),
             "N",
+            **kwargs,
         )
         is False
     ):
