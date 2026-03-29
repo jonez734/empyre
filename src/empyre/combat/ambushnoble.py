@@ -2,10 +2,10 @@ from random import random
 
 from bbsengine6 import io, util
 
-from . import lib
 
 def init(args, **kwargs):
     return True
+
 
 def main(args, **kwargs):
     player = kwargs["player"] if "player" in kwargs else None
@@ -16,7 +16,7 @@ def main(args, **kwargs):
 
     util.heading("ambush noble")
 
-    if player.soldiers < 1: # x(21)
+    if player.soldiers < 1:  # x(21)
         io.echo("You do not have any soldiers!")
         return True
 
@@ -25,10 +25,10 @@ def main(args, **kwargs):
         io.echo("No Nobles found!")
         return True
 
-    if random()*player.soldiers < random()*otherplayer.soldiers*1.7:
+    if random() * player.soldiers < random() * otherplayer.soldiers * 1.7:
         io.echo("Their guards foil your plans!")
         # @see mdl.emp.delx3.txt
-        x = int(random()*(player.soldiers*0.3))+1
+        x = int(random() * (player.soldiers * 0.3)) + 1
         player.soldiers -= x
 
     player.adjust()

@@ -1146,6 +1146,7 @@ def edit(args, **kwargs) -> Optional[Player]:
         newmoniker = io.inputstring(
             f"{{promptcolor}}New moniker: {{inputcolor}}",
             p.moniker,
+            **kwargs,
         )
         if newmoniker is None or newmoniker == "":
             io.echo("cancelled")

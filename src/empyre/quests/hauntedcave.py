@@ -2,14 +2,18 @@
 
 from bbsengine6 import io, util
 
+
 def init(args, **kwargs):
     return True
+
 
 def access(args, op, **kwargs):
     return True
 
+
 def buildargs(args, **kwargs):
     return None
+
 
 def main(args, **kwargs):
     player = kwargs["player"] if "player" in kwargs else None
@@ -19,7 +23,9 @@ def main(args, **kwargs):
 
     if isquestcompleted() is True:
         horseres = player.getresource("horses")
-        io.echo(f"{{labelcolor}}You gain {{valuecolor}}{util.pluralize(30, **horseres)}")
+        io.echo(
+            f"{{labelcolor}}You gain {{valuecolor}}{util.pluralize(30, **horseres)}"
+        )
         player.horses += 30
         player.adjust()
         player.save()

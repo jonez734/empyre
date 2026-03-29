@@ -245,12 +245,12 @@ def trade(args, player: object, name: str, **kwargs: dict):
         choices += "Y"
 
         prompt += ": "
-        ch = io.inputchar(prompt, choices, "C")
+        ch = io.inputchar(prompt, choices, "C", **kwargs)
         if ch == "":
             io.echo("{/all}")
         elif ch == "E":
             io.echo("Edit")
-            newvalue = io.inputinteger(f"{{promptcolor}}{name}: {{inputcolor}}", value)
+            newvalue = io.inputinteger(f"{{promptcolor}}{name}: {{inputcolor}}", value, **kwargs)
             io.echo("{/all}")
             if newvalue < 0:
                 newvalue = 0
@@ -273,7 +273,7 @@ def trade(args, player: object, name: str, **kwargs: dict):
                 f"Buy{{F6}}The barbarians will sell their {name} to you for {{var:valuecolor}}{util.pluralize(price, **coinres)}{{/all}}{{var:labelcolor}} each."
             )
             quantity = io.inputinteger(
-                f"{{var:promptcolor}}buy how many?: {{var:inputcolor}}"
+                f"{{var:promptcolor}}buy how many?: {{var:inputcolor}}", **kwargs
             )
             if quantity is None or quantity < 1:
                 break
@@ -299,7 +299,7 @@ def trade(args, player: object, name: str, **kwargs: dict):
             io.echo(
                 f"sell{{F6}}{{var:labelcolor}}The barbarians will buy your {plural} for {{var:valuecolor}}{util.pluralize(price, **coinres)}{{var:labelcolor}} each."
             )
-            quantity = io.inputinteger("{{promptcolor}}sell how many?: {{inputcolor}}")
+            quantity = io.inputinteger("{{promptcolor}}sell how many?: {{inputcolor}}", **kwargs)
             if quantity is None or quantity < 1:
                 break
             v = getattr(player, name)

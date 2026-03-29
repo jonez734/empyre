@@ -1,5 +1,6 @@
 import ttyio4 as ttyio
 
+
 class completeAttributeName(object):
     def __init__(self, args, attrs):
         self.matches = []
@@ -8,7 +9,7 @@ class completeAttributeName(object):
         ttyio.echo("completeAttributeName.100: called")
 
     @classmethod
-    def completer(self:object, text:str, state:int):
+    def completer(self: object, text: str, state: int):
         pas
         ttyio.echo("completeAttributeName.100: text=%r state=%d" % (text, state))
         vocab = []
@@ -19,22 +20,46 @@ class completeAttributeName(object):
         results = [x for x in vocab if x.startswith(text)] + [None]
         return results[state]
 
-def inputattributename(args:object, prompt:str="attribute name: ", oldvalue:str="", multiple:bool=False, verify=None, **kw):
+
+def inputattributename(
+    args: object,
+    prompt: str = "attribute name: ",
+    oldvalue: str = "",
+    multiple: bool = False,
+    verify=None,
+    **kw,
+):
     attrs = kw["attrs"] if "attrs" in kw else None
-    print("inputattributename.100: attrs="+str(attrs))
-    return ttyio.inputstring(prompt, oldvalue, opts=args, verify=verify, multiple=multiple, completer=completeAttributeName(args, attrs), returnseq=False, **kw)
+    print("inputattributename.100: attrs=" + str(attrs))
+    return ttyio.inputstring(
+        prompt,
+        oldvalue,
+        opts=args,
+        verify=verify,
+        multiple=multiple,
+        completer=completeAttributeName(args, attrs),
+        returnseq=False,
+        **kw,
+    )
+
 
 def main():
     # parser = OptionParser(usage="usage: %prog [options] projectid")
     parser = argparse.ArgumentParser("empyre")
-    
+
     # parser.add_option("--verbose", default=True, action="store_true", help="run %prog in verbose mode")
     parser.add_argument("--verbose", action="store_true", dest="verbose")
-    
+
     # parser.add_option("--debug", default=False, action="store_true", help="run %prog in debug mode")
     parser.add_argument("--debug", action="store_true", dest="debug")
 
-    defaults = {"databasename": "zoidweb4", "databasehost":"localhost", "databaseuser": None, "databaseport":5432, "databasepassword":None}
+    defaults = {
+        "databasename": "zoidweb4",
+        "databasehost": "localhost",
+        "databaseuser": None,
+        "databaseport": 5432,
+        "databasepassword": None,
+    }
     bbsengine.buildargdatabasegroup(parser, defaults)
 
     # databaseargs = parser.add_argument_group("database options")
@@ -50,9 +75,10 @@ def main():
     locale.setlocale(locale.LC_ALL, "")
 
     buf = inputattributename(args, "prompt: ")
-#    currentplayer = startup(args)
-#    mainmenu(args, currentplayer)
-    return    
+    #    currentplayer = startup(args)
+    #    mainmenu(args, currentplayer)
+    return
+
 
 if __name__ == "__main__":
     main()

@@ -1,13 +1,15 @@
 # @since 20220803 created 'sail' module
 
-from bbsengine6 import io, util
-from . import lib
+from bbsengine6 import io
+
 
 def access(args, op, **kwargs):
     return
 
+
 def init(args, **kwargs):
     return
+
 
 def main(args, **kwargs):
     bbsengine.util.heading("sail")

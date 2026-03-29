@@ -3,15 +3,15 @@ from bbsengine6 import io, listbox
 
 from .main import *
 
-#def init(args, **kwargs) -> bool:
+# def init(args, **kwargs) -> bool:
 #    return True
 
-#def access(args, op: str, **kwargs) -> bool:
+# def access(args, op: str, **kwargs) -> bool:
 #    return True
 
-#def buildargs(args, **kwargs):
+# def buildargs(args, **kwargs):
 #    return None
 
-#def main(args, **kwargs):
+# def main(args, **kwargs):
 #    io.echo(f"empyre.ship.main.100: {kwargs.get('pool')=}", level="debug")
 #    return lib.runmodule(args, "main", **kwargs)

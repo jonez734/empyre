@@ -40,7 +40,9 @@ def player_with_shipyard(test_player):
 
 
 class TestShipCreateIntegration:
-    def test_create_inserts_ship(self, test_args, test_pool, db_conn, clean_tables, player_with_shipyard):
+    def test_create_inserts_ship(
+        self, test_args, test_pool, db_conn, clean_tables, player_with_shipyard
+    ):
         ship = create(
             test_args,
             player=player_with_shipyard,
@@ -309,9 +311,7 @@ class TestShipVerifyIntegration:
         )
         db_conn.commit()
 
-        result = verifyShipNameFound(
-            test_args, "found_ship", pool=test_pool
-        )
+        result = verifyShipNameFound(test_args, "found_ship", pool=test_pool)
         assert result is False
 
     def test_verify_ship_name_not_found(

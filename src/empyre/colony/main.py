@@ -2,14 +2,18 @@
 
 from bbsengine6 import io, util
 
+
 def init(args, **kwargs):
     return True
+
 
 def access(args, op, **kwargs):
     return True
 
+
 def buildargs(args, **kwargs):
     return None
+
 
 def stats(args, **kwargs):
     player = kwargs["player"] if "player" in kwargs else None
@@ -31,6 +35,7 @@ def stats(args, **kwargs):
     io.echo(f"Navigators: {player.navigator}")
     io.echo(f"Colonies:   {player.colonies}")
 
+
 def main(args, **kwargs):
     player = kwargs["player"] if "player" in kwargs else None
     if player is None:
@@ -40,16 +45,21 @@ def main(args, **kwargs):
     io.echo(f"empyre.colony.main.100: {player.colonies=}", level="debug")
 
     if player.colonies > 0:
-        io.echo(f"colony trip... {util.pluralize(player.colonies, 'colony', 'colonies')}{{f6}}")
+        io.echo(
+            f"colony trip... {util.pluralize(player.colonies, 'colony', 'colonies')}{{f6}}"
+        )
     else:
         return True
 
-    io.echo("King George wishes you a safe and prosperous trip to your %s{f6}" % (util.pluralize(player.colonies, "colony", "colonies", quantity=False)))
+    io.echo(
+        "King George wishes you a safe and prosperous trip to your %s{f6}"
+        % (util.pluralize(player.colonies, "colony", "colonies", quantity=False))
+    )
 
     done = False
     while not done:
         prompt = "{var:optioncolor}[C]{var:promptcolor} Continue {var:optioncolor}[1]{var:promptcolor} Grain {var:optioncolor}[2]{var:promptcolor} Serf {var:optioncolor}[3]{var:labelcolor} Noble {var:optioncolor}[4] Navigator{var:promptcolor}: {var:inputcolor}"
-        ch = io.inputchar(prompt, "C1234", "C")
+        ch = io.inputchar(prompt, "C1234", "C", **kwargs)
         if ch == "C":
             done = True
             break

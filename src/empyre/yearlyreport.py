@@ -4,7 +4,6 @@ import random
 # import bbsengine6 as bbsengine
 from bbsengine6 import io, util
 
-from . import lib
 from . import player as libplayer
 
 

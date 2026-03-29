@@ -1,12 +1,15 @@
-from bbsengine6 import io, database, member
+from bbsengine6 import io, database, member, util
 
-from . import lib
+from .. import lib as libempyre
+
 
 def init(args, **kwargs):
     return True
 
+
 def access(args, op, **kwargs):
     return member.checkflag(args, "SYSOP", **kwargs)
+
 
 def main(args, player):
     dbh = database.connect(args)
@@ -20,13 +23,22 @@ def main(args, player):
         io.echo("no news entries to scratch")
         return True
 
-    if io.inputboolean("{promptcolor}scratch {valuecolor}%s{promptcolor}? {optioncolor}[yN]{promptcolor}: {inputcolor}" % (bbsengine.pluralize(newsentries, "news entry", "news entries")), "N") is False:
+    if (
+        io.inputboolean(
+            "{promptcolor}scratch {valuecolor}%s{promptcolor}? {optioncolor}[yN]{promptcolor}: {inputcolor}"
+            % (util.pluralize(newsentries, "news entry", "news entries")),
+            "N",
+        )
+        is False
+    ):
         io.echo("aborted.")
         return True
 
     sql = "delete from empyre.__newsentry"
     cur.execute(sql)
     dbh.commit()
-    io.echo("%s scratched." % (bbsengine.util.pluralize(cur.rowcount, "news entry", "news entries")))
-    lib.newsentry(args, player, "news reset")
+    io.echo(
+        "%s scratched." % (util.pluralize(cur.rowcount, "news entry", "news entries"))
+    )
+    libempyre.newsentry(args, "news reset", player=player)
     return True

@@ -1,18 +1,22 @@
 from bbsengine6 import io, database, member
 
+
 def init(args, **kwargs):
     return True
+
 
 def access(args, op, **kwargs):
     return True
 
+
 def buildargs(args, **kwargs):
     return None
 
+
 def checkavailable(args, **kwargs):
     def _work(conn):
-        sql:str = "select * from empyre.mercs where hiredbymoniker is null"
-        dat:tuple = ()
+        sql: str = "select * from empyre.mercs where hiredbymoniker is null"
+        dat: tuple = ()
         with database.cursor(conn) as cur:
             cur.execute(sql, dat)
             if cur.rowcount == 0:
@@ -25,19 +29,22 @@ def checkavailable(args, **kwargs):
         if conn is None:
             pool = kwargs.get("pool", None)
             if pool is None:
-                io.echo(f"empyre.town.juicebar.checkavailable.120: {pool=}", level="error")
+                io.echo(
+                    f"empyre.town.juicebar.checkavailable.120: {pool=}", level="error"
+                )
                 return False
             with database.connect(args, pool=pool) as conn:
                 return _work(conn)
         return _work(conn)
-    except Exception as e:
+    except Exception:
         io.echo("town.juicebar.checkavailable.100: exception {e}", level="error")
         raise
 
+
 def z(args, **kwargs):
     def _gettotalmercs(cur):
-        sql:str = "select count(moniker) from empyre.mercs"
-        dat:tuple = ()
+        sql: str = "select count(moniker) from empyre.mercs"
+        dat: tuple = ()
         cur.execute(sql)
         if cur.rowcount == 0:
             return None
@@ -51,7 +58,9 @@ def z(args, **kwargs):
     else:
         totalmercs = _gettotalmercs(cur)
 
-    io.echo(f"{{var:valuecolor}}{util.pluralize(totalmercs, 'mercenary team', 'mercenary teams')}{{var:labelcolor}} in the game.")
+    io.echo(
+        f"{{var:valuecolor}}{util.pluralize(totalmercs, 'mercenary team', 'mercenary teams')}{{var:labelcolor}} in the game."
+    )
 
 
 def juicebarhelp(**kwargs):
@@ -61,13 +70,20 @@ def juicebarhelp(**kwargs):
         io.echo("[Z] Maint")
     io.echo("[X] Exit Juice Bar")
 
+
 def main(args, **kwargs):
     done = False
     while not done:
         choices = "H"
         if member.checkflag(args, "sysop", **kwargs) is True:
             choices += "Z"
-        ch = io.inputchoice(f"{{var:promptcolor}}juicebar {{var:optioncolor}}[HX]{{var:promptcolor}}: {{var:inputcolor}}", choices+"XQ", "X", help=juicebarhelp)
+        ch = io.inputchoice(
+            f"{{var:promptcolor}}juicebar {{var:optioncolor}}[HX]{{var:promptcolor}}: {{var:inputcolor}}",
+            choices + "XQ",
+            "X",
+            help=juicebarhelp,
+            **kwargs,
+        )
         if ch == "X" or ch == "Q":
             io.echo("Exit")
             done = True

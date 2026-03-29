@@ -45,6 +45,7 @@ def main(args, **kwargs):
     amount = io.inputinteger(
         f"{{promptcolor}}unload amount of {resourcename}: {{inputcolor}}",
         manifestentry["value"],
+        **kwargs,
     )
     if amount is None or amount == 0:
         io.echo("aborted.")

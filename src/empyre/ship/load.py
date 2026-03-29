@@ -24,7 +24,9 @@ def main(args, **kwargs):
     #    r["value"] = getattr(player, name)
     #    io.echo("{name=} {r['value']=}", level="debug")
 
-    op = libempyre.selectresource(args, "select load resource", player.resources, **kwargs)
+    op = libempyre.selectresource(
+        args, "select load resource", player.resources, **kwargs
+    )
     io.echo(f"empyre.ship.load.100: {op=}", level="debug")
     if op.status == "cancelled" or op.status == "noitems":
         return True
@@ -35,7 +37,7 @@ def main(args, **kwargs):
     io.echo("load")
     attr = getattr(player, resourcename)
     amount = io.inputinteger(
-        f"{{promptcolor}}load amount of {resourcename}: {{inputcolor}}", attr
+        f"{{promptcolor}}load amount of {resourcename}: {{inputcolor}}", attr, **kwargs
     )
     if amount is None:
         io.echo("aborted.")

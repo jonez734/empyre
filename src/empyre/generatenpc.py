@@ -5,13 +5,16 @@ import bbsengine5 as bbsengine
 
 from . import lib
 
+
 def init(args, **kwargs):
     return True
+
 
 def access(args, op, **kwargs):
     return True
 
-def main(args:object, **kwargs):
+
+def main(args: object, **kwargs):
     player = kwargs["player"] if "player" in kwargs else None
 
     bbsengine.title("generate npc")
@@ -21,10 +24,16 @@ def main(args:object, **kwargs):
     nonplayercharrank = random.randint(0, min(3, player.rank + 1))
     nonplayerchar.generate(nonplayercharrank)
     nonplayerchar.memberid = bbsengine.getcurrentmemberid(args)
-#    otherplayer.rank = rank
+    #    otherplayer.rank = rank
     nonplayerchar.status()
 
-    if ttyio.inputboolean("{var:promptcolor}add this npc? {var:optioncolor}[yN]{var:normalcolor}: {var:inputcolor}", "N") is False:
+    if (
+        ttyio.inputboolean(
+            "{var:promptcolor}add this npc? {var:optioncolor}[yN]{var:normalcolor}: {var:inputcolor}",
+            "N",
+        )
+        is False
+    ):
         return True
 
     res = nonplayerchar.insert()

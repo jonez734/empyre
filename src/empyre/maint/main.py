@@ -1,18 +1,20 @@
-#import ttyio6 as ttyio
-#import bbsengine6 as bbsengine
 from bbsengine6 import io, util, member
 
 from .. import lib as libempyre
 from .. import player as libplayer
 
+
 def init(args, **kwargs):
     return True
+
 
 def access(args, op, **kwargs):
     return member.checkflag(args, "SYSOP", **kwargs)
 
+
 def buildargs(args, **kwargs):
     return None
+
 
 def mainthelp(args=None, **kwargs):
     buf = """{f6}{labelcolor}Maint Options:{/all}{f6}
@@ -27,6 +29,7 @@ def mainthelp(args=None, **kwargs):
 """
     io.echo(buf)
 
+
 def main(args, **kwargs):
     player = kwargs.get("player", None)
     sysop = member.checkflag(args, "SYSOP", **kwargs)
@@ -35,7 +38,9 @@ def main(args, **kwargs):
         util.heading("maint")
         libempyre.setbottombar(args, "maint", **kwargs)
         mainthelp()
-        ch = io.inputchar("{promptcolor}maintenance: {inputcolor}", "XELRSYQ", "", help=mainthelp)
+        ch = io.inputchar(
+            "{promptcolor}maintenance: {inputcolor}", "XELRSYQ", "", help=mainthelp, **kwargs
+        )
 
         if ch == "Q":
             io.echo("Quit")
@@ -46,14 +51,23 @@ def main(args, **kwargs):
             continue
         elif ch == "E":
             io.echo("Edit Player")
-            p = libplayer.select(args, title="select player to edit", prompt="select player:", **kwargs)
+            p = libplayer.select(
+                args, title="select player to edit", prompt="select player:", **kwargs
+            )
             if p is None:
                 continue
             libempyre.setbottombar(args, p, f"edit player {player.moniker}")
             p.edit()
             p.adjust()
             p.status()
-            if io.inputboolean("{promptcolor}save? {optioncolor}[{currentoptioncolor}Y{optioncolor}n]{promptcolor}: {inputcolor}", "Y") is True:
+            if (
+                io.inputboolean(
+                    "{promptcolor}save? {optioncolor}[{currentoptioncolor}Y{optioncolor}n]{promptcolor}: {inputcolor}",
+                    "Y",
+                    **kwargs,
+                )
+                is True
+            ):
                 p.save()
         elif ch == "L":
             io.echo("List Players")
@@ -62,7 +76,7 @@ def main(args, **kwargs):
             io.echo("Play Empyre")
             if libempyre.runmodule(args, "play", **kwargs) is not True:
                 io.echo("error running 'play' submodule", level="error")
-#            play(args, player)
+        #            play(args, player)
         elif ch == "R":
             io.echo("Reset Empyre")
             libempyre.runmodule(args, "maint.resetempyre", **kwargs)
@@ -74,12 +88,18 @@ def main(args, **kwargs):
         elif ch == "Y":
             if sysop is True:
                 io.echo("Player Stats")
-                playermoniker = libempyre.inputplayername("{promptcolor}player: {inputcolor}", player.moniker, verify=libplayer.verifyPlayerNameFound, args=args, **kwargs)
+                playermoniker = libempyre.inputplayername(
+                    "{promptcolor}player: {inputcolor}",
+                    player.moniker,
+                    verify=libplayer.verifyPlayerNameFound,
+                    args=args,
+                    **kwargs,
+                )
             else:
                 io.echo("Your stats")
                 playermoniker = player.moniker
             if playermoniker is None:
-                io.echo(f"play{playername} not found.", level="error")
+                io.echo(f"player {playermoniker} not found.", level="error")
                 continue
             p = libplayer.load(args, playermoniker, **kwargs)
             p.status()

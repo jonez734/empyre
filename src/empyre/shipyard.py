@@ -1,4 +1,4 @@
-from bbsengine6 import io, database, util
+from bbsengine6 import io, util
 from . import ship as libship
 
 
@@ -36,6 +36,7 @@ def main(args, **kwargs):
             io.inputboolean(
                 f"{{promptcolor}}visit shipyard? {{optioncolor}}[yN]{{promptcolor}}: {{inputcolor}}",
                 "N",
+                **kwargs,
             )
             is False
         ):
@@ -46,7 +47,7 @@ def main(args, **kwargs):
     done = False
     while not done:
         help()
-        ch = io.inputchar(f"shipyard: {{inputcolor}}", "BQ", "Q")
+        ch = io.inputchar(f"shipyard: {{inputcolor}}", "BQ", "Q", **kwargs)
         if ch == "Q":
             done = True
             break

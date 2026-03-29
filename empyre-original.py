@@ -2,12 +2,9 @@
 # Copyright (C) 2021 zoidtechnologies.com. All Rights Reserved.
 #
 
-import os
 import time
 import argparse
-import random
 import locale
-import traceback
 
 import ttyio5 as ttyio
 import bbsengine5 as bbsengine
@@ -20,20 +17,29 @@ PRG = "empyre"
 
 # args = None
 
+
 def init(args=None):
     ttyio.setvariable("empyre.highlightcolor", "{bggray}{white}")
     return True
+
 
 def buildargs(args=None):
     parser = argparse.ArgumentParser("empyre")
     parser.add_argument("--verbose", action="store_true", dest="verbose")
     parser.add_argument("--debug", action="store_true", dest="debug")
 
-    defaults = {"databasename": "zoidweb5", "databasehost":"localhost", "databaseuser": None, "databaseport":5432, "databasepassword":None}
+    defaults = {
+        "databasename": "zoidweb5",
+        "databasehost": "localhost",
+        "databaseuser": None,
+        "databaseport": 5432,
+        "databasepassword": None,
+    }
     bbsengine.buildargdatabasegroup(parser, defaults)
 
     return parser
-    
+
+
 def main(args, **kwargs):
     ttyio.echo("empyre.main.140: args=%r" % (args), level="debug")
 
@@ -42,7 +48,11 @@ def main(args, **kwargs):
 
     bbsengine.title("empyre")
     if args.debug is True:
-        ttyio.echo("database: %s host: %s:%s" % (args.databasename, args.databasehost, args.databaseport), level="debug")
+        ttyio.echo(
+            "database: %s host: %s:%s"
+            % (args.databasename, args.databasehost, args.databaseport),
+            level="debug",
+        )
 
     lib.setarea(args, None, "startup")
     # ttyio.echo("empyre.startup.100: args=%r" % (args))
@@ -55,11 +65,12 @@ def main(args, **kwargs):
         player = newplayer(args)
         lib.newsentry(args, player, "New Player %r!" % (player.name))
 
-#    currentplayer = startup(args)
+    #    currentplayer = startup(args)
     lib.setarea(args, player, "rev: %s" % (_empyreversion.__version__))
     if lib.runsubmodule(args, player, "mainmenu") is not True:
         ttyio.echo("error running submodule 'mainmenu'", level="error")
-    return    
+    return
+
 
 if __name__ == "__main__":
     parser = buildargs()
@@ -72,7 +83,7 @@ if __name__ == "__main__":
     time.tzset()
 
     init(args)
-    
+
     try:
         main(args)
     except KeyboardInterrupt:
@@ -81,5 +92,7 @@ if __name__ == "__main__":
         ttyio.echo("{/all}{bold}EOF{/bold}")
     finally:
         ttyio.echo("empyre.200: areastack=%r" % (bbsengine.areastack), level="debug")
-#        ttyio.inputboolean("continue? [Yn]: ", "Y")
-        ttyio.echo("{decsc}{curpos:%d,0}{el}{decrc}{reset}{/all}" % (ttyio.getterminalheight()))
+        #        ttyio.inputboolean("continue? [Yn]: ", "Y")
+        ttyio.echo(
+            "{decsc}{curpos:%d,0}{el}{decrc}{reset}{/all}" % (ttyio.getterminalheight())
+        )

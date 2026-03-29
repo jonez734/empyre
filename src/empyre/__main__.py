@@ -1,4 +1,5 @@
-import time, locale
+import time
+import locale
 
 from bbsengine6 import io, screen
 
@@ -31,7 +32,9 @@ def main():
     except EOFError:
         io.echo("{/all}*EOF*")
     finally:
-        io.echo("{savecursor}{curpos:%d,0}{el}{reset}{decrc}" % (io.terminal.height()))
+        io.echo(
+            f"{{savecursor}}{{curpos:{io.terminal.height()},0}}{{el}}{{reset}}{{restorecursor}}"
+        )
 
 
 if __name__ == "__main__":

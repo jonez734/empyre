@@ -1,16 +1,18 @@
 import ttyio6 as ttyio
 import bbsengine6 as bbsengine
 
-from . import lib
 
 def init(args, **kwargs):
     return
 
+
 def access(args, op, **kwargs):
     return True
 
+
 def buildargs(args, **kwargs):
     return None
+
 
 def main(args, **kwargs):
     bbsengine.util.heading("load ship")
@@ -19,10 +21,12 @@ def main(args, **kwargs):
     if player.ships == 0:
         ttyio.echo("You do not have any ships!")
         return True
-    
+
     grain = ttyio.inputinteger("grain: ", player.grain)
     if grain > player.grain:
-        ttyio.echo("You only have {bbsengine.util.pluralize(player.grain, 'bushel', 'bushels', emoji=':crop:')}!")
+        ttyio.echo(
+            "You only have {bbsengine.util.pluralize(player.grain, 'bushel', 'bushels', emoji=':crop:')}!"
+        )
     else:
         if "grain" in ship.manifest:
             ship.manifest["grain"] += grain
@@ -32,7 +36,9 @@ def main(args, **kwargs):
 
     serfs = ttyio.inputinteger("serfs: ", player.serfs)
     if serfs > player.serfs:
-        ttyio.echo("You only have {bbsengine.util.pluralize(player.serfs, 'serf', 'serf'}!")
+        ttyio.echo(
+            "You only have {bbsengine.util.pluralize(player.serfs, 'serf', 'serf'}!"
+        )
     else:
         if "serfs" in ship.manifest:
             ship.manifest["serfs"] += serfs

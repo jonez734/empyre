@@ -1,9 +1,7 @@
-import time
-
 from datetime import datetime
 import dateutil.tz
 
-from bbsengine6 import io, member
+from bbsengine6 import io
 
 from . import (
     lib,
@@ -80,7 +78,7 @@ def main(args, **kwargs):
         try:
             if lib.runmodule(args, x, player=player, **kwargs) is False:
                 io.echo(f"error running submodule {x}", level="error")
-        except Exception  as e:
+        except Exception:
             io.echo_traceback("empyre.play.200:", level="error")
             break
         player.adjust()

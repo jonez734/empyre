@@ -135,7 +135,9 @@ def clean_tables(db_conn):
             db_conn.rollback()
     try:
         with database.cursor(db_conn) as cur:
-            cur.execute("delete from empyre.__player where moniker = %s", ("test_player",))
+            cur.execute(
+                "delete from empyre.__player where moniker = %s", ("test_player",)
+            )
         db_conn.commit()
     except psycopg.errors.UndefinedTable:
         db_conn.rollback()

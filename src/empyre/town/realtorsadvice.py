@@ -1,14 +1,18 @@
 from .. import lib as libempyre
 from bbsengine6 import util, database
 
+
 def init(args, **kwargs):
     return True
+
 
 def access(args, op, **kwargs):
     return True
 
+
 def buildargs(args, **kwargs):
     return None
+
 
 def main(args, player, **kwargs):
     util.heading(": hood's real deals! :")
@@ -24,21 +28,28 @@ def main(args, player, **kwargs):
         #    lib.trade(args, player, "ships", "ships", 5000, "ship", "ships", "a", ":anchor:")
 
         res = player.getresource("foundries")
-        res["price"] = 2000+player.foundries//2
-        libempyre.trade(args, player, "foundries", conn=conn, **res) # "foundries", "foundries", 2000+player.foundries//2, "foundry", "foundries", "a")
+        res["price"] = 2000 + player.foundries // 2
+        libempyre.trade(
+            args, player, "foundries", conn=conn, **res
+        )  # "foundries", "foundries", 2000+player.foundries//2, "foundry", "foundries", "a")
 
         res = player.getresource("mills")
-        res["price"] = 500+player.mills//2
-        libempyre.trade(args, player, "mills", conn=conn, **res) # "mills", 500+player.mills//2, "mill", "mills", "a")
+        res["price"] = 500 + player.mills // 2
+        libempyre.trade(
+            args, player, "mills", conn=conn, **res
+        )  # "mills", 500+player.mills//2, "mill", "mills", "a")
 
         res = player.getresource("markets")
-        res["price"] = 250+player.markets//2
-        libempyre.trade(args, player, "markets", conn=conn, **res) # "markets", 250+player.markets//2, "market", "markets", "a")
+        res["price"] = 250 + player.markets // 2
+        libempyre.trade(
+            args, player, "markets", conn=conn, **res
+        )  # "markets", 250+player.markets//2, "market", "markets", "a")
 
         player.adjust()
         player.save()
 
         return True
+
     conn = kwargs.get("conn", None)
     if conn is None:
         pool = kwargs.get("pool", None)

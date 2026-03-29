@@ -2,14 +2,18 @@ from bbsengine6 import io, util
 
 from .. import lib as libempyre
 
+
 def init(args, **kwargs):
     return True
+
 
 def access(args, op, **kwargs):
     return True
 
+
 def buildargs(args, **kwargs):
     return None
+
 
 # @see empire6/plus_emp6_tourney.lbl#L2
 def main(args, **kwargs):
@@ -19,8 +23,13 @@ def main(args, **kwargs):
         return False
     otherplayer = kwargs["otherplayer"] if "otherplayer" in kwargs else None
     if player.moniker == otherplayer.moniker:
-        if io.inputboolean("You cannot joust against yourself! Big mistake! Continue?: ", "N") is True:
-            loss = util.diceroll(player.land//2)
+        if (
+            io.inputboolean(
+                "You cannot joust against yourself! Big mistake! Continue?: ", "N", **kwargs
+            )
+            is True
+        ):
+            loss = util.diceroll(player.land // 2)
             player.land -= loss
             landres = player.getresource("land")
             io.echo(f"You lost {util.pluralize(loss, **landres)}")
@@ -44,13 +53,19 @@ def main(args, **kwargs):
 
     io.echo("{f6:2}Your Noble mounts his mighty steed and aims his lance... ")
     # @see empire6/plus_emp6_tourney.lbl#L12
-    if player.nobles > otherplayer.nobles*2:
+    if player.nobles > otherplayer.nobles * 2:
         # player.joustwin = True # nj=1
         player.nobles += 1
         otherplayer.nobles -= 1
-        io.echo("Your noble's lance knocks their opponent to the ground. They get up and swear loyalty to you!")
+        io.echo(
+            "Your noble's lance knocks their opponent to the ground. They get up and swear loyalty to you!"
+        )
         # if nj=1 then tt$="{gray1}"+d2$+"{lt. blue}"+na$+"{white} wins joust - {lt. blue}"+en$+"{white} is shamed."
-        libempyre.newsentry(args, f"{{lightblue}}{player.moniker}{{white}} wins joust - {{lightblue}}{otherplayer.moniker}{{white}} is shamed", player=player)
+        libempyre.newsentry(
+            args,
+            f"{{lightblue}}{player.moniker}{{white}} wins joust - {{lightblue}}{otherplayer.moniker}{{white}} is shamed",
+            player=player,
+        )
         return True
 
     lost = []
@@ -103,13 +118,13 @@ def main(args, **kwargs):
         if player.land >= 100:
             player.land -= 100
             lost.append("100 acres")
-    
+
     res = []
     if len(lost) > 0:
         res.append("lost " + util.oxfordcomma(lost))
     if len(gained) > 0:
         res.append("gained " + util.oxfordcomma(gained))
-    
+
     if len(res) > 0:
         io.echo("You have %s" % (util.oxfordcomma(res)))
 
@@ -118,5 +133,5 @@ def main(args, **kwargs):
 
     otherplayer.adjust()
     otherplayer.save()
-    
+
     return True

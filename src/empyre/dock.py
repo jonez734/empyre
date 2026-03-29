@@ -75,7 +75,7 @@ def main(args, **kwargs):
             f"You have {util.pluralize(player.ships, **shp)}, {util.pluralize(player.shipyards, **yrd)}, and {util.pluralize(player.navigators, **nav)}"
         )
         ch = io.inputchar(
-            "{var:promptcolor}dock: {var:inputcolor}", "STQX", "X", help=dockhelp
+            "{var:promptcolor}dock: {var:inputcolor}", "STQX", "X", help=dockhelp, **kwargs
         )
         if ch == "Q" or ch == "X":
             io.echo("exit")

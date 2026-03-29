@@ -52,7 +52,7 @@ def main(args, **kwargs):
     ###    libempyre.trade(args, player, "grain", **grainres)
     howmany = serfsrequire if player.grain >= serfsrequire else player.grain
     serfsgiven = io.inputinteger(
-        "{promptcolor}Give them how many?: {inputcolor}", howmany
+        "{promptcolor}Give them how many?: {inputcolor}", howmany, **kwargs
     )
     io.echo("{/all}")
     if serfsgiven < 1:
@@ -83,7 +83,7 @@ def main(args, **kwargs):
     if player.armyrequires > player.grain:
         player.armyrequires = player.grain
     player.armygiven = io.inputinteger(
-        "{promptcolor}Give them how many?: {/all}{inputcolor}", player.armyrequires
+        "{promptcolor}Give them how many?: {/all}{inputcolor}", player.armyrequires, **kwargs
     )
     if player.armygiven > player.grain:
         io.echo(
@@ -106,7 +106,7 @@ def main(args, **kwargs):
             f"Your {util.pluralize(player.horses, quantity=False, **horsesres)} {util.pluralize(horsesrequire, **grainres)}"
         )
         horsesgiven = io.inputinteger(
-            "{promptcolor}Give them how many?: {/all}{inputcolor}", horsesrequire
+            "{promptcolor}Give them how many?: {/all}{inputcolor}", horsesrequire, **kwargs
         )
         if horsesgiven < 0:
             horsesgiven = 0

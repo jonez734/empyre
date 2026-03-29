@@ -169,7 +169,7 @@ def build(args: argparse.Namespace, **kwargs: Any) -> Any:
 
     if (
         io.inputboolean(
-            "{promptcolor}build ship? {optioncolor}[Yn]{promptcolor}: {inputcolor}", "Y"
+            "{promptcolor}build ship? {optioncolor}[Yn]{promptcolor}: {inputcolor}", "Y", **kwargs
         )
         is True
     ):
@@ -244,7 +244,7 @@ def _edit(args: argparse.Namespace, mode: str, ship: Ship, **kwargs: Any) -> Shi
         else:
             io.echo()
 
-        ch = io.inputchar(f"{{promptcolor}}{mode} ship: {{inputcolor}}", "MNOAKQ", "")
+        ch = io.inputchar(f"{{promptcolor}}{mode} ship: {{inputcolor}}", "MNOAKQ", "", **kwargs)
         if ch == "Q":
             io.echo("Quit")
             done = True
@@ -284,7 +284,7 @@ def _edit(args: argparse.Namespace, mode: str, ship: Ship, **kwargs: Any) -> Shi
                 ship.navigator = True
         elif ch == "K":
             io.echo("Kind")
-            k = io.inputchoice("[C]argo [P]assenger [M]ilitary", "CPM", "C")
+            k = io.inputchoice("[C]argo [P]assenger [M]ilitary", "CPM", "C", **kwargs)
             if k == "C":
                 io.echo("cargo")
                 ship.kind = "cargo"

@@ -1,15 +1,19 @@
 from bbsengine6 import io, util, database
 
+
 def init(args, **kwargs):
     return True
+
 
 def access(args, op, **kwargs):
     return True
 
+
 def buildargs(args, **kwargs):
     return None
 
-def main(args:object, player:object, **kwargs):
+
+def main(args: object, player: object, **kwargs):
     pool = kwargs.get("pool", None)
     if pool is None:
         io.echo("empyre.shownews.100: {pool=}", level="error")
@@ -27,8 +31,10 @@ def main(args:object, player:object, **kwargs):
 
             util.heading("empyre news")
 
-            for entry in database.resultiter(cur, 10): # iter_news(cur, 10):
-                io.echo(f"{{var:valuecolor}}{util.datestamp(entry['datecreated'], format='%d%b%y@%H%M (%a)')} {entry['playermoniker']}: {entry['message']}")
-        
+            for entry in database.resultiter(cur, 10):  # iter_news(cur, 10):
+                io.echo(
+                    f"{{var:valuecolor}}{util.datestamp(entry['datecreated'], format='%d%b%y@%H%M (%a)')} {entry['playermoniker']}: {entry['message']}"
+                )
+
     io.echo("{/all}")
     return True

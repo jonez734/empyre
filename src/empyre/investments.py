@@ -78,7 +78,7 @@ def main(args, **kwargs):
     while not done:
         prompt = f"{{promptcolor}}{util.pluralize(player.coins, 'coin', 'coins', emoji=':moneybag:')}{{f6}}Investments {{optioncolor}}[{options}]{{promptcolor}}: {{inputcolor}}"
         ch = io.inputchar(
-            prompt, options, "Q", help=investmentshelp, args=args, player=player
+            prompt, options, "Q", help=investmentshelp, args=args, player=player, **kwargs
         )
         if ch == "Q":
             io.echo(f"{{optioncolor}}Q{{labelcolor}} -- Quit")

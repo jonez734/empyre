@@ -122,6 +122,7 @@ def main(args, **kwargs):
                         choices,
                         "",
                         help=mainmenuhelp,
+                        **kwargs,
                     )
                 else:
                     ch = io.inputchoice(
@@ -129,6 +130,7 @@ def main(args, **kwargs):
                         choices,
                         "",
                         help=mainmenuhelp,
+                        **kwargs,
                     )
 
                 if ch == "Q" or ch == "X":

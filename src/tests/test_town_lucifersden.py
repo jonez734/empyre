@@ -36,7 +36,9 @@ class TestLucifersDen:
         player = DummyPlayer(coins=500, serfs=2000, land=5000)
         with patch("empyre.town.lucifersden.lib.setbottombar"):
             with patch("empyre.town.lucifersden.io.inputboolean", return_value=True):
-                with patch("empyre.town.lucifersden.io.inputinteger", return_value=1000):
+                with patch(
+                    "empyre.town.lucifersden.io.inputinteger", return_value=1000
+                ):
                     result = lucifersden.main(test_args, player=player)
         assert result is None
 

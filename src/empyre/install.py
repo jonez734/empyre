@@ -1,13 +1,17 @@
 from bbsengine6 import io, database, util, member
 
+
 def init(args, **kwargs):
     return True
+
 
 def access(args, op, **kwargs):
     return member.checkflag(args, "SYSOP", **kwargs)
 
+
 def buildargs(args, **kwargs):
     return None
+
 
 def main(args, **kwargs):
     util.heading("install empyre")
