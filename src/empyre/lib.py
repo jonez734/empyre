@@ -99,19 +99,20 @@ def setbottombar(args, buf, **kwargs) -> None:
             coinres = player.getresource("coins")
             coinres["emoji"] = ""
             #            io.echo("empyre.setbottombar.rightside: trace", level="debug")
-            
+
             # Add notification count
             notify_str = ""
             try:
                 from bbsengine6 import member, notify
+
                 moniker = member.getcurrentmoniker(args, **kwargs)
                 if moniker:
-                    count = notify.count(moniker)
+                    count = notify.count(moniker, **kwargs)
                     if count > 0:
                         notify_str = f" {{black}}|{{bottombarcolor}} notify ({count})"
-            except Exception as e:
+            except Exception:
                 io.echo_traceback("empyre.lib.setbottombar.100:")
-            
+
             return f"empyre {{black}}|{{bottombarcolor}} {util.pluralize(turnremain, 'turn remains', 'turns remain')} {{black}}|{{bottombarcolor}} {isdirty}{player.moniker} {{black}}|{{bottombarcolor}} {util.pluralize(player.coins, **coinres)}{debug}{notify_str}"
         else:
             if debug is True:
