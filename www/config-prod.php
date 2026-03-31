@@ -42,9 +42,9 @@ namespace config {
     define("config\SMARTYTEMPLATESDIR", [
         0 => \config\VHOSTDIR . "skin/tmpl/",           // Empyre-specific templates (new structure)
         1 => \config\VHOSTDIR . "tmpl/",                // Empyre-specific templates (legacy structure)
-        2 => "/srv/www/zoid6/shared/skin/tmpl/",        // Shared zoid6 templates
+        2 => "/srv/www/zoid6/shared/skin/tmpl/",        // Shared zoid6 templates (includes topbar templates)
         3 => "/srv/www/zoid6/skin/tmpl/",               // zoid6 project templates
-        4 => "/srv/www/bbsengine6/skin/tmpl/"           // bbsengine6 framework templates
+        4 => "/srv/www/bbsengine6/skin/tmpl/"           // bbsengine6 framework templates (fallback)
     ]);
 
     // Include zoid6config.php to create global aliases for backward compatibility
