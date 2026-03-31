@@ -34,11 +34,21 @@ namespace config {
 
     define("IMAGESURL", "https://zoidtechnologies.com/static/");
 
-/*
-    define("SMARTYCOMPILEDTEMPLATESDIR", VHOSTDIR . "templates_c");
-    define("SMARTYPLUGINSDIR", [ 0 => VHOSTDIR . "smarty/", 1 => "/srv/www/zoid6/smarty/"]);
-    define("SMARTYTEMPLATESDIR", [ 0 => VHOSTDIR . "tmpl/", 1=> "/srv/www/zoid6/skin/tmpl/", 2 => "/srv/www/bbsengine6/skin/tmpl/"]);
-*/
+    // Define namespaced SMARTY constants for Smarty template engine
+    // These are used by the template system to locate template files
+    // Path array allows fallback search: site-specific → shared → framework
+    define("config\SMARTYCOMPILEDTEMPLATESDIR", \config\VHOSTDIR . "templates_c");
+    define("config\SMARTYPLUGINSDIR", [ 0 => \config\VHOSTDIR . "smarty/", 1 => "/srv/www/zoid6/smarty/"]);
+    define("config\SMARTYTEMPLATESDIR", [
+        0 => \config\VHOSTDIR . "skin/tmpl/",           // Empyre-specific templates
+        1 => "/srv/www/zoid6/shared/skin/tmpl/",        // Shared zoid6 templates
+        2 => "/srv/www/zoid6/skin/tmpl/",               // zoid6 project templates
+        3 => "/srv/www/bbsengine6/skin/tmpl/"           // bbsengine6 framework templates
+    ]);
+
+    // Include zoid6config.php to create global aliases for backward compatibility
+    // This converts namespaced constants (config\SMARTYTEMPLATESDIR) to global constants (SMARTYTEMPLATESDIR)
+    require_once("/srv/www/zoid6/php/zoid6config.php");
 
     define("config\LOGENTRYPREFIX", "empyreprod");
 
