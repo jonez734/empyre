@@ -16,6 +16,7 @@ namespace {
 
 namespace config {
 
+    define("SITENAME", "empyre");
     define("SITEADMINEMAIL", "empyre <empyre@projects.zoidtechnologies.com>");
 
     define("SITETITLE", "Empyre - Turn-based multi-player economy game");
