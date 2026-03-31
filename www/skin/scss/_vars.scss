@@ -1,64 +1,10 @@
-$color-1: #ede0d4;
-$color-2: #e6ccb2;
-$color-3: #ddb892;
-$color-4: #b08968;
-$color-5: #9c6644;
-$color-6: #7f5539;
+@import "vars";
 
-$page-backgroundcolor: $color-2;
-$page-textcolor: $color-1; // lightest of the palette
-
+$page-backgroundcolor: #e6ccb2;
+$page-textcolor: #ede0d4;
 $blurb-backgroundcolor: #344e41;
-$blurb-textcolor: $page-textcolor;
-
-$blurb-body-backgroundcolor: $page-backgroundcolor; // darken($page-backgroundcolor, 10%);
-$blurb-body-textcolor: $page-textcolor;
-
-$blurb-header-backgroundcolor: $color-4;
-$blurb-header-textcolor: $color-3;
-
-$blurb-footer-backgroundcolor: $blurb-body-backgroundcolor;
-$blurb-footer-textcolor: $blurb-body-textcolor;
-
-$blurb-metadata-color: $blurb-body-textcolor; // #909090
-$blurb-metadata-backgroundcolor: $blurb-body-backgroundcolor;
-
-// $blurb-border-gradient-start: lighten($blurb-body-backgroundcolor, 15%);
-// $blurb-border-gradient-end: darken($blurb-body-backgroundcolor, 15%);
-
-$page-anchor-color: $page-textcolor;
-$page-anchor-backgroundcolor: $page-backgroundcolor;
-
-// $page-anchor-hover-color: $page-color; // darken($page-color, 5%);
-$page-anchor-hover-color: black;
-$page-anchor-hover-backgroundcolor: $page-backgroundcolor; // darken($page-backgroundcolor, 10%);
-
-$page-anchor-visited-color: darken($page-textcolor, 10%);
-$page-anchor-visited-backgroundcolor: white;
-
-$form-color: $blurb-body-textcolor;
-$form-backgroundcolor: $blurb-body-backgroundcolor;
-$form-errors-color: white;
-
-$notify-backgroundcolor: $blurb-backgroundcolor;
-$notify-color: $blurb-textcolor;
-$notify-footer-backgroundcolor: #ababab;
-
-$headerbackgroundstartcolor: #006633;
-$headerbackgroundendcolor: darken($headerbackgroundstartcolor,2%);
-
-$topbarheight: 1.8em;
-$topbarlineheight: 1.8em;
-
-$blurb-a-hover-color: white;
-$blurb-a-hover-backgroundcolor: gray;
-
-/* 2020MAR24 */
-$blurb-border-size: 0.125em;
-$blurb-border-style: solid;
-$blurb-border-color: #3A5A40;
-
+$blurb-header-backgroundcolor: #b08968;
+$blurb-header-textcolor: #e6ccb2;
+$blurb-border: 0.125em solid #3A5A40;
+$pageheader-backgroundcolor: #b08968;
 $body-fontsize: 1.125em;
-
-$pageheader-textcolor: $blurb-textcolor;
-$pageheader-backgroundcolor: #B08968;
