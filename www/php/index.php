@@ -23,6 +23,9 @@ class index
     $data["metadata"] = [];
     $data["pagetemplate"] = "index.tmpl"; // achilles-page.tmpl";
 
+    $choices = [];
+    $data["choices"] = \zoid6\buildchoices($choices);
+
     \bbsengine6\displaypage($data, "index.tmpl");
     return;
   }
