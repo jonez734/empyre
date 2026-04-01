@@ -1,7 +1,30 @@
-RewriteEngine On
+#
+# Empyre Rewrite Rules
+# Enables clean URLs and proper routing for dynamic pages
+# @since 20260401
 
+RewriteEngine On
 RewriteBase /
-#RewriteRule ^login[/]?$ login.php [last]
-#RewriteRule ^logout[/]?$ logout.php [last]
-#RewriteRule ^about[/]?$ /page.php?name=about [last]
-#RewriteRule ^timeline[/]?$ /page.php?name=timeline [last]
+RewriteOptions Inherit
+
+# Enforce HTTPS for all requests except .well-known (for SSL verification)
+RewriteCond %{HTTPS} off
+RewriteCond %{REQUEST_URI} !/.well-known [NC]
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Route clean URLs to appropriate handlers
+# Uncomment rules as needed to enable specific routes
+
+# RewriteRule ^login[/]?$ login.php [last]
+# RewriteRule ^logout[/]?$ logout.php [last]
+
+# Route named pages through page.php handler
+# RewriteRule ^about[/]?$ /page.php?name=about [last,qsappend]
+# RewriteRule ^timeline[/]?$ /page.php?name=timeline [last,qsappend]
+# RewriteRule ^install[/]?$ /page.php?name=installation [last,qsappend]
+# RewriteRule ^features[/]?$ /page.php?name=features [last,qsappend]
+
+# Require access control
+<RequireAll>
+    Require all granted
+</RequireAll>
