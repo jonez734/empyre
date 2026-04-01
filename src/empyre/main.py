@@ -10,8 +10,6 @@ from . import player as libplayer
 
 
 def init(args, **kwargs):
-    # ttyio.echo("empyre.mainmenu.init.100: args=%r" % (args), level="debug")
-    #    io.setvariable("empyre.highlightcolor", "{bggray}{white}")
     return True
 
 
@@ -56,7 +54,7 @@ def main(args, **kwargs):
         #            choices += opt
         io.echo(f"{{F6}}{{optioncolor}}[Q]{{/all}}{{valuecolor}} Quit :door:{{/all}}")
 
-    io.echo(f"empyre.main.400: {args=}")
+    io.echo(f"empyre.main.400: {args=} {kwargs=}")
     util.heading("empyre")
 
     io.echo(
