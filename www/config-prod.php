@@ -35,6 +35,20 @@ namespace config {
 
     define("IMAGESURL", "https://zoidtechnologies.com/static/");
 
+    // URL configuration for shared and engine resources
+    // Color scheme update: Unified to match www/asimov/achilles (2026-04-01)
+    // Original empyre colors were tan/brown (#e6ccb2, #ede0d4)
+    // Now using unified green scheme (#3a5a40, #dad7cd) via _vars.scss
+    define("config\ENGINEURL", "/engine/");
+    define("config\ENGINESKINURL", "/engine/skin/");
+    define("config\SHAREDSKINURL", "/shared/skin/");
+
+    // Backward compatibility aliases
+    define("ENGINEURL", \config\ENGINEURL);
+    define("ENGINESKINURL", \config\ENGINESKINURL);
+    define("SHAREDSKINURL", \config\SHAREDSKINURL);
+    define("STATICSKINURL", \config\SHAREDSKINURL);
+
     // Define namespaced SMARTY constants for Smarty template engine
     // These are used by the template system to locate template files
     // Path array allows fallback search: site-specific → shared → framework
