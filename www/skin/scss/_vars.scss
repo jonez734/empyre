@@ -15,7 +15,9 @@ $page-textcolor: #dad7cd;           // Cream (matches www/asimov/achilles)
 $blurb-backgroundcolor: #344e41;
 $blurb-header-backgroundcolor: #a3b18a;  // Sage green (matches bbsengine6)
 $blurb-header-textcolor: #dad7cd;   // Cream text on sage header
-$blurb-border: 0.125em solid #3A5A40;
+$blurb-border-size: 0.125em;
+$blurb-border-style: solid;
 $blurb-border-color: #3A5A40 !default;
+$blurb-border: $blurb-border-size $blurb-border-style $blurb-border-color;
 $pageheader-backgroundcolor: #a3b18a;    // Sage green (matches bbsengine6)
 $body-fontsize: 1.125em;
