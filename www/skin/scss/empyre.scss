@@ -1,6 +1,6 @@
 @import "vars";           // Import variables (includes zoid6vars via _vars.scss)
 
-/* asimov.scss */
+/* empyre.scss */
 
 .highlight {
 	background-color: yellow;
@@ -11,4 +11,13 @@
 body {
 	background-color: $page-backgroundcolor;
 	font-size: $body-fontsize; // 1.75em;
+	display: flex;
+	flex-direction: column;
+	min-height: 100vh;
+}
+
+main {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
 }
