@@ -12,6 +12,11 @@ RewriteCond %{HTTPS} off
 RewriteCond %{REQUEST_URI} !/.well-known [NC]
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
+# Allow direct access to static files and directories
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
 # Route clean URLs to appropriate handlers
 # Uncomment rules as needed to enable specific routes
 

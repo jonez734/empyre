@@ -31,7 +31,9 @@ prod:
 
 	$(MAKE) -C php stage
 	$(MAKE) -C skin stage
+	$(MAKE) -C handbook stage
 	-$(MAKE) -C js stage
 	$(RSYNC) config-prod.php $(STAGE)config.php
 	$(RSYNC) htaccess-prod $(STAGE).htaccess
+	$(RSYNC) handbook $(STAGE)
 	$(RSYNC) --delete-after $(STAGE) $(PROD)

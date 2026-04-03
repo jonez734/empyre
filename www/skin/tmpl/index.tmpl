@@ -1,11 +1,11 @@
 {extends file="page.tmpl"}
 <!-- index.tmpl in empyre -->
 {block name="head" append}
-<link rel="stylesheet" type="text/css" href="{$smarty.const.SKINDIR}css/empyre.css" media="screen" />
+<link rel="stylesheet" type="text/css" href="{$smarty.const.SKINURL}css/empyre.css" media="screen" />
 {/block}
 {block name="title"}empyre{/block}
 {block name="content"}
-{include file="overview.tmpl"}
+{include file="sections/overview.tmpl"}
 {include file="sections/handbook.tmpl"}
 {*{include file="sections/dependencies.tmpl"}*}
 {*{include file="sections/features.tmpl"}*}

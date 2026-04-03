@@ -1,0 +1,22 @@
+{extends file="page.tmpl"}
+<!-- index.tmpl in handbook -->
+{block name="head" append}
+<link rel="stylesheet" type="text/css" href="{$smarty.const.SKINURL}css/handbook.css" media="screen" />
+<link rel="stylesheet" type="text/css" href="{$smarty.const.SKINURL}../../../css/empyre.css" media="screen" />
+{/block}
+{block name="title"}handbook{/block}
+{block name="content"}
+{include file="../../../tmpl/overview.tmpl"}
+<div class="blurb">
+  <div class="header"><h1>handbook</h1></div>
+  <div class="body">
+    <ul>
+      <li><a href="/empyre/handbook/overview.md">Overview</a></li>
+      <li><a href="/empyre/handbook/INSTALL.md">Installation</a></li>
+      <li><a href="/empyre/handbook/NEW_PLAYER_QUICKSTART.md">Quick Start</a></li>
+      <li><a href="/empyre/handbook/README.md">Full Documentation</a></li>
+      <li><a href="/empyre/handbook/RUN.md">Running</a></li>
+    </ul>
+  </div>
+</div>
+{/block}
