@@ -29,7 +29,7 @@ namespace config {
     define("DOCUMENTROOT", \config\VHOSTDIR);
 
     define("SKINDIR", DOCUMENTROOT . "skin/");
-    define("SKINURL", SITEURL . "skin/");
+    define("SKINURL", "/skin/");
     
     define("JSURL", "/empyre/js/");
 
