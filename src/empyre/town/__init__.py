@@ -1,5 +1,2 @@
-from . import lib
-
+from . import lib as lib
 from .main import *
-
-from .main import buildargs

@@ -43,7 +43,7 @@ def main(args, **kwargs):
         for o in options:  # opt, t, callback, emoji in options:
             opt = o[0]
             t = o[1]
-            callback = o[2]
+            _callback = o[2]
             if len(o) == 3:
                 emoji = ""
             elif len(o) == 4:
@@ -72,7 +72,10 @@ def main(args, **kwargs):
             return False
 
         lib.setbottombar(
-            args, f"empyre {_version.datestamp} githash {_version.githash}", player=None, pool=pool
+            args,
+            f"empyre {_version.datestamp} githash {_version.githash}",
+            player=None,
+            pool=pool,
         )
 
         currentmembermoniker = member.getcurrentmoniker(args, pool=pool)

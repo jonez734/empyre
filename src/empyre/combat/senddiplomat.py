@@ -30,9 +30,8 @@ def main(args, **kwargs):
         land = otherplayer.land // 15
         otherplayer.land -= land
         player.land += land
-        res = player.getresource("land")
         io.echo(
-            "{F6}{green}Your noble returns with good news! To avoid attack, you have been given {util.pluralize(land, **res)} of land!"
+            "{F6}{green}Your noble returns with good news! To avoid attack, you have been given {util.pluralize(land, **player.getresource('land'))} of land!"
         )
     else:
         player.nobles -= 1

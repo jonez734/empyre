@@ -1,5 +1,5 @@
 from .. import lib as libempyre
-from bbsengine6 import util, database
+from bbsengine6 import io, util, database
 
 
 def init(args, **kwargs):

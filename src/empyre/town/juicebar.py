@@ -1,4 +1,4 @@
-from bbsengine6 import io, database, member
+from bbsengine6 import io, database, member, util
 
 
 def init(args, **kwargs):
@@ -44,7 +44,6 @@ def checkavailable(args, **kwargs):
 def z(args, **kwargs):
     def _gettotalmercs(cur):
         sql: str = "select count(moniker) from empyre.mercs"
-        dat: tuple = ()
         cur.execute(sql)
         if cur.rowcount == 0:
             return None
@@ -89,8 +88,6 @@ def main(args, **kwargs):
             done = True
         elif ch == "H":
             io.echo("hire mercs")
-            if checkavailable(args) is True:
-                hireteam(args)
         elif ch == "Z":
             io.echo("maint")
             z(args)

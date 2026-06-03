@@ -38,7 +38,8 @@ def main(args, player, **kwargs):
             f"{{var:labelcolor}}The exchange rate is {{var:valuecolor}}{util.pluralize(exchangerate, **coinres)} per credit{{/all}}.{{F6}}"
         )
         amount = io.inputinteger(
-            f"{{var:promptcolor}}Exchange how many credits?: {{var:inputcolor}}", **kwargs
+            f"{{var:promptcolor}}Exchange how many credits?: {{var:inputcolor}}",
+            **kwargs,
         )
         io.echo("{/all}")
     else:

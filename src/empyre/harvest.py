@@ -19,7 +19,6 @@ def buildargs(args=None, subparser=None, **kwargs):
 
 def main(args, **kwargs):
     player = kwargs.get("player", None)
-    conn = kwargs.get("conn", None)
 
     grainres = player.getresource("grain")
 
@@ -83,7 +82,9 @@ def main(args, **kwargs):
     if player.armyrequires > player.grain:
         player.armyrequires = player.grain
     player.armygiven = io.inputinteger(
-        "{promptcolor}Give them how many?: {/all}{inputcolor}", player.armyrequires, **kwargs
+        "{promptcolor}Give them how many?: {/all}{inputcolor}",
+        player.armyrequires,
+        **kwargs,
     )
     if player.armygiven > player.grain:
         io.echo(
@@ -106,7 +107,9 @@ def main(args, **kwargs):
             f"Your {util.pluralize(player.horses, quantity=False, **horsesres)} {util.pluralize(horsesrequire, **grainres)}"
         )
         horsesgiven = io.inputinteger(
-            "{promptcolor}Give them how many?: {/all}{inputcolor}", horsesrequire, **kwargs
+            "{promptcolor}Give them how many?: {/all}{inputcolor}",
+            horsesrequire,
+            **kwargs,
         )
         if horsesgiven < 0:
             horsesgiven = 0

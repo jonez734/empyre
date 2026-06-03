@@ -42,7 +42,9 @@ def main(args, **kwargs):
         "LUCIFER'S DEN - Where Gamblin's no Sin!"
     )  # , hrcolor="{orange}", titlecolor="{bgred}{yellow}")
     io.echo("{yellow}I will let you play for the price of a few souls!")
-    ch = io.inputboolean("{promptcolor}Will you agree to this? [yN]: {inputcolor}", "N", **kwargs)
+    ch = io.inputboolean(
+        "{promptcolor}Will you agree to this? [yN]: {inputcolor}", "N", **kwargs
+    )
     if ch is False:
         io.echo("{normalcolor}Some other time, then.")
         return True
@@ -80,7 +82,9 @@ def main(args, **kwargs):
             done = True
             break
 
-        pick = io.inputinteger("{promptcolor}Pick a number from 1 to 6: {inputcolor}", **kwargs)
+        pick = io.inputinteger(
+            "{promptcolor}Pick a number from 1 to 6: {inputcolor}", **kwargs
+        )
         if pick is None or pick < 1:
             io.echo("invalid value")
             done = True

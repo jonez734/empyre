@@ -86,24 +86,11 @@ def main(args, **kwargs):
     #    ttyio.echo("Receivables: %s" % "{:>6n}".format(receivables)) # (pluralize(receivables, "credit", "credits")))
     #    ttyio.echo("Payables:    %s" % "{:>6n}".format(payables)) # (pluralize(payables, "credit", "credits")))
     peoplerequire = player.serfs * 5 + 1  # pr plus_emp6_trading.lbl
-    armyrequires = player.soldiers * 10 + 1  # ar
-    armygiven = armyrequires
     grain = player.grain
     givenpeople = peoplerequire  # gp pr
-    gd = givenpeople // peoplerequire  # no idea of a better name, yet
-    ad = givenpeople // peoplerequire  # pr
-    # bb: babies born
-    # dn: died naturally
-
-    pd = 0
-
-    if gd < 1:
-        pass
 
     if player.grain < 0:
         givenpeople = 0
-        armygiven = 0
-        # goto no_grain
 
     if givenpeople > grain:
         grnres = player.getresource("grain")

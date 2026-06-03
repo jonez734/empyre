@@ -22,7 +22,6 @@ def main(args: object, player: object, **kwargs):
     with database.connect(args, pool=pool) as conn:
         with database.cursor(conn) as cur:
             sql = "select * from empyre.newsentry order by datecreated desc"
-            dat = (player.datelastplayed,)
             cur.execute(sql)
 
             if cur.rowcount == 0:

@@ -78,7 +78,7 @@ def zircon3(player):
     elif x == 3:
         millsres = player.getresource("mills")
         player.mills += 10  # x(8)
-        gifts.append(util.pluralize(10, **millres))
+        gifts.append(util.pluralize(10, **millsres))
     elif x == 4:
         player.spices += 10  # x(25) spices
     elif x == 5:
@@ -166,18 +166,6 @@ def main(args, **kwargs):
         player.serfs -= serfs
 
         io.echo(f"{player.land=}", level="debug")
-
-        landres = player.getresource("land")
-        serfsres = player.getresource("serfs")
-        coinsres = player.getresource("coins")
-        nobleres = player.getresource("nobles")
-        # io.setvariable("land", util.pluralize(land, **landres))
-        # io.setvariable("serfs", util.pluralize(serfs, **serfsres))
-        # if nobles > 0:
-        #    io.setvariable("nobles", util.pluralize(nobles, **nobleres))
-        # else:
-        #    io.setvariable("nobles", "")
-        # io.setvariable("coins", util.pluralize(coins, **coinres))
 
         player.adjust()
         player.save()

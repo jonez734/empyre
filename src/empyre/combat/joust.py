@@ -25,7 +25,9 @@ def main(args, **kwargs):
     if player.moniker == otherplayer.moniker:
         if (
             io.inputboolean(
-                "You cannot joust against yourself! Big mistake! Continue?: ", "N", **kwargs
+                "You cannot joust against yourself! Big mistake! Continue?: ",
+                "N",
+                **kwargs,
             )
             is True
         ):
@@ -70,7 +72,7 @@ def main(args, **kwargs):
 
     lost = []
     gained = []
-    x = bbsengine.diceroll(10)
+    x = util.diceroll(10)
     io.echo(f"{x=}", level="debug")
     if x == 1:
         player.land += 100

@@ -39,7 +39,11 @@ def main(args, **kwargs):
         libempyre.setbottombar(args, "maint", **kwargs)
         mainthelp()
         ch = io.inputchar(
-            "{promptcolor}maintenance: {inputcolor}", "XELRSYQ", "", help=mainthelp, **kwargs
+            "{promptcolor}maintenance: {inputcolor}",
+            "XELRSYQ",
+            "",
+            help=mainthelp,
+            **kwargs,
         )
 
         if ch == "Q":

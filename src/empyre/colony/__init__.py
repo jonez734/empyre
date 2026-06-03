@@ -1,4 +1,4 @@
-from bbsengine6 import io, util
+from bbsengine6 import util
 from .. import lib as libempyre
 
 

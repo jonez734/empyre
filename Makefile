@@ -1,4 +1,5 @@
 PROJECT = empyre
+THUMB = /run/media/jam/BEA6-BBCE/
 
 all:
 
@@ -23,4 +24,4 @@ sdist: version
 	./setup.py sdist
 
 backup:
-	rsync --recursive --verbose --exclude=.venv . /run/media/jam/AEAB-CF37/projects/$(PROJECT)/
+	rsync --recursive --verbose --exclude=.venv . $(THUMB)work/$(PROJECT)/

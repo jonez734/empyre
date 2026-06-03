@@ -1,6 +1,4 @@
-from . import lib
-from bbsengine6 import io, listbox
-
+from . import lib as lib
 from .main import *
 
 # def init(args, **kwargs) -> bool:

@@ -8,8 +8,8 @@ from .ship import lib as libship
 
 
 def scanshiplocations(args, location):
-    sql = "select * from empyre.ship where ownerid=%s and location=%s"
-    dat = (currentplayerid, location)
+    _sql = "select * from empyre.ship where ownerid=%s and location=%s"
+    _dat = (location,)
 
 
 def init(args, **kwargs):
@@ -75,7 +75,11 @@ def main(args, **kwargs):
             f"You have {util.pluralize(player.ships, **shp)}, {util.pluralize(player.shipyards, **yrd)}, and {util.pluralize(player.navigators, **nav)}"
         )
         ch = io.inputchar(
-            "{var:promptcolor}dock: {var:inputcolor}", "STQX", "X", help=dockhelp, **kwargs
+            "{var:promptcolor}dock: {var:inputcolor}",
+            "STQX",
+            "X",
+            help=dockhelp,
+            **kwargs,
         )
         if ch == "Q" or ch == "X":
             io.echo("exit")

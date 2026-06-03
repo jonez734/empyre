@@ -1,4 +1,4 @@
-from bbsengine6 import io
+from bbsengine6 import io, util
 
 # @since 20220731 created quests.raidpiratecamp.py
 
@@ -20,13 +20,20 @@ def main(args, **kwargs):
 
     io.echo(f"{player.coins=}", level="debug")
 
+    def isquestcompleted():
+        return io.inputboolean(
+            "{var:promptcolor}quest completed? {var:optioncolor}[Yn]{var:promptcolor}: {var:inputcolor}",
+            "Y",
+            **kwargs,
+        )
+
     if isquestcompleted() is True:
         coinres = player.getresource("coins")
-        io.echo("You gain {util.pluralize(30000, **coinres)}")
+        io.echo(f"You gain {util.pluralize(30000, **coinres)}")
         player.coins += 30000
         result = True
     else:
-        ttyio.echo("You failed to complete this quest.")
+        io.echo("You failed to complete this quest.")
         result = False
     io.echo(f"after completed check, {player.coins=}", level="debug")
     player.adjust()

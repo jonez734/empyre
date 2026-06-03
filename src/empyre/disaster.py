@@ -130,7 +130,6 @@ def tidalwave(player):
         0, player.shipyards // 2
     )  # int(random.random()*player.shipyards/2)
     if player.shipyards >= x:
-        shipyardres = player.getresource("shipyards")
         _handle_damage(player, "shipyards", x)
         io.echo(
             "TIDAL WAVE!{F6:2}%s under water!"

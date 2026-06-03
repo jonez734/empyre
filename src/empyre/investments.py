@@ -63,8 +63,6 @@ def main(args, **kwargs):
 
     util.heading("investments")
 
-    terminalwidth = io.terminal.width()
-
     investmentoptions = buildinvestmentoptions(player)
 
     options = ""
@@ -78,7 +76,13 @@ def main(args, **kwargs):
     while not done:
         prompt = f"{{promptcolor}}{util.pluralize(player.coins, 'coin', 'coins', emoji=':moneybag:')}{{f6}}Investments {{optioncolor}}[{options}]{{promptcolor}}: {{inputcolor}}"
         ch = io.inputchar(
-            prompt, options, "Q", help=investmentshelp, args=args, player=player, **kwargs
+            prompt,
+            options,
+            "Q",
+            help=investmentshelp,
+            args=args,
+            player=player,
+            **kwargs,
         )
         if ch == "Q":
             io.echo(f"{{optioncolor}}Q{{labelcolor}} -- Quit")
@@ -96,8 +100,6 @@ def main(args, **kwargs):
                 if ch == opt:
                     name = r["name"]
                     price = r["price"]
-                    singular = r["singular"] if "singular" in r else "singular"
-                    plural = r["plural"] if "plural" in r else "plural"
                     io.echo(
                         f"{{optioncolor}}{ch}{{labelcolor}} -- {name.title()} {util.pluralize(price, 'coin', 'coins', emoji=':moneybag:')} each"
                     )

@@ -23,7 +23,9 @@ def main(args, **kwargs):
 
     if otherplayer == player:
         if (
-            io.inputboolean("attacking yourself is a bad idea. Are you sure? [yN]: ", **kwargs)
+            io.inputboolean(
+                "attacking yourself is a bad idea. Are you sure? [yN]: ", **kwargs
+            )
             is False
         ):
             io.echo("wise choice. aborted")
@@ -39,7 +41,7 @@ def main(args, **kwargs):
 
     dragonsres = player.getresource("dragons")
     io.echo(
-        f"{{var:labelcolor}}You have {{var:valuecolor}}{util.pluralize(player.dragons, **dragonres)}"
+        f"{{var:labelcolor}}You have {{var:valuecolor}}{util.pluralize(player.dragons, **dragonsres)}"
     )
     if player.dragons > 0:
         if (
@@ -73,10 +75,10 @@ def main(args, **kwargs):
         otherplayer.horses -= x
         res = player.getresource("horses")
         damages.append(f"roasted {util.pluralize(x, **res)}")
-    n = otherplayer.acres // 10
+    n = otherplayer.land // 10
     x = util.diceroll(n)
     if x > 0:
-        otherplayer.acres -= x
+        otherplayer.land -= x
         res = player.getresource("land")
         damages.append(f"incinerated {util.pluralize(x, **res)}")
 

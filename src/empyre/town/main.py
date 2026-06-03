@@ -59,8 +59,6 @@ def main(args, **kwargs):
             "{/all}{optioncolor}[Q]{/all} {labelcolor}Return to the Empyre :door:{/all}{f6}"
         )
 
-    terminalwidth = io.terminal.width()
-
     hotkeys = "Q"
     for hotkey, desc, func in optiontable:
         if callable(func) or lib.checkmodule(args, func, **kwargs):
@@ -72,7 +70,9 @@ def main(args, **kwargs):
         player.adjust()
         player.save()
         menu()
-        ch = io.inputchoice(f"town", hotkeys, "Q", help=townhelp, rewriteprompt=True, **kwargs)
+        ch = io.inputchoice(
+            f"town", hotkeys, "Q", help=townhelp, rewriteprompt=True, **kwargs
+        )
         if ch == "Q":
             io.echo(":door: {green}Return to the Empyre{/all}")
             done = True

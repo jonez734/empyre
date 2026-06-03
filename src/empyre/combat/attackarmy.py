@@ -39,20 +39,20 @@ def main(args, **kwargs):
         )
         return
 
-    ff = 1
+    _ff = 1
 
-    pv = 0  # player victory
+    _pv = 0  # player victory
 
-    sr = otherplayer.soldiers  # aka 'wa'
-    sg = player.soldiers
+    _sr = otherplayer.soldiers  # aka 'wa'
+    _sg = player.soldiers
 
     a2 = 20
     b2 = 20
 
     a = 0
 
-    sr = otherplayer.soldiers
-    sg = player.soldiers
+    _sr = otherplayer.soldiers
+    _sg = player.soldiers
 
     done = False
     while not done:
@@ -98,7 +98,7 @@ def main(args, **kwargs):
                 continue
 
             # at this point, either otherplayer.soldiers == 0 or b2 == 0
-            bn = 1  # when > 0, shows player attributes
+            _bn = 1  # when > 0, shows player attributes
             if player.soldiers > random.randint(0, otherplayer.land):
                 io.echo("You conquered their land!")
                 player.land += otherplayer.land
@@ -111,7 +111,7 @@ def main(args, **kwargs):
             if player.soldiers > 0 and a2 > 0:
                 continue
             player.soldiers = 0
-            pv = 1
+            _pv = 1
 
         otherplayer.adjust()
         otherplayer.save()

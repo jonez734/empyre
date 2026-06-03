@@ -28,7 +28,9 @@ def removeplayer(args, player, **kwargs):
 
     if (
         io.inputboolean(
-            "{promptcolor}proceed? {optioncolor}[yN]{promptcolor}: {inputcolor}", "N", **kwargs
+            "{promptcolor}proceed? {optioncolor}[yN]{promptcolor}: {inputcolor}",
+            "N",
+            **kwargs,
         )
         is True
     ):

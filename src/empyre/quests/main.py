@@ -2,6 +2,7 @@ from bbsengine6 import io, util
 
 from .. import data
 from .. import lib as libempyre
+from . import module
 
 
 def init(args, **kwargs):
@@ -81,7 +82,6 @@ def main(args, **kwargs):
         for q in runnablequests:
             ch = chr(ord("1") + index)
             t = q["title"]
-            callback = q["callback"] if "callback" in q else None
             io.echo(f"{{var:optioncolor}}[{ch}]{{var:valuecolor}} {t}")
             index += 1
         io.echo("{/all}")

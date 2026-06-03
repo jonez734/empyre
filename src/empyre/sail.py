@@ -1,6 +1,6 @@
 # @since 20220803 created 'sail' module
 
-from bbsengine6 import io
+from bbsengine6 import io, util
 
 
 def access(args, op, **kwargs):
@@ -12,7 +12,7 @@ def init(args, **kwargs):
 
 
 def main(args, **kwargs):
-    bbsengine.util.heading("sail")
+    util.heading("sail")
     io.echo(f"setting sail {kwargs=}", level="debug")
 
     ship = kwargs.get("ship", None)

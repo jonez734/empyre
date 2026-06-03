@@ -21,6 +21,13 @@ def main(args, **kwargs):
         io.echo("You do not exist! Go Away!", level="error")
         return False
 
+    def isquestcompleted():
+        return io.inputboolean(
+            "{var:promptcolor}quest completed? {var:optioncolor}[Yn]{var:promptcolor}: {var:inputcolor}",
+            "Y",
+            **kwargs,
+        )
+
     if isquestcompleted() is True:
         horseres = player.getresource("horses")
         io.echo(

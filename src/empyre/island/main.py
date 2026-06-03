@@ -23,11 +23,12 @@ def help(**kwargs):
 
 # @see mdl.emp.delx3.txt#L337
 def main(args, **kwargs):
-    player = kwargs["player"] if "player" in kwargs else None
+    _player = kwargs["player"] if "player" in kwargs else None
 
     done = False
     while not done:
         util.heading("island")
+        options = "SQ"
         ch = io.inputchar(
             f"{{promptcolor}}island {{optioncolor}}[{options}]{{promptcolor}}: {{inputcolor}}",
             options,

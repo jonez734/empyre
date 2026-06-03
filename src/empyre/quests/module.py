@@ -49,6 +49,7 @@ def runsubmodule(args, submodule, **kwargs):
 
 def main(args, **kwargs):
     #    bbsengine.util.heading("empyre combat")
+    player = kwargs.get("player", None)
     if runsubmodule(args, "main", player=player, **kwargs) is False:
         ttyio.echo("error running submodule 'main'", level="error")
     return
