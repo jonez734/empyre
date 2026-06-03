@@ -5,6 +5,9 @@ from datetime import datetime
 import dateutil.tz
 from enum import Enum
 
+from bbsengine6 import io, member, database, util, module, listbox
+from bbsengine6.io import screen
+
 from . import player as libplayer
 
 
@@ -13,14 +16,8 @@ class ShipKind(str, Enum):
     CARGO = "cargo"
 
 
-# from dateutil.tz import tzlocal
-
-from bbsengine6 import io, member, database, util, module, listbox
-from bbsengine6.io import screen
-
-
-# TURNSPERDAY:int = 10
-PACKAGENAME: str = "empyre"
+MODULENAME = "empyre"
+PACKAGENAME = "empyre"
 # SHIPSPERSHIPYARD:int = 10
 # HORSESPERSTABLE:int = 50
 # SOLDIERSPERNOBLE:int = 20
@@ -76,10 +73,6 @@ class Colony(object):
 
 
 def setbottombar(args, buf, **kwargs) -> None:
-    player = kwargs.get("player", None)
-    help = kwargs.get("help", None)
-    stack = kwargs.get("stack", False)
-
     def rightside(**kwargs):
         debug = True if args is not None and args.debug is True else False
         player = kwargs.get("player", None)
@@ -198,10 +191,7 @@ def newsentry(
 
 def trade(args, player: object, name: str, **kwargs: dict):
     price = kwargs.get("price", None)
-    # name = kwargs["name"] if "name" in kwargs else None
-    emoji = kwargs.get("emoji", "")
-    singular = kwargs.get("singular", None)
-    plural = kwargs.get("plural", None)
+    plural = kwargs.get("plural", name)
     io.echo(f"empyre.lib.trade.100: {price=} {player.coins=}", level="debug")
     if price is None:
         io.echo("this item is not for sale.")
@@ -250,7 +240,9 @@ def trade(args, player: object, name: str, **kwargs: dict):
             io.echo("{/all}")
         elif ch == "E":
             io.echo("Edit")
-            newvalue = io.inputinteger(f"{{promptcolor}}{name}: {{inputcolor}}", value, **kwargs)
+            newvalue = io.inputinteger(
+                f"{{promptcolor}}{name}: {{inputcolor}}", value, **kwargs
+            )
             io.echo("{/all}")
             if newvalue < 0:
                 newvalue = 0
@@ -299,7 +291,9 @@ def trade(args, player: object, name: str, **kwargs: dict):
             io.echo(
                 f"sell{{F6}}{{var:labelcolor}}The barbarians will buy your {plural} for {{var:valuecolor}}{util.pluralize(price, **coinres)}{{var:labelcolor}} each."
             )
-            quantity = io.inputinteger("{{promptcolor}}sell how many?: {{inputcolor}}", **kwargs)
+            quantity = io.inputinteger(
+                "{{promptcolor}}sell how many?: {{inputcolor}}", **kwargs
+            )
             if quantity is None or quantity < 1:
                 break
             v = getattr(player, name)
@@ -436,7 +430,6 @@ def selectresource(args, title, resources, kind=None, **kwargs):
             )  # number of items on the page in case it doesn't equal pagesize
             return self.items
 
-    player = kwargs["player"] if "player" in kwargs else None
     lb = EmpyreResourceListbox(args, "select player resource", resources)
     res = lb.run("edit player resource: ")
     return res
@@ -448,6 +441,7 @@ def init(args, **kwargs):
 
 
 SUBCOMMANDS = (
+    "market",
     "weather",
     "disaster",
     "harvest",

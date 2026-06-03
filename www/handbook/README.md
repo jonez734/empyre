@@ -146,6 +146,7 @@
 - [x] if editing a player, check to see if it is current player before player = p
 - [x] in "natural disaster bank", do not prompt if credits < 1
 - [ ] finite number of acres in entire game (@since 20220217)
+- [x] market module - trade commodities (grain, land, horses, timber, spices) in turn flow (@since 20260203)
 - [ ] finite number of coins in entire game (@since 20220217)
 - [ ] implement "sneak attack" (@since 20220217)
 

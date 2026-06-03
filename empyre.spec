@@ -13,6 +13,7 @@ empyre/src/empyre/
 ├── _version.py             # Version information (githash, datestamp)
 ├── main.py                 # Main game menu and player management
 ├── lib.py                  # Core game utilities and shared functions
+├── market.py               # Market/commodity trading module
 ├── player.py               # Player class and player management functions
 ├── play.py                 # Main game loop - turn processing
 ├── startup.py              # Initialization and database setup
@@ -157,7 +158,8 @@ Players manage the following resources:
 ### 3. Turn Processing Flow
 
 Each game turn executes the following modules in order:
-1. **weather** - Determines weather conditions
+1. **market** - Trade commodities (grain, land, horses, timber, spices)
+2. **weather** - Determines weather conditions
 2. **disaster** - Random disasters (plague, rats, earthquake, volcano, tidal wave)
 3. **harvest** - Grain harvesting and distribution
 4. **town** - Town activities (optional)
