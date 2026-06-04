@@ -76,7 +76,6 @@ def main(args, **kwargs):
             "Q",
             help=markethelp,
             args=args,
-            player=player,
             **kwargs,
         )
 
