@@ -1,21 +1,37 @@
 import pytest
 from unittest.mock import patch
 
+from empyre.ship import load as ship_load
+from empyre.ship import sail as ship_sail
+from empyre.ship import unload as ship_unload
 from empyre.ship.lib import (
     Ship,
     create,
     load,
     count,
+    runmodule as ship_runmodule,
     verifyShipNameFound,
     verifyShipNameNotFound,
 )
 from bbsengine6 import member as member_module
+from bbsengine6.listbox import ListboxItem, ListboxResult
 
 from .helpers import create_test_ship
 
 
 TEST_LOGINID = "empyre_test_user"
 TEST_MEMBER_MONIKER = "test_member"
+
+
+def _listbox_selected(pk: str) -> ListboxResult:
+    """Build a ListboxResult('selected', ListboxItem(pk=pk)) for mocking."""
+    item = ListboxItem()
+    item.pk = pk
+    return ListboxResult("selected", item)
+
+
+def _listbox_cancelled() -> ListboxResult:
+    return ListboxResult("cancelled")
 
 
 @pytest.fixture(autouse=True)
@@ -37,6 +53,12 @@ def player_with_shipyard(test_player):
     test_player.shipyards = 1
     test_player.ships = 0
     return test_player
+
+
+@pytest.fixture
+def player_with_grain(player_with_shipyard):
+    player_with_shipyard.grain = 1000
+    return player_with_shipyard
 
 
 class TestShipCreateIntegration:
@@ -388,3 +410,597 @@ class TestShipAttributes:
         assert ship.navigator is True
         assert ship.location == "harbor"
         assert ship.playermoniker == "player1"
+
+
+class TestShipLoadTUI:
+    """Tests empyre.ship.load.main() with real DB and mocked interactive IO."""
+
+    def test_load_tui_moves_resource_from_player_to_ship(
+        self, test_args, test_pool, db_conn, clean_tables, player_with_grain
+    ):
+        create_test_ship(
+            test_args,
+            test_pool,
+            moniker="load_tui_ship",
+            playermoniker="test_player",
+            createdbymoniker=TEST_MEMBER_MONIKER,
+            conn=db_conn,
+            kind="cargo",
+            manifest={},
+            status="docked",
+        )
+        db_conn.commit()
+
+        ship = load(test_args, "load_tui_ship", pool=test_pool)
+        with (
+            patch(
+                "empyre.ship.load.libempyre.selectresource",
+                return_value=_listbox_selected("grain"),
+            ),
+            patch("empyre.ship.load.io.inputinteger", return_value=100),
+        ):
+            ship_load.main(
+                test_args, player=player_with_grain, ship=ship, pool=test_pool
+            )
+
+        reloaded = load(test_args, "load_tui_ship", pool=test_pool)
+        assert reloaded.manifest == {"grain": {"value": 100}}
+        assert player_with_grain.grain == 900
+
+    def test_load_tui_appends_to_existing_manifest_entry(
+        self, test_args, test_pool, db_conn, clean_tables, player_with_grain
+    ):
+        create_test_ship(
+            test_args,
+            test_pool,
+            moniker="load_tui_ship_existing",
+            playermoniker="test_player",
+            createdbymoniker=TEST_MEMBER_MONIKER,
+            conn=db_conn,
+            kind="cargo",
+            manifest={"grain": {"value": 50}},
+            status="docked",
+        )
+        db_conn.commit()
+
+        ship = load(test_args, "load_tui_ship_existing", pool=test_pool)
+        with (
+            patch(
+                "empyre.ship.load.libempyre.selectresource",
+                return_value=_listbox_selected("grain"),
+            ),
+            patch("empyre.ship.load.io.inputinteger", return_value=25),
+        ):
+            ship_load.main(
+                test_args, player=player_with_grain, ship=ship, pool=test_pool
+            )
+
+        reloaded = load(test_args, "load_tui_ship_existing", pool=test_pool)
+        assert reloaded.manifest == {"grain": {"value": 75}}
+        assert player_with_grain.grain == 975
+
+    def test_load_tui_creates_new_manifest_entry(
+        self, test_args, test_pool, db_conn, clean_tables, player_with_shipyard
+    ):
+        create_test_ship(
+            test_args,
+            test_pool,
+            moniker="load_tui_ship_new",
+            playermoniker="test_player",
+            createdbymoniker=TEST_MEMBER_MONIKER,
+            conn=db_conn,
+            kind="cargo",
+            manifest={},
+            status="docked",
+        )
+        db_conn.commit()
+        player_with_shipyard.gold = 1000
+
+        ship = load(test_args, "load_tui_ship_new", pool=test_pool)
+        with (
+            patch(
+                "empyre.ship.load.libempyre.selectresource",
+                return_value=_listbox_selected("gold"),
+            ),
+            patch("empyre.ship.load.io.inputinteger", return_value=10),
+        ):
+            ship_load.main(
+                test_args, player=player_with_shipyard, ship=ship, pool=test_pool
+            )
+
+        reloaded = load(test_args, "load_tui_ship_new", pool=test_pool)
+        assert reloaded.manifest == {"gold": {"value": 10}}
+        assert player_with_shipyard.gold == 990
+
+    def test_load_tui_aborts_when_resource_selection_cancelled(
+        self, test_args, test_pool, db_conn, clean_tables, player_with_grain
+    ):
+        create_test_ship(
+            test_args,
+            test_pool,
+            moniker="load_tui_ship_cancel",
+            playermoniker="test_player",
+            createdbymoniker=TEST_MEMBER_MONIKER,
+            conn=db_conn,
+            kind="cargo",
+            manifest={},
+            status="docked",
+        )
+        db_conn.commit()
+
+        ship = load(test_args, "load_tui_ship_cancel", pool=test_pool)
+        with patch(
+            "empyre.ship.load.libempyre.selectresource",
+            return_value=_listbox_cancelled(),
+        ):
+            ship_load.main(
+                test_args, player=player_with_grain, ship=ship, pool=test_pool
+            )
+
+        reloaded = load(test_args, "load_tui_ship_cancel", pool=test_pool)
+        assert reloaded.manifest == {}
+        assert player_with_grain.grain == 1000
+
+    def test_load_tui_aborts_when_amount_is_none(
+        self, test_args, test_pool, db_conn, clean_tables, player_with_grain
+    ):
+        create_test_ship(
+            test_args,
+            test_pool,
+            moniker="load_tui_ship_none",
+            playermoniker="test_player",
+            createdbymoniker=TEST_MEMBER_MONIKER,
+            conn=db_conn,
+            kind="cargo",
+            manifest={},
+            status="docked",
+        )
+        db_conn.commit()
+
+        ship = load(test_args, "load_tui_ship_none", pool=test_pool)
+        with (
+            patch(
+                "empyre.ship.load.libempyre.selectresource",
+                return_value=_listbox_selected("grain"),
+            ),
+            patch("empyre.ship.load.io.inputinteger", return_value=None),
+        ):
+            ship_load.main(
+                test_args, player=player_with_grain, ship=ship, pool=test_pool
+            )
+
+        reloaded = load(test_args, "load_tui_ship_none", pool=test_pool)
+        assert reloaded.manifest == {}
+        assert player_with_grain.grain == 1000
+
+    def test_load_tui_aborts_when_amount_is_negative(
+        self, test_args, test_pool, db_conn, clean_tables, player_with_grain
+    ):
+        create_test_ship(
+            test_args,
+            test_pool,
+            moniker="load_tui_ship_neg",
+            playermoniker="test_player",
+            createdbymoniker=TEST_MEMBER_MONIKER,
+            conn=db_conn,
+            kind="cargo",
+            manifest={},
+            status="docked",
+        )
+        db_conn.commit()
+
+        ship = load(test_args, "load_tui_ship_neg", pool=test_pool)
+        with (
+            patch(
+                "empyre.ship.load.libempyre.selectresource",
+                return_value=_listbox_selected("grain"),
+            ),
+            patch("empyre.ship.load.io.inputinteger", return_value=-5),
+        ):
+            ship_load.main(
+                test_args, player=player_with_grain, ship=ship, pool=test_pool
+            )
+
+        reloaded = load(test_args, "load_tui_ship_neg", pool=test_pool)
+        assert reloaded.manifest == {}
+        assert player_with_grain.grain == 1000
+
+    def test_load_tui_aborts_when_amount_exceeds_player_resources(
+        self, test_args, test_pool, db_conn, clean_tables, player_with_grain
+    ):
+        create_test_ship(
+            test_args,
+            test_pool,
+            moniker="load_tui_ship_short",
+            playermoniker="test_player",
+            createdbymoniker=TEST_MEMBER_MONIKER,
+            conn=db_conn,
+            kind="cargo",
+            manifest={},
+            status="docked",
+        )
+        db_conn.commit()
+        player_with_grain.grain = 10
+
+        ship = load(test_args, "load_tui_ship_short", pool=test_pool)
+        with (
+            patch(
+                "empyre.ship.load.libempyre.selectresource",
+                return_value=_listbox_selected("grain"),
+            ),
+            patch("empyre.ship.load.io.inputinteger", return_value=100),
+        ):
+            ship_load.main(
+                test_args, player=player_with_grain, ship=ship, pool=test_pool
+            )
+
+        reloaded = load(test_args, "load_tui_ship_short", pool=test_pool)
+        assert reloaded.manifest == {}
+        assert player_with_grain.grain == 10
+
+
+class TestShipUnloadTUI:
+    """Tests empyre.ship.unload.main() with real DB and mocked interactive IO."""
+
+    def test_unload_tui_moves_resource_from_ship_to_player(
+        self, test_args, test_pool, db_conn, clean_tables, player_with_grain
+    ):
+        create_test_ship(
+            test_args,
+            test_pool,
+            moniker="unload_tui_ship",
+            playermoniker="test_player",
+            createdbymoniker=TEST_MEMBER_MONIKER,
+            conn=db_conn,
+            kind="cargo",
+            manifest={"grain": {"value": 200}},
+            status="docked",
+        )
+        db_conn.commit()
+        player_with_grain.grain = 0
+
+        ship = load(test_args, "unload_tui_ship", pool=test_pool)
+        with (
+            patch(
+                "empyre.ship.unload.manifest.select_item",
+                return_value=_listbox_selected("grain"),
+            ),
+            patch("empyre.ship.unload.io.inputinteger", return_value=50),
+        ):
+            ship_unload.main(
+                test_args, player=player_with_grain, ship=ship, pool=test_pool
+            )
+
+        reloaded = load(test_args, "unload_tui_ship", pool=test_pool)
+        assert reloaded.manifest == {"grain": {"value": 150}}
+        assert player_with_grain.grain == 50
+
+    def test_unload_tui_reduces_manifest_to_zero(
+        self, test_args, test_pool, db_conn, clean_tables, player_with_grain
+    ):
+        create_test_ship(
+            test_args,
+            test_pool,
+            moniker="unload_tui_ship_zero",
+            playermoniker="test_player",
+            createdbymoniker=TEST_MEMBER_MONIKER,
+            conn=db_conn,
+            kind="cargo",
+            manifest={"grain": {"value": 10}},
+            status="docked",
+        )
+        db_conn.commit()
+        player_with_grain.grain = 0
+
+        ship = load(test_args, "unload_tui_ship_zero", pool=test_pool)
+        with (
+            patch(
+                "empyre.ship.unload.manifest.select_item",
+                return_value=_listbox_selected("grain"),
+            ),
+            patch("empyre.ship.unload.io.inputinteger", return_value=10),
+        ):
+            ship_unload.main(
+                test_args, player=player_with_grain, ship=ship, pool=test_pool
+            )
+
+        reloaded = load(test_args, "unload_tui_ship_zero", pool=test_pool)
+        assert reloaded.manifest == {"grain": {"value": 0}}
+        assert player_with_grain.grain == 10
+
+    def test_unload_tui_aborts_when_manifest_selection_cancelled(
+        self, test_args, test_pool, db_conn, clean_tables, player_with_grain
+    ):
+        create_test_ship(
+            test_args,
+            test_pool,
+            moniker="unload_tui_ship_cancel",
+            playermoniker="test_player",
+            createdbymoniker=TEST_MEMBER_MONIKER,
+            conn=db_conn,
+            kind="cargo",
+            manifest={"grain": {"value": 100}},
+            status="docked",
+        )
+        db_conn.commit()
+
+        ship = load(test_args, "unload_tui_ship_cancel", pool=test_pool)
+        with patch(
+            "empyre.ship.unload.manifest.select_item", return_value=_listbox_cancelled()
+        ):
+            ship_unload.main(
+                test_args, player=player_with_grain, ship=ship, pool=test_pool
+            )
+
+        reloaded = load(test_args, "unload_tui_ship_cancel", pool=test_pool)
+        assert reloaded.manifest == {"grain": {"value": 100}}
+
+    def test_unload_tui_aborts_when_amount_is_none(
+        self, test_args, test_pool, db_conn, clean_tables, player_with_grain
+    ):
+        create_test_ship(
+            test_args,
+            test_pool,
+            moniker="unload_tui_ship_none",
+            playermoniker="test_player",
+            createdbymoniker=TEST_MEMBER_MONIKER,
+            conn=db_conn,
+            kind="cargo",
+            manifest={"grain": {"value": 100}},
+            status="docked",
+        )
+        db_conn.commit()
+
+        ship = load(test_args, "unload_tui_ship_none", pool=test_pool)
+        with (
+            patch(
+                "empyre.ship.unload.manifest.select_item",
+                return_value=_listbox_selected("grain"),
+            ),
+            patch("empyre.ship.unload.io.inputinteger", return_value=None),
+        ):
+            ship_unload.main(
+                test_args, player=player_with_grain, ship=ship, pool=test_pool
+            )
+
+        reloaded = load(test_args, "unload_tui_ship_none", pool=test_pool)
+        assert reloaded.manifest == {"grain": {"value": 100}}
+
+    def test_unload_tui_aborts_when_amount_is_zero(
+        self, test_args, test_pool, db_conn, clean_tables, player_with_grain
+    ):
+        create_test_ship(
+            test_args,
+            test_pool,
+            moniker="unload_tui_ship_zeroamt",
+            playermoniker="test_player",
+            createdbymoniker=TEST_MEMBER_MONIKER,
+            conn=db_conn,
+            kind="cargo",
+            manifest={"grain": {"value": 100}},
+            status="docked",
+        )
+        db_conn.commit()
+
+        ship = load(test_args, "unload_tui_ship_zeroamt", pool=test_pool)
+        with (
+            patch(
+                "empyre.ship.unload.manifest.select_item",
+                return_value=_listbox_selected("grain"),
+            ),
+            patch("empyre.ship.unload.io.inputinteger", return_value=0),
+        ):
+            ship_unload.main(
+                test_args, player=player_with_grain, ship=ship, pool=test_pool
+            )
+
+        reloaded = load(test_args, "unload_tui_ship_zeroamt", pool=test_pool)
+        assert reloaded.manifest == {"grain": {"value": 100}}
+
+    def test_unload_tui_aborts_when_amount_is_negative(
+        self, test_args, test_pool, db_conn, clean_tables, player_with_grain
+    ):
+        create_test_ship(
+            test_args,
+            test_pool,
+            moniker="unload_tui_ship_neg",
+            playermoniker="test_player",
+            createdbymoniker=TEST_MEMBER_MONIKER,
+            conn=db_conn,
+            kind="cargo",
+            manifest={"grain": {"value": 100}},
+            status="docked",
+        )
+        db_conn.commit()
+
+        ship = load(test_args, "unload_tui_ship_neg", pool=test_pool)
+        with (
+            patch(
+                "empyre.ship.unload.manifest.select_item",
+                return_value=_listbox_selected("grain"),
+            ),
+            patch("empyre.ship.unload.io.inputinteger", return_value=-5),
+        ):
+            ship_unload.main(
+                test_args, player=player_with_grain, ship=ship, pool=test_pool
+            )
+
+        reloaded = load(test_args, "unload_tui_ship_neg", pool=test_pool)
+        assert reloaded.manifest == {"grain": {"value": 100}}
+
+    def test_unload_tui_aborts_when_amount_exceeds_manifest(
+        self, test_args, test_pool, db_conn, clean_tables, player_with_grain
+    ):
+        create_test_ship(
+            test_args,
+            test_pool,
+            moniker="unload_tui_ship_over",
+            playermoniker="test_player",
+            createdbymoniker=TEST_MEMBER_MONIKER,
+            conn=db_conn,
+            kind="cargo",
+            manifest={"grain": {"value": 10}},
+            status="docked",
+        )
+        db_conn.commit()
+
+        ship = load(test_args, "unload_tui_ship_over", pool=test_pool)
+        with (
+            patch(
+                "empyre.ship.unload.manifest.select_item",
+                return_value=_listbox_selected("grain"),
+            ),
+            patch("empyre.ship.unload.io.inputinteger", return_value=100),
+        ):
+            ship_unload.main(
+                test_args, player=player_with_grain, ship=ship, pool=test_pool
+            )
+
+        reloaded = load(test_args, "unload_tui_ship_over", pool=test_pool)
+        assert reloaded.manifest == {"grain": {"value": 10}}
+
+
+class TestShipSailTUI:
+    """Tests empyre.ship.sail.main() (dispatch only — sail is currently a stub)."""
+
+    def test_sail_main_returns_true_with_valid_inputs(self, test_args):
+        class FakeShip:
+            moniker = "any_ship"
+
+        class FakePlayer:
+            moniker = "any_player"
+
+        result = ship_sail.main(
+            test_args, player=FakePlayer(), ship=FakeShip(), pool=None
+        )
+        assert result is True
+
+    def test_sail_main_returns_false_without_player(self, test_args):
+        class FakeShip:
+            moniker = "any_ship"
+
+        result = ship_sail.main(test_args, ship=FakeShip(), pool=None)
+        assert result is False
+
+    def test_sail_main_returns_false_without_ship(self, test_args):
+        class FakePlayer:
+            moniker = "any_player"
+
+        result = ship_sail.main(test_args, player=FakePlayer(), pool=None)
+        assert result is False
+
+
+class TestShipRunmoduleDispatch:
+    """Tests empyre.ship.lib.runmodule() dispatches to the correct submodule."""
+
+    def test_runmodule_dispatches_to_ship_load(self, test_args, test_pool):
+        with patch(
+            "empyre.ship.lib.libempyre.runmodule", return_value=True
+        ) as mock_dispatch:
+            ship_runmodule(
+                test_args, "load", ship=object(), player=object(), pool=test_pool
+            )
+
+        mock_dispatch.assert_called_once()
+        args, kwargs = mock_dispatch.call_args[0], mock_dispatch.call_args[1]
+        assert args[1] == "ship.load"
+        assert kwargs.get("ship") is not None
+        assert kwargs.get("player") is not None
+        assert kwargs.get("pool") is test_pool
+
+    def test_runmodule_dispatches_to_ship_unload(self, test_args, test_pool):
+        with patch(
+            "empyre.ship.lib.libempyre.runmodule", return_value=True
+        ) as mock_dispatch:
+            ship_runmodule(
+                test_args, "unload", ship=object(), player=object(), pool=test_pool
+            )
+
+        args, _ = mock_dispatch.call_args[0], mock_dispatch.call_args[1]
+        assert args[1] == "ship.unload"
+
+    def test_runmodule_dispatches_to_ship_sail(self, test_args, test_pool):
+        with patch(
+            "empyre.ship.lib.libempyre.runmodule", return_value=True
+        ) as mock_dispatch:
+            ship_runmodule(
+                test_args, "sail", ship=object(), player=object(), pool=test_pool
+            )
+
+        args, _ = mock_dispatch.call_args[0], mock_dispatch.call_args[1]
+        assert args[1] == "ship.sail"
+
+    def test_runmodule_passes_kwargs_through(self, test_args, test_pool):
+        with patch(
+            "empyre.ship.lib.libempyre.runmodule", return_value=True
+        ) as mock_dispatch:
+            marker_ship = object()
+            marker_player = object()
+            ship_runmodule(
+                test_args,
+                "sail",
+                ship=marker_ship,
+                player=marker_player,
+                pool=test_pool,
+            )
+
+        kwargs = mock_dispatch.call_args[1]
+        assert kwargs.get("ship") is marker_ship
+        assert kwargs.get("player") is marker_player
+        assert kwargs.get("pool") is test_pool
+
+
+class TestShipFullLifecycleTUI:
+    """End-to-end test: create a ship, load it, unload it, and sail."""
+
+    def test_create_load_unload_sail_full_lifecycle(
+        self, test_args, test_pool, db_conn, clean_tables, player_with_grain
+    ):
+        ship = create(
+            test_args,
+            player=player_with_grain,
+            pool=test_pool,
+            moniker="lifecycle_ship",
+            kind="cargo",
+            status="docked",
+        )
+        assert ship is not None
+        assert ship.moniker == "lifecycle_ship"
+
+        loaded = load(test_args, "lifecycle_ship", pool=test_pool)
+        assert loaded is not None
+        assert loaded.manifest == {}
+        assert loaded.kind == "cargo"
+
+        with (
+            patch(
+                "empyre.ship.load.libempyre.selectresource",
+                return_value=_listbox_selected("grain"),
+            ),
+            patch("empyre.ship.load.io.inputinteger", return_value=100),
+        ):
+            ship_load.main(
+                test_args, player=player_with_grain, ship=loaded, pool=test_pool
+            )
+
+        after_load = load(test_args, "lifecycle_ship", pool=test_pool)
+        assert after_load.manifest == {"grain": {"value": 100}}
+
+        with (
+            patch(
+                "empyre.ship.unload.manifest.select_item",
+                return_value=_listbox_selected("grain"),
+            ),
+            patch("empyre.ship.unload.io.inputinteger", return_value=30),
+        ):
+            ship_unload.main(
+                test_args, player=player_with_grain, ship=after_load, pool=test_pool
+            )
+
+        after_unload = load(test_args, "lifecycle_ship", pool=test_pool)
+        assert after_unload.manifest == {"grain": {"value": 70}}
+
+        result = ship_sail.main(
+            test_args, player=player_with_grain, ship=after_unload, pool=test_pool
+        )
+        assert result is True

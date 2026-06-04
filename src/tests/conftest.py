@@ -91,6 +91,8 @@ def test_player(test_args, test_pool, db_conn):
             db_conn.commit()
 
     player.save = dummy_save
+    player.adjust = lambda: True
+    player.getresource = lambda name: {"name": name, "price": 0}
 
     rec = {
         "moniker": "test_player",
