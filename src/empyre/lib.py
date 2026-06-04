@@ -100,7 +100,7 @@ def setbottombar(args, buf, **kwargs) -> None:
 
                 moniker = member.getcurrentmoniker(args, **kwargs)
                 if moniker:
-                    count = notify.count(moniker, **kwargs)
+                    count = notify.count(moniker, args=args, **kwargs)
                     if count > 0:
                         notify_str = f" {{black}}|{{bottombarcolor}} notify ({count})"
             except Exception:
