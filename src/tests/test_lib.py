@@ -13,6 +13,7 @@ from empyre.lib import (
     Weather,
     completeResourceName,
     setbottombar,
+    trade,
 )
 
 
@@ -256,70 +257,219 @@ class TestCompleteResourceName:
 
 class TestSetbottombar:
     def test_returns_none(self):
+        from empyre import lib as empyre_lib
+
+        empyre_lib._current_player = None
+        empyre_lib._current_args = None
         args = MagicMock()
         args.debug = False
         with patch("bbsengine6.io.screen.setbottombar"):
             result = setbottombar(args, "test message")
             assert result is None
 
-    def test_calls_screen_setbottombar(self):
+    def test_calls_screen_setbottombar_with_buf_only(self):
+        from empyre import lib as empyre_lib
+
+        empyre_lib._current_player = None
+        empyre_lib._current_args = None
         args = MagicMock()
         args.debug = False
         with patch("bbsengine6.io.screen.setbottombar") as mock_sb:
             setbottombar(args, "test buffer")
-            mock_sb.assert_called_once()
-            call_args = mock_sb.call_args[0]
-            assert call_args[0] == "test buffer"
-            assert callable(call_args[1])
+            mock_sb.assert_called_once_with("test buffer")
 
-    def test_rightside_callable_passed(self):
-        args = MagicMock()
-        args.debug = False
-        with patch("bbsengine6.io.screen.setbottombar") as mock_sb:
-            setbottombar(args, "msg", player=None)
-            rightside_fn = mock_sb.call_args[0][1]
-            result = rightside_fn()
-            assert isinstance(result, str)
+    def test_player_kwarg_updates_cached_state(self):
+        from empyre import lib as empyre_lib
 
-    def test_rightside_with_debug_no_player(self):
-        args = MagicMock()
-        args.debug = True
-        with patch("bbsengine6.io.screen.setbottombar") as mock_sb:
-            setbottombar(args, "", player=None)
-            rightside_fn = mock_sb.call_args[0][1]
-            result = rightside_fn()
-            assert result == "debug"
-
-    def test_player_dirty_marker(self):
+        empyre_lib._current_player = None
+        empyre_lib._current_args = None
         args = MagicMock()
         args.debug = False
         mock_player = MagicMock()
-        mock_player.isdirty = PropertyMock(return_value=True)
-        mock_player.turncount = 0
-        mock_player.moniker = "test"
-        mock_player.coins = 100
-        mock_player.getresource.return_value = {"emoji": ""}
+        with patch("bbsengine6.io.screen.setbottombar"):
+            setbottombar(args, "msg", player=mock_player)
+        assert empyre_lib._current_player is mock_player
+        assert empyre_lib._current_args is args
 
-        with patch("bbsengine6.io.screen.setbottombar") as mock_sb:
-            with patch("empyre.lib.libplayer.TURNSPERDAY", 10):
-                setbottombar(args, "msg", player=mock_player)
-                rightside_fn = mock_sb.call_args[0][1]
-                result = rightside_fn(player=mock_player)
-                assert "*" in result
-                assert mock_player.moniker in result
+    def test_turns_fragment_renders_count(self):
+        from empyre import lib as empyre_lib
 
-    def test_player_clean_no_marker(self):
+        empyre_lib._current_player = None
+        empyre_lib._current_args = None
+        args = MagicMock()
+        args.debug = False
+        mock_player = MagicMock()
+        mock_player.turncount = 3
+        with patch("empyre.lib.libplayer.TURNSPERDAY", 10):
+            empyre_lib._current_player = mock_player
+            empyre_lib._current_args = args
+            result = empyre_lib._empyre_turns_fragment()
+        assert "7" in result
+
+    def test_turns_fragment_empty_when_no_player(self):
+        from empyre import lib as empyre_lib
+
+        empyre_lib._current_player = None
+        empyre_lib._current_args = None
+        assert empyre_lib._empyre_turns_fragment() == ""
+
+    def test_player_fragment_marks_dirty(self):
+        from empyre import lib as empyre_lib
+
+        empyre_lib._current_player = None
+        empyre_lib._current_args = None
+        args = MagicMock()
+        args.debug = False
+        mock_player = MagicMock()
+        mock_player.isdirty.return_value = True
+        mock_player.moniker = "alice"
+        empyre_lib._current_player = mock_player
+        empyre_lib._current_args = args
+        result = empyre_lib._empyre_player_fragment()
+        assert result == "*alice"
+
+    def test_player_fragment_clean_no_marker(self):
+        from empyre import lib as empyre_lib
+
+        empyre_lib._current_player = None
+        empyre_lib._current_args = None
         args = MagicMock()
         args.debug = False
         mock_player = MagicMock()
         mock_player.isdirty.return_value = False
-        mock_player.turncount = 0
-        mock_player.moniker = "test"
+        mock_player.moniker = "alice"
+        empyre_lib._current_player = mock_player
+        empyre_lib._current_args = args
+        result = empyre_lib._empyre_player_fragment()
+        assert result == "alice"
+        assert "*" not in result
+
+    def test_coins_fragment_includes_debug_suffix(self):
+        from empyre import lib as empyre_lib
+
+        empyre_lib._current_player = None
+        empyre_lib._current_args = None
+        args = MagicMock()
+        args.debug = True
+        mock_player = MagicMock()
         mock_player.coins = 100
         mock_player.getresource.return_value = {"emoji": ""}
+        empyre_lib._current_player = mock_player
+        empyre_lib._current_args = args
+        result = empyre_lib._empyre_coins_fragment()
+        assert "debug" in result
 
-        with patch("bbsengine6.io.screen.setbottombar") as mock_sb:
-            setbottombar(args, "msg", player=mock_player)
-            rightside_fn = mock_sb.call_args[0][1]
-            result = rightside_fn()
-            assert "*" not in result
+    def test_coins_fragment_omits_debug_when_off(self):
+        from empyre import lib as empyre_lib
+
+        empyre_lib._current_player = None
+        empyre_lib._current_args = None
+        args = MagicMock()
+        args.debug = False
+        mock_player = MagicMock()
+        mock_player.coins = 100
+        mock_player.getresource.return_value = {"emoji": ""}
+        empyre_lib._current_player = mock_player
+        empyre_lib._current_args = args
+        result = empyre_lib._empyre_coins_fragment()
+        assert "debug" not in result
+
+    def test_register_and_unregister_fragments(self):
+        from empyre import lib as empyre_lib
+
+        empyre_lib._empyre_fragments.clear()
+        with patch("bbsengine6.io.screen.register_bottombar_fragment") as mock_reg:
+            with patch("bbsengine6.io.screen.unregister_bottombar_fragment") as mock_unreg:
+                empyre_lib._register_empyre_fragments()
+                assert mock_reg.call_count == 3
+                assert len(empyre_lib._empyre_fragments) == 3
+                empyre_lib._unregister_empyre_fragments()
+                assert mock_unreg.call_count == 3
+                assert empyre_lib._empyre_fragments == []
+        empyre_lib._empyre_fragments.clear()
+
+
+class TestTrade:
+    def _make_player(self, foundries=5):
+        player = MagicMock()
+        player.coins = 100000
+        player.foundries = foundries
+        player.resources = {"foundries": {"value": foundries}}
+        player.getresource.side_effect = lambda name, **kw: (
+            {
+                "value": player.foundries,
+                "singular": "foundry",
+                "plural": "foundries",
+                "name": "foundries",
+            }
+            if name == "foundries"
+            else {
+                "singular": "coin",
+                "plural": "coins",
+                "name": "coins",
+                "emoji": ":moneybag:",
+            }
+        )
+        return player
+
+    def test_edit_option_sets_player_attribute(self, test_args):
+        player = self._make_player(foundries=5)
+        with patch("empyre.lib.setbottombar"):
+            with patch("empyre.lib.member.checkflag", return_value=True):
+                with patch("empyre.lib.io.inputchar", side_effect=["E", "C"]):
+                    with patch("empyre.lib.io.inputinteger", return_value=42):
+                        trade(test_args, player, "foundries", price=2000)
+        assert player.foundries == 42
+
+    def test_edit_option_zero_replaces_negative_input(self, test_args):
+        player = self._make_player(foundries=5)
+        with patch("empyre.lib.setbottombar"):
+            with patch("empyre.lib.member.checkflag", return_value=True):
+                with patch("empyre.lib.io.inputchar", side_effect=["E", "C"]):
+                    with patch("empyre.lib.io.inputinteger", return_value=-10):
+                        trade(test_args, player, "foundries", price=2000)
+        assert player.foundries == 0
+
+    def test_edit_option_preserves_existing_value_when_cancelled(self, test_args):
+        player = self._make_player(foundries=5)
+        with patch("empyre.lib.setbottombar"):
+            with patch("empyre.lib.member.checkflag", return_value=False):
+                with patch("empyre.lib.io.inputchar", side_effect=["C"]):
+                    with patch("empyre.lib.io.inputinteger") as mock_int:
+                        trade(test_args, player, "foundries", price=2000)
+        assert player.foundries == 5
+        mock_int.assert_not_called()
+
+    def test_edit_option_continues_loop_for_invalid_resource(self, test_args):
+        player = self._make_player(foundries=5)
+        player.resources = {}
+        with patch("empyre.lib.setbottombar"):
+            with patch("empyre.lib.member.checkflag", return_value=True):
+                with patch("empyre.lib.io.inputchar", side_effect=["E", "C"]):
+                    with patch("empyre.lib.io.inputinteger", return_value=99):
+                        trade(test_args, player, "foundries", price=2000)
+        assert player.foundries == 5
+
+    def test_edit_option_prompts_for_inputinteger_with_current_value(self, test_args):
+        player = self._make_player(foundries=7)
+        with patch("empyre.lib.setbottombar"):
+            with patch("empyre.lib.member.checkflag", return_value=True):
+                with patch("empyre.lib.io.inputchar", side_effect=["E", "C"]):
+                    with patch(
+                        "empyre.lib.io.inputinteger", return_value=1
+                    ) as mock_int:
+                        trade(test_args, player, "foundries", price=2000)
+        mock_int.assert_called_once()
+        assert mock_int.call_args.args[1] == 7
+
+    def test_edit_option_continues_after_edit(self, test_args):
+        player = self._make_player(foundries=5)
+        with patch("empyre.lib.setbottombar"):
+            with patch("empyre.lib.member.checkflag", return_value=True):
+                with patch(
+                    "empyre.lib.io.inputchar", side_effect=["E", "C"]
+                ) as mock_ch:
+                    with patch("empyre.lib.io.inputinteger", return_value=20):
+                        trade(test_args, player, "foundries", price=2000)
+        assert mock_ch.call_count == 2
+        assert player.foundries == 20

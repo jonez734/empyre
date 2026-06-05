@@ -111,7 +111,7 @@ def main(args, **kwargs):
 
     done = False
     while not done:
-        libempyre.setbottombar(args, player, "quests")
+        libempyre.setbottombar(args, "quests", player=player)
 
         help()
 

@@ -1,5 +1,6 @@
 from bbsengine6 import io, util
 from .. import lib as libempyre
+from .. import playerstatus
 from . import lib
 
 
@@ -40,7 +41,7 @@ def main(args, **kwargs):
         #        ("U", "   Utopia's Auction", None),
         #        ("W", "   Buy Soldiers", None),
         ("X", "Train Serfs to Soldiers :military-helmet:", "trainsoldiers"),
-        ("Y", "Your Status", "playerstatus"),
+        ("Y", "Your Status", playerstatus.main),
     )
 
     def townhelp(**kwargs):

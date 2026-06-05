@@ -179,7 +179,7 @@
     - would save a save() if Player was initialized properly on load
     - reload player record after maint of current player (@since 20220522)
 - [ ] trade() (@since 20220411)
-    - [x] update bottombar after every call so dirty flag is updated (rightbuf) (@since 20220411)
+    - [x] bottombar right side now uses registered fragments (turns/player/coins); auto-updates per render, no per-call recompute (@since 20260604)
     - [x] do not show player stats after a transaction by default. add 'Y' option to menu (@since 20220412, @done 20220422)
 - [ ] player.save() gets called in maint mode even if the choice is not to save (@since 20220411)
 - [ ] player.revert() builds self.attributes (which is a seq of dicts) values based on Player object attrs (@since 20220411)

@@ -66,112 +66,125 @@ def main(args, **kwargs):
         io.echo(f"empyre failed to start up", level="critical")
         return False
 
-    with database.getpool(args, dbname=args.databasename) as pool:
-        if session.start(args, pool=pool) is False:
-            io.echo(f"empyre.main.240: session.start() failed", level="error")
-            return False
-
-        lib.setbottombar(
-            args,
-            f"empyre {_version.datestamp} githash {_version.githash}",
-            player=None,
-            pool=pool,
-        )
-
-        currentmembermoniker = member.getcurrentmoniker(args, pool=pool)
-        io.echo(f"main.300: {currentmembermoniker=}", level="debug")
-        if currentmembermoniker is False:
-            io.echo("empyre.main.200: you do not exist! go away!", level="error")
-            return False
-
-        currentplayer = libplayer.select(
-            args, membermoniker=currentmembermoniker, pool=pool, **kwargs
-        )
-        if currentplayer is None:
-            io.echo(f"empyre.main.220: no player selected", level="info")
-            return True
-
-        done = False
-        while not done:
-            # io.echo(f"empyre.main.320: {currentplayer=}", level="debug")
-            if currentplayer is not None:
-                currentplayer.adjust()
-                currentplayer.save()
+    try:
+        with database.getpool(args, dbname=args.databasename) as pool:
+            if session.start(args, pool=pool) is False:
+                io.echo(f"empyre.main.240: session.start() failed", level="error")
+                return False
 
             lib.setbottombar(
                 args,
-                f"{_version.datestamp} git {_version.githash}",
-                player=currentplayer,
+                f"empyre {_version.datestamp} githash {_version.githash}",
+                player=None,
                 pool=pool,
             )
 
-            util.heading("main menu")
+            currentmembermoniker = member.getcurrentmoniker(args, pool=pool)
+            io.echo(f"main.300: {currentmembermoniker=}", level="debug")
+            if currentmembermoniker is False:
+                io.echo("empyre.main.200: you do not exist! go away!", level="error")
+                return False
 
-            io.echo()
+            currentplayer = libplayer.select(
+                args, membermoniker=currentmembermoniker, pool=pool, **kwargs
+            )
+            if currentplayer is None:
+                io.echo(f"empyre.main.220: no player selected", level="info")
+                return True
 
-            choices = "QX"
-            for o in options:
-                choices += o[0]
-            mainmenuhelp()
-            #            io.echo(f"mainmenu.100: {currentplayer.moniker=}", level="debug")
-            try:
-                #            io.echo(f"{player.rank=} {player.moniker=}", level="debug")
+            done = False
+            while not done:
+                # io.echo(f"empyre.main.320: {currentplayer=}", level="debug")
                 if currentplayer is not None:
-                    ranktitle = libplayer.getranktitle(args, currentplayer.rank).title()
-                    ch = io.inputchoice(
-                        f"{{promptcolor}}Your command, {ranktitle.title()} {currentplayer.moniker}? {{inputcolor}}",
-                        choices,
-                        "",
-                        help=mainmenuhelp,
-                        **kwargs,
-                    )
-                else:
-                    ch = io.inputchoice(
-                        f"{{promptcolor}}Your command? {{inputcolor}}",
-                        choices,
-                        "",
-                        help=mainmenuhelp,
-                        **kwargs,
-                    )
+                    currentplayer.adjust()
+                    currentplayer.save()
 
-                if ch == "Q" or ch == "X":
-                    io.echo(":door: {optioncolor}Q{labelcolor} -- quit game{/all}")
-                    done = True
-                    break
-                #                elif ch == "Y":
-                #                    io.echo("Current Player Status")
-                #                    currentplayer.status()
-                #                    continue
-                else:
-                    for o in options:  # opt, t, callback in options:
-                        if o[0] != ch:
-                            continue
-                        option = o[0]
-                        title = o[1]
-                        submodule = o[2]
-                        if len(o) == 4:
-                            emoji = o[3]
-                        else:
-                            emoji = ""
-                        io.echo(
-                            f"{emoji}{{optioncolor}}{option}{{normalcolor}} -- {title}{{/all}}"
+                lib.setbottombar(
+                    args,
+                    f"empyre {_version.datestamp} git {_version.githash}",
+                    player=currentplayer,
+                    pool=pool,
+                )
+
+                util.heading("main menu")
+
+                io.echo()
+
+                choices = "QX"
+                for o in options:
+                    choices += o[0]
+                mainmenuhelp()
+                #            io.echo(f"mainmenu.100: {currentplayer.moniker=}", level="debug")
+                try:
+                    #            io.echo(f"{player.rank=} {player.moniker=}", level="debug")
+                    if currentplayer is not None:
+                        ranktitle = libplayer.getranktitle(
+                            args, currentplayer.rank
+                        ).title()
+                        ch = io.inputchoice(
+                            f"{{promptcolor}}Your command, {ranktitle.title()} {currentplayer.moniker}? {{inputcolor}}",
+                            choices,
+                            "",
+                            help=mainmenuhelp,
+                            **kwargs,
                         )
-                        res = lib.runmodule(
-                            args, submodule, player=currentplayer, pool=pool, **kwargs
+                    else:
+                        ch = io.inputchoice(
+                            f"{{promptcolor}}Your command? {{inputcolor}}",
+                            choices,
+                            "",
+                            help=mainmenuhelp,
+                            **kwargs,
                         )
-                        if res is not True:
-                            io.echo(
-                                f"error running submodule {submodule}, returned {res=}",
-                                level="error",
-                            )
-                        io.echo()
+
+                    if ch == "Q" or ch == "X":
+                        io.echo(":door: {optioncolor}Q{labelcolor} -- quit game{/all}")
+                        done = True
                         break
-            except EOFError:
-                io.echo("{/all}*EOF*")
-                return True
-            except KeyboardInterrupt:
-                io.echo("{/all}*INTR*")
-                return True
+                    #                elif ch == "Y":
+                    #                    io.echo("Current Player Status")
+                    #                    currentplayer.status()
+                    #                    continue
+                    else:
+                        for o in options:  # opt, t, callback in options:
+                            if o[0] != ch:
+                                continue
+                            option = o[0]
+                            title = o[1]
+                            submodule = o[2]
+                            if len(o) == 4:
+                                emoji = o[3]
+                            else:
+                                emoji = ""
+                            io.echo(
+                                f"{emoji}{{optioncolor}}{option}{{normalcolor}} -- {title}{{/all}}"
+                            )
+                            res = lib.runmodule(
+                                args,
+                                submodule,
+                                player=currentplayer,
+                                pool=pool,
+                                **kwargs,
+                            )
+                            if res is not True:
+                                io.echo(
+                                    f"error running submodule {submodule}, returned {res=}",
+                                    level="error",
+                                )
+                            io.echo()
+                            break
+                except EOFError:
+                    io.echo("{/all}*EOF*")
+                    return True
+                except KeyboardInterrupt:
+                    io.echo("{/all}*INTR*")
+                    return True
 
-        currentplayer.save()
+            currentplayer.save()
+    finally:
+        # unregister empyre's bottombar fragments on exit so the bottombar
+        # does not bleed empyre state into the console/bbs loop. Only
+        # empyre's own items are removed; other modules' fragments are
+        # preserved.
+        lib._unregister_empyre_fragments()
     return True

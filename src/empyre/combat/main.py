@@ -76,7 +76,7 @@ def main(args, **kwargs):
         otherplayer.adjust()
         otherplayer.save()
 
-        libempyre.setbottombar(args, "combat", help=True, player=player)
+        libempyre.setbottombar(args, "combat", player=player)
 
         # @see empire6/mdl.emp.delx3.txt#L91
         ch = io.inputchar(

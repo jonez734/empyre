@@ -240,6 +240,38 @@ Available quests:
 - Look for the Mountain-Side Ship
 - Seek Arch-Mage Zircon's Help
 
+### 11. Bottombar Fragments
+
+The bottombar's right side is rendered from three fragments registered with
+`bbsengine6.io.screen` at module init time (`empyre.lib.init()`). Each fragment
+is a callable that takes `**kwargs` and returns a string. On every call to
+`screen.setbottombar(left)` the registered fragments are invoked and joined
+with `" | "`. The notification status (e.g. `F2: notify (N)`) is
+auto-prepended by `bbsengine6.io.screen._render_bottombar_fragments()`.
+
+| Fragment | Renders |
+|----------|---------|
+| `_empyre_turns_fragment`  | `N turns remain` (uses `TURNSPERDAY - player.turncount`) |
+| `_empyre_player_fragment` | `*player_moniker` (asterisk when `player.isdirty()`) |
+| `_empyre_coins_fragment`  | `X coins` (with ` \| debug` suffix when `args.debug`) |
+
+Fragments read from module-level state (`empyre.lib._current_player`,
+`empyre.lib._current_args`) that the `lib.setbottombar()` wrapper updates on
+each invocation. Returning `""` from a fragment causes it to be omitted from
+the joined output, so the no-player path renders no right-side content.
+
+**Caller pattern:** every module calls `libempyre.setbottombar(args, "label",
+player=player)`. The wrapper updates state and invokes
+`screen.setbottombar("label")`; the right side renders automatically from the
+fragments.
+
+**Lifecycle:** fragments are registered in `empyre.lib.init()` (called when
+the empyre module is loaded by `bbsengine6`) and unregistered in a
+`try/finally` block in `empyre.main.main()`. The unregister step only
+removes empyre's own items from `bbsengine6.io.screen._bottombar_fragments`,
+so fragments registered by other modules (e.g. console) are preserved when
+the player quits empyre.
+
 ## Database Schema
 
 See [empyre-database-schema.spec](empyre-database-schema.spec) for complete schema documentation including tables and views.

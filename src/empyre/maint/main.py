@@ -60,7 +60,7 @@ def main(args, **kwargs):
             )
             if p is None:
                 continue
-            libempyre.setbottombar(args, p, f"edit player {player.moniker}")
+            libempyre.setbottombar(args, f"edit player {player.moniker}", player=player)
             p.edit()
             p.adjust()
             p.status()

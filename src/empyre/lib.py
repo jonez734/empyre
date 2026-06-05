@@ -72,50 +72,61 @@ class Colony(object):
         self.args = args
 
 
+# module-level state shared with the registered bottombar fragments.
+# fragments are callables invoked by bbsengine6.io.screen.setbottombar()
+# on every render; they read the current player/args from these vars so
+# callers don't need to pass them through kwargs.
+# @since 20260604
+_current_args = None
+_current_player = None
+_empyre_fragments = []
+
+
+def _empyre_turns_fragment(**kwargs) -> str:
+    if _current_player is None:
+        return ""
+    if _current_player.turncount >= libplayer.TURNSPERDAY:
+        _current_player.turncount = libplayer.TURNSPERDAY
+    turnremain = libplayer.TURNSPERDAY - _current_player.turncount
+    return util.pluralize(turnremain, "turn remains", "turns remain")
+
+
+def _empyre_player_fragment(**kwargs) -> str:
+    if _current_player is None:
+        return ""
+    isdirty = "*" if _current_player.isdirty() is True else ""
+    return f"{isdirty}{_current_player.moniker}"
+
+
+def _empyre_coins_fragment(**kwargs) -> str:
+    if _current_player is None:
+        return ""
+    coinres = _current_player.getresource("coins")
+    coinres["emoji"] = ""
+    debug = (
+        " | debug" if _current_args is not None and _current_args.debug is True else ""
+    )
+    return f"{util.pluralize(_current_player.coins, **coinres)}{debug}"
+
+
+def _register_empyre_fragments() -> None:
+    for fn in (_empyre_turns_fragment, _empyre_player_fragment, _empyre_coins_fragment):
+        if fn not in _empyre_fragments:
+            screen.register_bottombar_fragment(fn)
+            _empyre_fragments.append(fn)
+
+
+def _unregister_empyre_fragments() -> None:
+    for fn in _empyre_fragments:
+        screen.unregister_bottombar_fragment(fn)
+    _empyre_fragments.clear()
+
+
 def setbottombar(args, buf, **kwargs) -> None:
-    def rightside(**kwargs):
-        debug = True if args is not None and args.debug is True else False
-        player = kwargs.get("player", None)
-        if player is not None:
-            if player.isdirty() is True:
-                isdirty = "*"
-            else:
-                isdirty = ""
-
-            if player.turncount >= libplayer.TURNSPERDAY:
-                player.turncount = libplayer.TURNSPERDAY
-
-            turnremain = libplayer.TURNSPERDAY - player.turncount
-
-            debug = " | debug" if args is not None and args.debug is True else ""
-
-            coinres = player.getresource("coins")
-            coinres["emoji"] = ""
-            #            io.echo("empyre.setbottombar.rightside: trace", level="debug")
-
-            # Add notification count
-            notify_str = ""
-            try:
-                from bbsengine6 import member, notify
-
-                moniker = member.getcurrentmoniker(args, **kwargs)
-                if moniker:
-                    count = notify.count(moniker, args=args, **kwargs)
-                    if count > 0:
-                        notify_str = f" {{black}}|{{bottombarcolor}} notify ({count})"
-            except Exception:
-                io.echo_traceback("empyre.lib.setbottombar.100:")
-
-            return f"empyre {{black}}|{{bottombarcolor}} {util.pluralize(turnremain, 'turn remains', 'turns remain')} {{black}}|{{bottombarcolor}} {isdirty}{player.moniker} {{black}}|{{bottombarcolor}} {util.pluralize(player.coins, **coinres)}{debug}{notify_str}"
-        else:
-            if debug is True:
-                return "debug"
-            else:
-                return ""
-
-    screen.setbottombar(buf, rightside, **kwargs)
-    # if args.debug is True:
-    #    io.echo(f"empyre.setarea.100: {buf=} {stack=} {screen.areastack=}", level="debug")
+    global _current_args, _current_player
+    _current_args = args
+    _current_player = kwargs.get("player", _current_player)
+    screen.setbottombar(buf)
     return
 
 
@@ -213,7 +224,7 @@ def trade(args, player: object, name: str, **kwargs: dict):
     while not done:
         player.adjust()
         player.save()
-        setbottombar(args, f"trade: {plural}", stack=False, player=player)
+        setbottombar(args, f"trade: {plural}", player=player)
 
         # currentvalue = getattr(player, attr)
         # prompt = "You have {reverse}%s{/reverse} and {reverse}%s{/reverse}{F6}" % (pluralize(currentvalue, singular, plural), pluralize(player.coins, "coin", "coins"))
@@ -235,6 +246,7 @@ def trade(args, player: object, name: str, **kwargs: dict):
         choices += "Y"
 
         prompt += ": "
+        kwargs.pop("default", None)
         ch = io.inputchar(prompt, choices, "C", **kwargs)
         if ch == "":
             io.echo("{/all}")
@@ -437,6 +449,7 @@ def selectresource(args, title, resources, kind=None, **kwargs):
 
 def init(args, **kwargs):
     io.setvar("empyre.highlightcolor", "{highlightcolor}")
+    _register_empyre_fragments()
     return True
 
 
