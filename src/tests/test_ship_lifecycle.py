@@ -14,24 +14,12 @@ from empyre.ship.lib import (
     verifyShipNameNotFound,
 )
 from bbsengine6 import member as member_module
-from bbsengine6.listbox import ListboxItem, ListboxResult
 
-from .helpers import create_test_ship
+from .helpers import create_test_ship, listbox_cancelled, listbox_selected
 
 
 TEST_LOGINID = "empyre_test_user"
 TEST_MEMBER_MONIKER = "test_member"
-
-
-def _listbox_selected(pk: str) -> ListboxResult:
-    """Build a ListboxResult('selected', ListboxItem(pk=pk)) for mocking."""
-    item = ListboxItem()
-    item.pk = pk
-    return ListboxResult("selected", item)
-
-
-def _listbox_cancelled() -> ListboxResult:
-    return ListboxResult("cancelled")
 
 
 @pytest.fixture(autouse=True)
@@ -435,7 +423,7 @@ class TestShipLoadTUI:
         with (
             patch(
                 "empyre.ship.load.libempyre.selectresource",
-                return_value=_listbox_selected("grain"),
+                return_value=listbox_selected("grain"),
             ),
             patch("empyre.ship.load.io.inputinteger", return_value=100),
         ):
@@ -467,7 +455,7 @@ class TestShipLoadTUI:
         with (
             patch(
                 "empyre.ship.load.libempyre.selectresource",
-                return_value=_listbox_selected("grain"),
+                return_value=listbox_selected("grain"),
             ),
             patch("empyre.ship.load.io.inputinteger", return_value=25),
         ):
@@ -500,7 +488,7 @@ class TestShipLoadTUI:
         with (
             patch(
                 "empyre.ship.load.libempyre.selectresource",
-                return_value=_listbox_selected("gold"),
+                return_value=listbox_selected("gold"),
             ),
             patch("empyre.ship.load.io.inputinteger", return_value=10),
         ):
@@ -531,7 +519,7 @@ class TestShipLoadTUI:
         ship = load(test_args, "load_tui_ship_cancel", pool=test_pool)
         with patch(
             "empyre.ship.load.libempyre.selectresource",
-            return_value=_listbox_cancelled(),
+            return_value=listbox_cancelled(),
         ):
             ship_load.main(
                 test_args, player=player_with_grain, ship=ship, pool=test_pool
@@ -561,7 +549,7 @@ class TestShipLoadTUI:
         with (
             patch(
                 "empyre.ship.load.libempyre.selectresource",
-                return_value=_listbox_selected("grain"),
+                return_value=listbox_selected("grain"),
             ),
             patch("empyre.ship.load.io.inputinteger", return_value=None),
         ):
@@ -593,7 +581,7 @@ class TestShipLoadTUI:
         with (
             patch(
                 "empyre.ship.load.libempyre.selectresource",
-                return_value=_listbox_selected("grain"),
+                return_value=listbox_selected("grain"),
             ),
             patch("empyre.ship.load.io.inputinteger", return_value=-5),
         ):
@@ -626,7 +614,7 @@ class TestShipLoadTUI:
         with (
             patch(
                 "empyre.ship.load.libempyre.selectresource",
-                return_value=_listbox_selected("grain"),
+                return_value=listbox_selected("grain"),
             ),
             patch("empyre.ship.load.io.inputinteger", return_value=100),
         ):
@@ -663,7 +651,7 @@ class TestShipUnloadTUI:
         with (
             patch(
                 "empyre.ship.unload.manifest.select_item",
-                return_value=_listbox_selected("grain"),
+                return_value=listbox_selected("grain"),
             ),
             patch("empyre.ship.unload.io.inputinteger", return_value=50),
         ):
@@ -696,7 +684,7 @@ class TestShipUnloadTUI:
         with (
             patch(
                 "empyre.ship.unload.manifest.select_item",
-                return_value=_listbox_selected("grain"),
+                return_value=listbox_selected("grain"),
             ),
             patch("empyre.ship.unload.io.inputinteger", return_value=10),
         ):
@@ -726,7 +714,7 @@ class TestShipUnloadTUI:
 
         ship = load(test_args, "unload_tui_ship_cancel", pool=test_pool)
         with patch(
-            "empyre.ship.unload.manifest.select_item", return_value=_listbox_cancelled()
+            "empyre.ship.unload.manifest.select_item", return_value=listbox_cancelled()
         ):
             ship_unload.main(
                 test_args, player=player_with_grain, ship=ship, pool=test_pool
@@ -755,7 +743,7 @@ class TestShipUnloadTUI:
         with (
             patch(
                 "empyre.ship.unload.manifest.select_item",
-                return_value=_listbox_selected("grain"),
+                return_value=listbox_selected("grain"),
             ),
             patch("empyre.ship.unload.io.inputinteger", return_value=None),
         ):
@@ -786,7 +774,7 @@ class TestShipUnloadTUI:
         with (
             patch(
                 "empyre.ship.unload.manifest.select_item",
-                return_value=_listbox_selected("grain"),
+                return_value=listbox_selected("grain"),
             ),
             patch("empyre.ship.unload.io.inputinteger", return_value=0),
         ):
@@ -817,7 +805,7 @@ class TestShipUnloadTUI:
         with (
             patch(
                 "empyre.ship.unload.manifest.select_item",
-                return_value=_listbox_selected("grain"),
+                return_value=listbox_selected("grain"),
             ),
             patch("empyre.ship.unload.io.inputinteger", return_value=-5),
         ):
@@ -848,7 +836,7 @@ class TestShipUnloadTUI:
         with (
             patch(
                 "empyre.ship.unload.manifest.select_item",
-                return_value=_listbox_selected("grain"),
+                return_value=listbox_selected("grain"),
             ),
             patch("empyre.ship.unload.io.inputinteger", return_value=100),
         ):
@@ -975,7 +963,7 @@ class TestShipFullLifecycleTUI:
         with (
             patch(
                 "empyre.ship.load.libempyre.selectresource",
-                return_value=_listbox_selected("grain"),
+                return_value=listbox_selected("grain"),
             ),
             patch("empyre.ship.load.io.inputinteger", return_value=100),
         ):
@@ -989,7 +977,7 @@ class TestShipFullLifecycleTUI:
         with (
             patch(
                 "empyre.ship.unload.manifest.select_item",
-                return_value=_listbox_selected("grain"),
+                return_value=listbox_selected("grain"),
             ),
             patch("empyre.ship.unload.io.inputinteger", return_value=30),
         ):

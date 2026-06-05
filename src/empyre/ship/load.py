@@ -1,22 +1,29 @@
-from bbsengine6 import io, database, util
+import argparse
+from typing import Any, Optional
+
+from bbsengine6 import database, io, util
 from .. import lib as libempyre
+from . import manifest as ship_manifest  # noqa: F401  (kept for symmetry with unload.py)
+
+STATUS_CANCELLED = "cancelled"
+STATUS_NOITEMS = "noitems"
 
 
-def init(args, **kwargs):
+def init(args: argparse.Namespace, **kwargs: Any) -> bool:
     return True
 
 
-def access(args, op, **kwargs):
+def access(args: argparse.Namespace, op: Any, **kwargs: Any) -> bool:
     return True
 
 
-def buildargs(args, **kwargs):
+def buildargs(args: argparse.Namespace, **kwargs: Any) -> None:
     return None
 
 
-def main(args, **kwargs):
-    player = kwargs["player"] if "player" in kwargs else None
-    ship = kwargs["ship"] if "ship" in kwargs else None
+def main(args: argparse.Namespace, **kwargs: Any) -> bool:
+    player: Optional[Any] = kwargs["player"] if "player" in kwargs else None
+    ship: Optional[Any] = kwargs["ship"] if "ship" in kwargs else None
 
     player.save()
     # for name in player.resources.keys():
@@ -28,7 +35,7 @@ def main(args, **kwargs):
         args, "select load resource", player.resources, **kwargs
     )
     io.echo(f"empyre.ship.load.100: {op=}", level="debug")
-    if op.status == "cancelled" or op.status == "noitems":
+    if op.status in (STATUS_CANCELLED, STATUS_NOITEMS):
         return True
 
     resourcename = op.item.pk
@@ -64,3 +71,4 @@ def main(args, **kwargs):
     ship.adjust()
     ship.save()
     database.commit(args)
+    return True

@@ -126,7 +126,17 @@ def setbottombar(args, buf, **kwargs) -> None:
     global _current_args, _current_player
     _current_args = args
     _current_player = kwargs.get("player", _current_player)
-    screen.setbottombar(buf)
+    # Forward args and pool to bbsengine6.io.screen.setbottombar so that
+    # downstream subsystems (notably bbsengine6.notify) can resolve their
+    # database connection from args.databasename rather than falling back
+    # to the BBSENGINE6_DBNAME env var.
+    screen_kwargs = {}
+    if args is not None:
+        screen_kwargs["args"] = args
+    pool = kwargs.get("pool", None)
+    if pool is not None:
+        screen_kwargs["pool"] = pool
+    screen.setbottombar(buf, **screen_kwargs)
     return
 
 
@@ -284,7 +294,7 @@ def trade(args, player: object, name: str, **kwargs: dict):
 
             if player.coins < quantity * price:
                 io.echo(
-                    f"{{var:labelcolor}}You have {{var:valuecolor}}:moneybag: {util.pluralize(player.coins, **coinres)} {{var:labelcolor}}and you need {{var:valuecolor}}:moneybag: {util.pluralize(abs(player.coins - quantity * price), 'more coin', 'more coins', **coinres)} to complete this transaction."
+                    f"{{var:labelcolor}}You have {{var:valuecolor}}:moneybag: {util.pluralize(player.coins, **coinres)} {{var:labelcolor}}and you need {{var:valuecolor}}:moneybag: {util.pluralize(abs(player.coins - quantity * price), 'more coin', 'more coins', **{k: v for k, v in coinres.items() if k not in ('singular', 'plural')})} to complete this transaction."
                 )
                 continue
 
@@ -482,8 +492,8 @@ def buildargs(args=None, **kwargs: dict):
     )
 
     defaults = {
-        "databasename": "zoid6",
-        "databasehost": "localhost",
+        "databasename": "zoid6test",
+        "databasehost": "127.0.0.1",
         "databaseuser": None,
         "databaseport": 5432,
         "databasepassword": None,

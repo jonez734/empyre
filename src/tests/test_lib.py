@@ -276,7 +276,28 @@ class TestSetbottombar:
         args.debug = False
         with patch("bbsengine6.io.screen.setbottombar") as mock_sb:
             setbottombar(args, "test buffer")
-            mock_sb.assert_called_once_with("test buffer")
+            mock_sb.assert_called_once_with("test buffer", args=args)
+
+    def test_forwards_pool_to_screen_setbottombar(self):
+        from empyre import lib as empyre_lib
+
+        empyre_lib._current_player = None
+        empyre_lib._current_args = None
+        args = MagicMock()
+        args.debug = False
+        mock_pool = MagicMock()
+        with patch("bbsengine6.io.screen.setbottombar") as mock_sb:
+            setbottombar(args, "buf", pool=mock_pool)
+            mock_sb.assert_called_once_with("buf", args=args, pool=mock_pool)
+
+    def test_screen_setbottombar_omits_args_when_none(self):
+        from empyre import lib as empyre_lib
+
+        empyre_lib._current_player = None
+        empyre_lib._current_args = None
+        with patch("bbsengine6.io.screen.setbottombar") as mock_sb:
+            setbottombar(None, "buf")
+            mock_sb.assert_called_once_with("buf")
 
     def test_player_kwarg_updates_cached_state(self):
         from empyre import lib as empyre_lib
@@ -353,7 +374,11 @@ class TestSetbottombar:
         args.debug = True
         mock_player = MagicMock()
         mock_player.coins = 100
-        mock_player.getresource.return_value = {"emoji": ""}
+        mock_player.getresource.return_value = {
+            "emoji": "",
+            "singular": "coin",
+            "plural": "coins",
+        }
         empyre_lib._current_player = mock_player
         empyre_lib._current_args = args
         result = empyre_lib._empyre_coins_fragment()
@@ -368,7 +393,11 @@ class TestSetbottombar:
         args.debug = False
         mock_player = MagicMock()
         mock_player.coins = 100
-        mock_player.getresource.return_value = {"emoji": ""}
+        mock_player.getresource.return_value = {
+            "emoji": "",
+            "singular": "coin",
+            "plural": "coins",
+        }
         empyre_lib._current_player = mock_player
         empyre_lib._current_args = args
         result = empyre_lib._empyre_coins_fragment()
@@ -379,7 +408,9 @@ class TestSetbottombar:
 
         empyre_lib._empyre_fragments.clear()
         with patch("bbsengine6.io.screen.register_bottombar_fragment") as mock_reg:
-            with patch("bbsengine6.io.screen.unregister_bottombar_fragment") as mock_unreg:
+            with patch(
+                "bbsengine6.io.screen.unregister_bottombar_fragment"
+            ) as mock_unreg:
                 empyre_lib._register_empyre_fragments()
                 assert mock_reg.call_count == 3
                 assert len(empyre_lib._empyre_fragments) == 3
@@ -473,3 +504,83 @@ class TestTrade:
                         trade(test_args, player, "foundries", price=2000)
         assert mock_ch.call_count == 2
         assert player.foundries == 20
+
+
+class TestDatabaseArgs:
+    """Verify that the --database* argparse defaults registered by
+    empyre.lib.buildargs are sane (no localhost, sensible test dbname,
+    standard postgres port, credentials left to the environment)."""
+
+    def test_default_databasename_is_zoid6test(self, test_args):
+        parser = buildargs()
+        ns = parser.parse_args([])
+        assert ns.databasename == "zoid6test"
+
+    def test_default_databasehost_is_loopback_ip(self, test_args):
+        parser = buildargs()
+        ns = parser.parse_args([])
+        assert ns.databasehost == "127.0.0.1"
+
+    def test_default_databaseport_is_standard_pg_port(self, test_args):
+        parser = buildargs()
+        ns = parser.parse_args([])
+        assert ns.databaseport == 5432
+
+    def test_default_databaseuser_is_none(self, test_args):
+        parser = buildargs()
+        ns = parser.parse_args([])
+        assert ns.databaseuser is None
+
+    def test_default_databasepassword_is_none(self, test_args):
+        parser = buildargs()
+        ns = parser.parse_args([])
+        assert ns.databasepassword is None
+
+    def test_all_database_args_present_with_defaults(self, test_args):
+        parser = buildargs()
+        ns = parser.parse_args([])
+        for attr in (
+            "databasename",
+            "databasehost",
+            "databaseport",
+            "databaseuser",
+            "databasepassword",
+        ):
+            assert hasattr(ns, attr), f"missing database arg: {attr}"
+
+    def test_cli_override_databasename(self, test_args):
+        parser = buildargs()
+        ns = parser.parse_args(["--databasename", "mygame_db"])
+        assert ns.databasename == "mygame_db"
+
+    def test_cli_override_databasehost(self, test_args):
+        parser = buildargs()
+        ns = parser.parse_args(["--databasehost", "10.0.0.5"])
+        assert ns.databasehost == "10.0.0.5"
+
+    def test_cli_override_databaseport(self, test_args):
+        parser = buildargs()
+        ns = parser.parse_args(["--databaseport", "6543"])
+        assert ns.databaseport == 6543
+
+    def test_cli_override_databaseuser_and_password(self, test_args):
+        parser = buildargs()
+        ns = parser.parse_args(
+            [
+                "--databaseuser",
+                "alice",
+                "--databasepassword",
+                "s3cret",
+            ]
+        )
+        assert ns.databaseuser == "alice"
+        assert ns.databasepassword == "s3cret"
+
+    def test_default_host_is_not_localhost(self, test_args):
+        """Regression guard: psycopg resolves 'localhost' via /etc/hosts and
+        sometimes picks an IPv6 address that the server isn't listening on,
+        producing 'database does not exist' errors that look like the
+        database is missing.  Use 127.0.0.1 to avoid that ambiguity."""
+        parser = buildargs()
+        ns = parser.parse_args([])
+        assert ns.databasehost != "localhost"

@@ -723,8 +723,11 @@ class Player(object):
 
         if self.shipyards > libship.MAXSHIPYARDS:  # > 400
             a = int(self.shipyards / 1.1)
+            shipyardsfmt = {
+                k: v for k, v in shipyardsres.items() if k not in ("singular", "plural")
+            }
             io.echo(
-                f"{{labelcolor}}Your kingdom cannot support {{valuecolor}}{util.pluralize(self.shipyards, **shipyardsres)}{{labelcolor}}! {{valuecolor}}{util.pluralize(self.shipyards, singular='shipyard is', plural='shipyards are', **shipyardsres)}{{labelcolor}} closed.{{/all}}"
+                f"{{labelcolor}}Your kingdom cannot support {{valuecolor}}{util.pluralize(self.shipyards, **shipyardsres)}{{labelcolor}}! {{valuecolor}}{util.pluralize(self.shipyards, singular='shipyard is', plural='shipyards are', **shipyardsfmt)}{{labelcolor}} closed.{{/all}}"
             )
             self.shipyards -= a
 

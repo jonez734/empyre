@@ -280,8 +280,11 @@ def _edit(args: argparse.Namespace, mode: str, ship: Ship, **kwargs: Any) -> Shi
                 io.echo("'navigator' is not a valid resource.", level="error")
                 continue
             if player.coins < nav["price"]:
+                nav_fmt = {
+                    k: v for k, v in nav.items() if k not in ("singular", "plural")
+                }
                 io.echo(
-                    f"You need {util.pluralize(nav['price'], 'coin', 'coins', **nav)} to purchase a navigator"
+                    f"You need {util.pluralize(nav['price'], 'coin', 'coins', **nav_fmt)} to purchase a navigator"
                 )
             else:
                 player.coins -= nav["price"]

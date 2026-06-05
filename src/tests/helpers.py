@@ -4,9 +4,10 @@ from typing import Any, Optional
 
 import dateutil.tz
 
+from bbsengine6 import database
+from bbsengine6.listbox import ListboxItem, ListboxResult
 from empyre.player import Player
 from empyre.ship.lib import Ship
-from bbsengine6 import database
 
 
 def make_test_args() -> argparse.Namespace:
@@ -106,3 +107,14 @@ def create_test_ship(
         )
 
     return ship
+
+
+def listbox_selected(pk: str) -> ListboxResult:
+    """Build a ListboxResult('selected', ListboxItem(pk=pk)) for mocking."""
+    item = ListboxItem()
+    item.pk = pk
+    return ListboxResult("selected", item)
+
+
+def listbox_cancelled() -> ListboxResult:
+    return ListboxResult("cancelled")

@@ -1,21 +1,27 @@
-from bbsengine6 import io
+import argparse
+from typing import Any, Optional
+
+from bbsengine6 import database, io, util
 
 from . import manifest
 
+STATUS_CANCELLED = "cancelled"
+STATUS_NOITEMS = "noitems"
 
-def init(args, **kwargs):
+
+def init(args: argparse.Namespace, **kwargs: Any) -> bool:
     return True
 
 
-def access(args, op, **kwargs):
+def access(args: argparse.Namespace, op: Any, **kwargs: Any) -> bool:
     return True
 
 
-def buildargs(args=None, **kwargs):
+def buildargs(args: Optional[argparse.Namespace] = None, **kwargs: Any) -> None:
     return None
 
 
-def main(args, **kwargs):
+def main(args: argparse.Namespace, **kwargs: Any) -> bool:
     player = kwargs["player"] if "player" in kwargs else None
     ship = kwargs["ship"] if "ship" in kwargs else None
 
@@ -25,7 +31,7 @@ def main(args, **kwargs):
     op = manifest.select_item(args, ship, player, **kwargs)
     if args.debug is True:
         io.echo(f"{op=}", level="debug")
-    if op.status == "cancelled" or op.status == "noitems":
+    if op.status in (STATUS_CANCELLED, STATUS_NOITEMS):
         return True
 
     resourcename = op.item.pk
@@ -33,6 +39,8 @@ def main(args, **kwargs):
     if type(manifestentry) is int:
         manifestentry = {"value": manifestentry}
     manifestentryvalue = manifestentry["value"]
+
+    playerres = player.getresource(resourcename)
 
     playerattr = getattr(player, resourcename)
 
@@ -54,30 +62,24 @@ def main(args, **kwargs):
     if amount < 0:
         io.echo("Must specify an amount greater than zero.")
         return True
-    elif amount > manifestentryvalue:
-        io.echo("This ship has {util.pluralize(manifestentryvalue, **playerres)}")
+    if amount > manifestentryvalue:
+        io.echo(
+            f"This ship has {{valuecolor}}{util.pluralize(manifestentryvalue, **playerres)}"
+        )
         return True
 
-    else:
-        if manifestentryvalue < 0:
-            manifestentryvalue = 0
+    if manifestentryvalue < 0:
+        manifestentryvalue = 0
 
-        if amount > manifestentryvalue:
-            io.echo("You only have {util.pluralize(amount, **playerres)} on board.")
-            return True
+    manifestentry["value"] = manifestentryvalue - amount
+    playerattr += amount
+    setattr(player, resourcename, playerattr)
 
-        if resourcename in ship.manifest:
-            manifestentry["value"] -= amount
-        else:
-            manifestentry["value"] = 0
-
-        playerattr += amount
-        setattr(player, resourcename, playerattr)
-
-        ship.manifest[resourcename] = manifestentry
+    ship.manifest[resourcename] = manifestentry
 
     player.adjust()
     player.save()
     ship.adjust()
     ship.save()
+    database.commit(args)
     return True
