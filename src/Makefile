@@ -18,7 +18,8 @@ push:
 	git push
 
 version:
-	@echo 'githash = "'`git log -1 --format='%H' | cut -c 1-16`'"' > $(PROJECT)/_version.py
+	@echo '__version__ = "0.0.1.dev$(VERSION)"' > $(PROJECT)/_version.py
+	@echo 'githash = "'`git log -1 --format='%H' | cut -c 1-16`'"' >> $(PROJECT)/_version.py
 	@echo 'datestamp = "$(VERSION)"' >> $(PROJECT)/_version.py
 
 build:
