@@ -1,6 +1,7 @@
 # TODO
 
 - [ ] Make sure all trades route through the bank
+- [ ] Check quests to make sure they route through the bank
 
 ## Plan: Route All Trades Through the Bank
 
