@@ -1,4 +1,4 @@
-from bbsengine6 import io, util
+from bbsengine6 import io, util, bank
 
 # @since 20220731 created quests.raidpiratecamp.py
 
@@ -17,6 +17,7 @@ def buildargs(args, **kwargs):
 
 def main(args, **kwargs):
     player = kwargs["player"] if "player" in kwargs else None
+    bank_service = bank.BankService(args)
 
     io.echo(f"{player.coins=}", level="debug")
 
@@ -30,7 +31,13 @@ def main(args, **kwargs):
     if isquestcompleted() is True:
         coinres = player.getresource("coins")
         io.echo(f"You gain {util.pluralize(30000, **coinres)}")
-        player.coins += 30000
+        bank_service.add_funds(
+            player.moniker,
+            30000,
+            transaction_type="quest_reward",
+            description="Raid Pirate Camp quest reward",
+        )
+        player.coins = bank_service.get_balance(player.moniker)
         result = True
     else:
         io.echo("You failed to complete this quest.")

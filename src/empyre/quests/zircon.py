@@ -1,4 +1,4 @@
-from bbsengine6 import io, util
+from bbsengine6 import io, util, bank
 
 from .. import lib
 
@@ -13,7 +13,7 @@ from .. import lib
 # Quest 9: Lose 2,000 acres, 600 serfs, 4 Nobles, 9,000 gold
 
 
-def zircon1(player):
+def zircon1(player, bank_service):
     gifts = []
     x = util.diceroll(40)  # random.randint(1, 40)
     if x >= 19:
@@ -27,7 +27,13 @@ def zircon1(player):
     elif x == 2:
         coinres = player.getresource("coins")
         gifts.append(util.pluralize(30000, **coinres))
-        player.coins += 30000  # x(3)
+        bank_service.add_funds(
+            player.moniker,
+            30000,
+            transaction_type="quest_reward",
+            description="Zircon quest reward",
+        )
+        player.coins = bank_service.get_balance(player.moniker)
     elif x == 3:
         nobleres = player.getresource("nobles")
         gifts.append(util.pluralize(5, **nobleres))
@@ -139,6 +145,7 @@ def access(args, op, **kwargs):
 # @see https://github.com/Pinacolada64/ImageBBS/blob/e9f033af1f0b341d0d435ee23def7120821c3960/v1.2/games/empire6/mdl.emp.delx3.txt#L362
 def main(args, **kwargs):
     player = kwargs["player"] if "player" in kwargs else None
+    bank_service = bank.BankService(args)
 
     #    filepath = bbsengine.buildfilepath(lib.QUESTDIR, "zircon-intro.txt")
     #    ttyio.echo("filepath=%r" % (filepath), level="debug")
@@ -162,7 +169,13 @@ def main(args, **kwargs):
 
         player.land -= land
         player.nobles -= nobles
-        player.coins -= coins
+        bank_service.remove_funds(
+            player.moniker,
+            coins,
+            transaction_type="quest_cost",
+            description="Zircon quest cost",
+        )
+        player.coins = bank_service.get_balance(player.moniker)
         player.serfs -= serfs
 
         io.echo(f"{player.land=}", level="debug")
@@ -174,7 +187,7 @@ def main(args, **kwargs):
     gifts = []
     dice = util.diceroll(1, 10)
     if dice == 1:
-        gifts += zircon1(player)
+        gifts += zircon1(player, bank_service)
     elif dice == 2:
         gifts += zircon2(player)
     elif dice == 3:
