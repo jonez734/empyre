@@ -1,4 +1,4 @@
-from bbsengine6 import io, util, member
+from bbsengine6 import io, util, member, bank
 
 from .. import lib
 
@@ -29,11 +29,12 @@ def main(args, player, **kwargs):
     coinres = player.getresource("coins")
     io.echo()
     exchangerate = 3  #:1 -- 3 coins per credit
-    cr = member.getcredits(args, **kwargs)
+    bank_service = bank.BankService(args)
+    cr = bank_service.get_balance(player.moniker)
     io.echo(
         f"{{var:labelcolor}}You have {{var:valuecolor}}{util.pluralize(player.coins, **coinres)}{{var:labelcolor}} and {{var:valuecolor}}{util.pluralize(cr, 'credit', 'credits', emoji=':moneybag:')}{{/all}}"
     )
-    if cr is not None and cr > 0:
+    if cr > 0:
         io.echo(
             f"{{var:labelcolor}}The exchange rate is {{var:valuecolor}}{util.pluralize(exchangerate, **coinres)} per credit{{/all}}.{{F6}}"
         )
@@ -59,8 +60,7 @@ def main(args, player, **kwargs):
         return
 
     player.coins += amount * exchangerate
-    cr -= amount
-    member.setcredits(args, player.moniker, cr, **kwargs)
+    bank_service.remove_funds(player.moniker, amount, transaction_type="exchange", description="Coins exchange")
 
     player.save()
 
