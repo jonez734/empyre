@@ -5,10 +5,28 @@ from datetime import datetime
 import dateutil.tz
 from enum import Enum
 
-from bbsengine6 import io, member, database, util, module, listbox
+from bbsengine6 import io, member, database, util, module, listbox, bank
 from bbsengine6.io import screen
 
 from . import player as libplayer
+
+
+def get_player_coins(args, player) -> int:
+    """Get coins from bank, fallback to cached player.coins."""
+    try:
+        bank_service = bank.BankService(args)
+        return bank_service.get_balance(player.moniker)
+    except Exception:
+        return getattr(player, "coins", 0)
+
+
+def sync_player_coins(args, player) -> None:
+    """Sync player.coins from bank balance."""
+    try:
+        bank_service = bank.BankService(args)
+        player.coins = bank_service.get_balance(player.moniker)
+    except Exception:
+        pass
 
 
 class ShipKind(str, Enum):
@@ -214,6 +232,9 @@ def trade(args, player: object, name: str, **kwargs: dict):
     price = kwargs.get("price", None)
     plural = kwargs.get("plural", name)
     io.echo(f"empyre.lib.trade.100: {price=} {player.coins=}", level="debug")
+
+    trade_fee = getattr(args, "trade_fee", 0) or 0
+    bank_service = bank.BankService(args)
     if price is None:
         io.echo("this item is not for sale.")
         return None
@@ -305,7 +326,23 @@ def trade(args, player: object, name: str, **kwargs: dict):
                 io.echo(f"invalid resource: {name}", level="error")
                 continue
             setattr(player, name, int(v))
-            player.coins -= quantity * price
+
+            total_cost = quantity * price
+            fee = int(total_cost * trade_fee / 100) if trade_fee > 0 else 0
+            net_amount = total_cost - fee
+
+            bank_result = bank_service.remove_funds(
+                player.moniker,
+                net_amount,
+                transaction_type="purchase",
+                description=f"Bought {quantity} {name}",
+            )
+            if not bank_result.get("success", False):
+                io.echo(f"{{var:labelcolor}}Bank transaction failed: {{var:valuecolor}}{bank_result.get('message', 'unknown error')}", level="error")
+                setattr(player, name, int(v - quantity))
+                continue
+
+            player.coins = bank_service.get_balance(player.moniker)
             player.save()
             io.echo("Bought!")
             break
@@ -324,7 +361,23 @@ def trade(args, player: object, name: str, **kwargs: dict):
                 io.echo(f"invalid resource: {name}", level="error")
                 continue
             setattr(player, name, int(v))
-            player.coins += quantity * price
+
+            total_proceeds = quantity * price
+            fee = int(total_proceeds * trade_fee / 100) if trade_fee > 0 else 0
+            net_amount = total_proceeds - fee
+
+            bank_result = bank_service.add_funds(
+                player.moniker,
+                net_amount,
+                transaction_type="sale",
+                description=f"Sold {quantity} {name}",
+            )
+            if not bank_result.get("success", False):
+                io.echo(f"{{var:labelcolor}}Bank transaction failed: {{var:valuecolor}}{bank_result.get('message', 'unknown error')}", level="error")
+                setattr(player, name, int(v + quantity))
+                continue
+
+            player.coins = bank_service.get_balance(player.moniker)
             io.echo("Sold!", level="success")
             player.save()
             break
@@ -497,7 +550,15 @@ def buildargs(args=None, **kwargs: dict):
         "databaseuser": None,
         "databaseport": 5432,
         "databasepassword": None,
+        "trade_fee": 0,
     }
+    parser.add_argument(
+        "--trade-fee",
+        type=int,
+        default=0,
+        dest="trade_fee",
+        help="Transaction fee percentage on trades (default: 0)",
+    )
     database.buildargs(parser, defaults, suppress=True)
 
     subparsers = parser.add_subparsers(dest="_subparser", help="Available subcommands")

@@ -936,6 +936,7 @@ def load(args, moniker: str, **kwargs) -> Player:
             # io.echo(f"empyre.player.load.320: {rec['resources']['foundries']['value']=}", level="debug")
             p = build(args, rec, **kwargs)
             p.sync()
+            libempyre.sync_player_coins(args, p)
             return p
 
     pool = kwargs.get("pool", None)
