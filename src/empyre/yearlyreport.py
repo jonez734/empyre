@@ -2,7 +2,7 @@ import random
 
 # import ttyio6 as ttyio
 # import bbsengine6 as bbsengine
-from bbsengine6 import io, util
+from bbsengine6 import io, util, bank
 
 from . import player as libplayer
 
@@ -159,8 +159,12 @@ def main(args, **kwargs):
         )  # %s{/all}" % ("{:>6n}".format(payables-receivables))) # pluralize(payables-receivables, "credit", "credits")))
     io.echo("{/all}")
 
-    player.coins += receivables
-    player.coins -= payables
+    bank_service = bank.BankService(args)
+    if receivables > 0:
+        bank_service.add_funds(player.moniker, receivables, transaction_type="yearly_receivables", description="Yearly report receivables")
+    if payables > 0:
+        bank_service.remove_funds(player.moniker, payables, transaction_type="yearly_payables", description="Yearly report payables")
+    player.coins = bank_service.get_balance(player.moniker)
 
     rank = libplayer.calculaterank(args, player)
 

@@ -59,8 +59,9 @@ def main(args, player, **kwargs):
         )
         return
 
-    player.coins += amount * exchangerate
-    bank_service.remove_funds(player.moniker, amount, transaction_type="exchange", description="Coins exchange")
+    bank_service.remove_funds(player.moniker, amount, transaction_type="exchange", description="Exchange credits for coins")
+    bank_service.add_funds(player.moniker, amount * exchangerate, transaction_type="exchange", description="Exchange credits for coins")
+    player.coins = bank_service.get_balance(player.moniker)
 
     player.save()
 

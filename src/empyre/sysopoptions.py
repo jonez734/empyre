@@ -1,6 +1,6 @@
 # import ttyio6 as ttyio
 # import bbsengine6 as bbsengine
-from bbsengine6 import io, member, util, database
+from bbsengine6 import io, member, util, database, bank
 
 from . import lib
 
@@ -54,9 +54,16 @@ def main(args, **kwargs):
     x = io.inputinteger(
         "{var:promptcolor}:moneybag: coins: {var:inputcolor}", player.coins, **kwargs
     )
-    if x > 0:
-        player.coins = x
-    else:
+    if x is not None and x > 0:
+        bank_service = bank.BankService(args)
+        current_balance = bank_service.get_balance(player.moniker)
+        diff = x - current_balance
+        if diff > 0:
+            bank_service.add_funds(player.moniker, diff, transaction_type="sysop_set", description="Sysop set coins")
+        elif diff < 0:
+            bank_service.remove_funds(player.moniker, abs(diff), transaction_type="sysop_set", description="Sysop set coins")
+        player.coins = bank_service.get_balance(player.moniker)
+    elif x is not None:
         io.echo("coins cannot be less than zero")
     io.echo("{/all}")
     player.adjust()

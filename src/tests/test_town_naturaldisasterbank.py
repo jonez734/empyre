@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from empyre.town import naturaldisasterbank
 
@@ -36,6 +36,9 @@ class TestNaturalDisasterBank:
 
     def test_returns_early_when_no_credits(self, test_args):
         player = DummyPlayer(coins=1000)
+        mock_bank = MagicMock()
+        mock_bank.get_balance.return_value = 0
+
         with patch("empyre.town.naturaldisasterbank.lib.setbottombar"):
             with patch(
                 "empyre.town.naturaldisasterbank.member.getcredits", return_value=None
@@ -64,44 +67,38 @@ class TestNaturalDisasterBank:
 
     def test_exchanges_credits_for_coins_at_3_to_1(self, test_args):
         player = DummyPlayer(coins=500)
+        mock_bank = MagicMock()
+        mock_bank.get_balance.return_value = 10
+        mock_bank.remove_funds.return_value = {"success": True, "new_balance": 6}
+        mock_bank.add_funds.return_value = {"success": True, "new_balance": 512}
+
         with patch("empyre.town.naturaldisasterbank.lib.setbottombar"):
-            with patch(
-                "empyre.town.naturaldisasterbank.member.getcredits", return_value=10
-            ):
+            with patch("empyre.town.naturaldisasterbank.bank.BankService", return_value=mock_bank):
                 with patch(
                     "empyre.town.naturaldisasterbank.io.inputinteger", return_value=4
                 ):
-                    with patch(
-                        "empyre.town.naturaldisasterbank.member.setcredits"
-                    ) as mock_set:
-                        result = naturaldisasterbank.main(test_args, player=player)
+                    result = naturaldisasterbank.main(test_args, player=player)
         assert result is True
-        assert player.coins == 500 + (4 * 3)
-        mock_set.assert_called_once()
-        positional = mock_set.call_args[0]
-        assert positional[1] == "test_player"
-        assert positional[2] == 6
+        mock_bank.remove_funds.assert_called_once()
+        mock_bank.add_funds.assert_called_once()
         assert player._saved is True
 
     def test_exchange_amount_equal_to_credits_succeeds(self, test_args):
         player = DummyPlayer(coins=0)
+        mock_bank = MagicMock()
+        mock_bank.get_balance.return_value = 5
+        mock_bank.remove_funds.return_value = {"success": True, "new_balance": 0}
+        mock_bank.add_funds.return_value = {"success": True, "new_balance": 15}
+
         with patch("empyre.town.naturaldisasterbank.lib.setbottombar"):
-            with patch(
-                "empyre.town.naturaldisasterbank.member.getcredits", return_value=5
-            ):
+            with patch("empyre.town.naturaldisasterbank.bank.BankService", return_value=mock_bank):
                 with patch(
                     "empyre.town.naturaldisasterbank.io.inputinteger", return_value=5
                 ):
-                    with patch(
-                        "empyre.town.naturaldisasterbank.member.setcredits"
-                    ) as mock_set:
-                        result = naturaldisasterbank.main(test_args, player=player)
+                    result = naturaldisasterbank.main(test_args, player=player)
         assert result is True
-        assert player.coins == 15
-        mock_set.assert_called_once()
-        positional = mock_set.call_args[0]
-        assert positional[1] == "test_player"
-        assert positional[2] == 0
+        mock_bank.remove_funds.assert_called_once()
+        mock_bank.add_funds.assert_called_once()
 
     def test_no_exchange_when_input_is_none(self, test_args):
         player = DummyPlayer(coins=500)

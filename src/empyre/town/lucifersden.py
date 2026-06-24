@@ -6,7 +6,7 @@ import random
 
 # import ttyio6 as ttyio
 # import bbsengine6 as bbsengine
-from bbsengine6 import io, util
+from bbsengine6 import io, util, bank
 
 from .. import lib
 
@@ -56,6 +56,7 @@ def main(args, **kwargs):
     )
 
     done = False
+    bank_service = bank.BankService(args)
     while not done:
         odds = random.randint(2, 4)
         io.echo("{normalcolor}Odds: {valuecolor}%s to 1{normalcolor}" % (odds))
@@ -97,10 +98,12 @@ def main(args, **kwargs):
 
         if dice == pick:
             io.echo("{green}MATCH!{/all}{F6}")
-            player.coins += bet * odds
+            bank_service.add_funds(player.moniker, bet * odds, transaction_type="gambling_win", description="Lucifer's Den winnings")
+            player.coins = bank_service.get_balance(player.moniker)
             player.serfs -= 50
         else:
-            player.coins += bet
+            bank_service.add_funds(player.moniker, bet, transaction_type="gambling_loss", description="Lucifer's Den loss (refund)")
+            player.coins = bank_service.get_balance(player.moniker)
             player.serfs -= 10
 
         # b=int(rnd(.)*(og+1)+1):on-(a=b)goto {:104}:pn=pn+x:sf=sf-10

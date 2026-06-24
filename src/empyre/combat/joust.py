@@ -1,4 +1,4 @@
-from bbsengine6 import io, util
+from bbsengine6 import io, util, bank
 
 from .. import lib as libempyre
 
@@ -72,6 +72,7 @@ def main(args, **kwargs):
 
     lost = []
     gained = []
+    bank_service = bank.BankService(args)
     x = util.diceroll(10)
     io.echo(f"{x=}", level="debug")
     if x == 1:
@@ -84,11 +85,13 @@ def main(args, **kwargs):
         else:
             lost.append("100 acres")
     elif x == 3:
-        player.coins += 1000
+        bank_service.add_funds(player.moniker, 1000, transaction_type="joust_win", description="Joust winnings")
+        player.coins = bank_service.get_balance(player.moniker)
         gained.append("1000 coins")
     elif x == 4:
         if player.coins >= 1000:
-            player.coins -= 1000
+            bank_service.remove_funds(player.moniker, 1000, transaction_type="joust_loss", description="Joust loss")
+            player.coins = bank_service.get_balance(player.moniker)
             lost.append("1000 coins")
     elif x == 5:
         player.nobles += 1
