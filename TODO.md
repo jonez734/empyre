@@ -18,6 +18,7 @@ request/reply protocol.
 - [ ] Pure JSON wire format for all IO types (no SETBOTTOMBAR binary packet).
 - [ ] Server-side cursor tracking for listbox (v1); client-side cursor is a future opt-in.
 - [ ] Reconnect via short-lived bearer token issued at `auth` time; no password resend on reconnect.
+- [ ] Adopt the corrected `menu` envelope: 1:1 projection of `bbsengine6.io.inputchoice()`'s positional and unconditional kwargs (`prompt`, `options`, `default`, `noneok`, `rewriteprompt`, `timeout`). The `help` kwarg is stashed server-side and served via the `help` / `help_result` / `help_error` round-trip (F1, per-menu, on demand). The `f2_handler` kwarg is dropped (not used in this monorepo; F2 is session-level via `key_f2`).
 
 ### Phase 0a — `bed` bearer token (cross-project prerequisite)
 
@@ -27,8 +28,8 @@ request/reply protocol.
 
 ### Phase 0 — Spec & wire format
 
-- [ ] Write `empyre/BED_PROTOCOL.md` defining every message `type`, request/reply pair, error envelope `{type:"error", code, message}`, listbox frame protocol, cancellation/timeout rules, and the connection section (clients connect to `--bed-host:--bed-port` per `--bed-path`). Reference `bed/TODO.md` for the auth/bearer-token messages.
-- [ ] Add `MessageKind` registry in `empyre.api.handler` mirroring the constants pattern used in `bbsengine6.services`.
+- [ ] Write `empyre/BED_PROTOCOL.md` defining every message `type`, request/reply pair, error envelope `{type:"error", code, message}`, listbox frame protocol, cancellation/timeout rules, and the connection section (clients connect to `--bed-host:--bed-port` per `--bed-path`). Reference `bed/TODO.md` for the auth/bearer-token messages and the `menu` / `help` / `key_f2` message types.
+- [ ] Add `MessageKind` registry in `empyre.api.handler` mirroring the constants pattern used in `bbsengine6.services`. Include the `help` / `help_result` / `help_error` (F1, per-menu) and `key_f2` / `key_f2_result` / `key_f2_empty` / `key_f2_error` (F2, session-level) types as cross-project primitives owned by `bed`.
 - [ ] Extend `databasebuildargs` and `empyre.lib.buildargs` with `--thick/--thin`, `--bed-router`, `--bed-port`. (Client flags `--bed-host`, `--bed-port`, `--bed-path`, `--uri` go in `empyre/client/__main__.py`.)
 
 ### Phase 1 — IO shim (`empyre/io_bridge.py`)
