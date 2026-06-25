@@ -37,7 +37,115 @@ request/reply protocol.
 - [ ] Implement **thick mode** as passthrough to `bbsengine6.io.*` (zero regression).
 - [ ] Implement **thin mode** that returns a request envelope to the active `MessageRouter` and `await`s the matching `*_reply`.
 - [ ] Select shim at `empyre.lib.init(args, thin=...)` time via `sys.modules` swap of `bbsengine6.io`.
-- [ ] Cover `echo` end-to-end as the first vertical slice: server emits `echo`, client renders, client sends `echo_ack`.
+- [ ] Cover `echo` end-to-end as the first vertical slice: server emits `echo`, client renders, client sends `echo_ack`. Detail below in "Phase 1a — echo / echo_ack vertical slice".
+
+### Phase 1a — `echo` / `echo_ack` vertical slice
+
+This is the **first** piece of the thin-client BED conversion to land, ahead
+of `inputstring`, `inputboolean`, `inputchoice`, etc. Reason: `echo` is
+fire-and-forget at the game level (no reply needed to advance the menu) and
+covers the entire transport + shim + client pipeline without requiring
+keyboard handling on the client side.
+
+The full protocol envelope is defined in `bed/TODO.md` under "`echo` and
+`echo_ack` — generic push-based text channel". Empyre consumes that
+envelope; the items below are the empyre-specific pieces.
+
+#### Shim behaviour (`empyre/io_bridge.py`)
+- [ ] `echo(text, **style_kwargs)` in **thin mode** MUST:
+  1. Build an `EchoFragment` (`request_id`, `stream="main"`, `seq=<next>`,
+     `payload={text, style, mci}`, `flush=False`, `ts=<iso8601>`).
+  2. Push it onto the active `ThinSession.render_buffer` and assign the
+     session's monotonic `seq` counter.
+  3. Append to a per-session listbox-friendly ring of fragments (so the
+     last N fragments can be re-sent on reconnect-resume).
+  4. Return synchronously — `echo` does **not** block on `echo_ack` in v1
+     (the IO requests that follow it will block; see "backpressure" below).
+- [ ] `echo(..., flush=True)` MUST set `flush=True` on the final fragment
+  of the current menu/prompt group; this is the signal to the client that
+  an IO request is imminent. The shim records a "pending flush" cursor.
+- [ ] `echo(text, mci=...)` in **thick mode** MUST pass through to
+  `bbsengine6.io.echo` unchanged — including all `{f6}` / `{labelcolor}` /
+  `{var:valuecolor}` tokens. Verified by the existing door-mode pytest
+  suite.
+- [ ] The shim MUST cache the active `ThinSession` (or `None` for thick
+  mode) at `empyre.lib.init` time, so module code that calls
+  `bbsengine6.io.echo(...)` indirectly (via the swapped `sys.modules`
+  module) reaches the shim without a context-var lookup on every call.
+
+#### Bottom-bar echo (out of scope for v1, noted for follow-up)
+- [ ] `screen.setbottombar` / `screen.register_bottombar_fragment` /
+  `screen.unregister_bottombar_fragment` will eventually push `echo` frames
+  on `stream="bottombar"`. v1 of Phase 1a only handles `stream="main"`.
+  Tracked as a follow-up to Phase 7.
+
+#### Backpressure — `flush` semantics
+- [ ] The shim MUST NOT send the next IO request (`inputstring`,
+  `inputchoice`, etc.) until the in-flight `flush=True` echo's
+  `echo_ack` arrives, **or** a configurable server-side timeout
+  (`--echo-ack-timeout`, default 30s, inherited from `bed`) elapses.
+- [ ] On `ack_timeout`, the shim logs a `logentry` warning with
+  `moniker`, `request_id`, `last_seq`, and proceeds with the IO request
+  anyway (the client is presumed stuck or disconnected; a future
+  disconnect handler will tear down the session).
+- [ ] On `echo_nack` (client cannot render — e.g. unknown MCI code), the
+  shim logs a `logentry` warning with `reason` + `detail`, increments a
+  per-session `nack_count`, and proceeds. If `nack_count > 5` in a single
+  session, the shim raises `EchoBudgetExceeded` and the router closes the
+  session with `error{code:"echo_budget_exceeded"}`.
+
+#### Style / MCI transcoding (v1 default)
+- [ ] In **thick mode** the shim passes through `bbsengine6.io.echo`'s
+  exact behaviour (verified by the existing door tests).
+- [ ] In **thin mode** the shim accepts both `echo("text", fg="white")`
+  keyword arguments (mapped to `payload.style`) and
+  `echo("text {f6}rest")` inline MCI tokens (mapped to `payload.mci`).
+- [ ] v1 default: the thin client renders `payload.text` only; the
+  structured `style` and `mci` fields are kept on the wire for the future
+  TUI client to consume, but the headless test client asserts the raw
+  `text` field. No transcoding happens server-side in v1.
+
+#### Tests
+- [ ] `tests/test_echo_thick_passthrough.py` — in `--thick` mode,
+  `io_bridge.echo("hello {f6}world")` produces exactly the same ANSI
+  output as the current door-mode `bbsengine6.io.echo`. Asserts byte-for-
+  byte equality against a snapshot of the legacy output for a fixed set
+  of inputs.
+- [ ] `tests/test_echo_thin_envelope.py` — in `--thin` mode, the shim
+  builds the correct `EchoFragment` (matches the wire shape in
+  `bed/TODO.md`), increments `seq` monotonically, attaches the active
+  `ThinSession`'s monotonic `request_id`, and does **not** call any
+  blocking I/O.
+- [ ] `tests/test_echo_thin_flush.py` — when `flush=True` is passed, the
+  shim records a "pending flush" cursor; the next IO call blocks until
+  `echo_ack{request_id, last_seq=…}` arrives; an `echo_nack` is logged
+  and the IO call still proceeds; an `ack_timeout` logs a warning and
+  still proceeds.
+- [ ] `tests/test_echo_thin_concurrent_streams.py` — `stream="main"` and
+  `stream="bottombar"` (when added later) advance independently.
+- [ ] `tests/test_echo_thin_nack_budget.py` — after 5 `echo_nack`s in
+  one session, the shim raises `EchoBudgetExceeded` and the router
+  sends `error{code:"echo_budget_exceeded"}`.
+- [ ] `tests/test_echo_thin_reconnect_resume.py` — start a BED instance,
+  connect, send 10 `echo`s, close socket before any `echo_ack`. Reconnect
+  with the bearer token. Server replays the unacked fragments in order;
+  client sends one `echo_ack{last_seq=10}`; server resumes from seq 11.
+- [ ] `tests/test_echo_thin_cancel.py` — server sends `echo_cancel{
+  request_id, reason="superseded"}`; client must drop the fragments and
+  may send `echo_ack{last_seq=<prior visible seq>}`.
+
+#### Definition of done for Phase 1a
+- [ ] All seven test files above pass.
+- [ ] The legacy door-mode pytest suite (`tests/`) still passes with the
+  shim installed in thick mode (no regressions).
+- [ ] A scripted `headless` client can connect, `auth`, receive a
+  welcome-banner `echo`, send `echo_ack`, and disconnect cleanly.
+- [ ] A `tui` client can connect, `auth`, render a welcome banner to
+  stdout, send `echo_ack`, and disconnect cleanly.
+- [ ] `empyre/BED_PROTOCOL.md` documents the `echo` / `echo_ack` /
+  `echo_batch` / `echo_nack` / `echo_cancel` wire shapes by reference
+  to `bed/TODO.md`, with the empyre-specific style/MCI field conventions
+  spelled out.
 
 ### Phase 2 — Router rework (`empyre/api/handler.py`)
 
