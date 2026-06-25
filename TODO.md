@@ -19,9 +19,15 @@ request/reply protocol.
 - [ ] Server-side cursor tracking for listbox (v1); client-side cursor is a future opt-in.
 - [ ] Reconnect via short-lived bearer token issued at `auth` time; no password resend on reconnect.
 
+### Phase 0a — `bed` bearer token (cross-project prerequisite)
+
+- [ ] Wait on `bed/TODO.md` "Bearer token" implementation: `bed.api.auth.AuthService`, `bed.api.token_store.TokenStore`, `bed.api.credential_provider` protocol, the `reconnect` / `auth_refresh` / `auth_revoke` message types, and the `--bed-secret` / `--token-ttl` / `--token-persistence` flags.
+- [ ] When `bed`'s `AuthService` lands, empyre adopts it instead of rolling its own `AuthService`. The empyre `AuthService` in `empyre/api/handler.py` is reduced to a thin `credential_provider` that calls `empyre.player.loadplayer` + `checkpassword` (legacy empyre accounts) or delegates to `bbsengine6.services.member.MemberService` (SSO).
+- [ ] Empyre's `empyre/BED_PROTOCOL.md` documents token lifetimes, refresh, revocation, and the `reconnect` message type, but does not redefine the wire format — `bed`'s protocol doc is the source of truth.
+
 ### Phase 0 — Spec & wire format
 
-- [ ] Write `empyre/BED_PROTOCOL.md` defining every message `type`, request/reply pair, error envelope `{type:"error", code, message}`, listbox frame protocol, cancellation/timeout rules, and the connection section (clients connect to `--bed-host:--bed-port` per `--bed-path`).
+- [ ] Write `empyre/BED_PROTOCOL.md` defining every message `type`, request/reply pair, error envelope `{type:"error", code, message}`, listbox frame protocol, cancellation/timeout rules, and the connection section (clients connect to `--bed-host:--bed-port` per `--bed-path`). Reference `bed/TODO.md` for the auth/bearer-token messages.
 - [ ] Add `MessageKind` registry in `empyre.api.handler` mirroring the constants pattern used in `bbsengine6.services`.
 - [ ] Extend `databasebuildargs` and `empyre.lib.buildargs` with `--thick/--thin`, `--bed-router`, `--bed-port`. (Client flags `--bed-host`, `--bed-port`, `--bed-path`, `--uri` go in `empyre/client/__main__.py`.)
 
