@@ -26,6 +26,33 @@ request/reply protocol.
 - [ ] When `bed`'s `AuthService` lands, empyre adopts it instead of rolling its own `AuthService`. The empyre `AuthService` in `empyre/api/handler.py` is reduced to a thin `credential_provider` that calls `empyre.player.loadplayer` + `checkpassword` (legacy empyre accounts) or delegates to `bbsengine6.services.member.MemberService` (SSO).
 - [ ] Empyre's `empyre/BED_PROTOCOL.md` documents token lifetimes, refresh, revocation, and the `reconnect` message type, but does not redefine the wire format — `bed`'s protocol doc is the source of truth.
 
+### Phase 0b — `bbsengine6.io` sink + `MessageRouterMixin` adoption (cross-project prerequisite)
+
+- [ ] Wait on `bbsengine6/TODO.md` "`bbsengine6.io` sink
+  infrastructure for thin-client BED conversion" Phases 0–5:
+  `bbsengine6.io.sink.Sink` protocol, `set_io_sink` / `reset_io_sink`
+  contextvar API, `bbsengine6.io.echo_render` public function,
+  `bbsengine6.io.mci.parse` / `mci.render`, `echo()` returns
+  `str`, and the `MessageRouter` / `MessageRouterMixin` in
+  `bbsengine6/net/router.py`.
+- [ ] When the sink infrastructure lands, empyre's
+  `empyre.api.handler.MessageRouter` adopts `MessageRouterMixin` (a
+  one-line change to its class declaration:
+  `class MessageRouter(MessageRouterMixin):`). This gives the
+  empyre per-game router the `get_session` / `get_pending_request` /
+  `resolve_pending_request` / `cleanup_session` / `next_request_id`
+  API without changing the existing class hierarchy.
+- [ ] The empyre `MessageRouter` is then ready to be the
+  incoming-dispatch side of the BED wire format. The
+  `BEDSink` (defined in `bed/TODO.md` "BED `Sink` integration with
+  `bbsengine6.io`") is the outgoing-send side; it references the
+  empyre `MessageRouter` for session access.
+- [ ] **Backward compat**: door mode (no `BEDSink` installed) uses
+  the default `DefaultSink` behavior, which is the current
+  `bbsengine6.io` behavior byte-for-byte. The
+  `bbsengine6/tests/test_io_backward_compat.py` suite passes for the
+  empyre door-mode pytest corpus.
+
 ### Phase 0 — Spec & wire format
 
 - [ ] Write `empyre/BED_PROTOCOL.md` defining every message `type`, request/reply pair, error envelope `{type:"error", code, message}`, listbox frame protocol, cancellation/timeout rules, and the connection section (clients connect to `--bed-host:--bed-port` per `--bed-path`). Reference `bed/TODO.md` for the auth/bearer-token messages and the `menu` / `help` / `key_f2` message types.
