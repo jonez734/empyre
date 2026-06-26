@@ -148,70 +148,6 @@ class AuthService(BaseService):
         }
 
 
-class MemberServiceHandler(BaseService):
-    """Handle member profile, tier, and referral messages."""
-
-    def __init__(self, args: Any, session_manager: SessionManager):
-        super().__init__(args, session_manager)
-        from bbsengine6.services.member import MemberService
-
-        self.member_service = MemberService(args)
-
-    async def handle_message(
-        self, server: Any, websocket: Any, path: str, message: Dict[str, Any]
-    ) -> Optional[Dict[str, Any]]:
-        msg_type = message.get("type")
-
-        if msg_type == "member_profile":
-            return await self._handle_profile(message)
-        elif msg_type == "member_tier":
-            return await self._handle_tier(message)
-        elif msg_type == "member_referral_code":
-            return await self._handle_referral_code(message)
-        elif msg_type == "member_referrals":
-            return await self._handle_referrals(message)
-
-        return None
-
-    async def _handle_profile(self, message: Dict[str, Any]) -> Dict[str, Any]:
-        moniker = message.get("moniker", "")
-        if not moniker:
-            return {"type": "error", "code": "invalid_request", "message": "Moniker required"}
-
-        profile = self.member_service.get_profile(moniker)
-        if profile:
-            return {"type": "member_profile_result", "success": True, "profile": profile}
-        return {"type": "member_profile_result", "success": False, "message": "Member not found"}
-
-    async def _handle_tier(self, message: Dict[str, Any]) -> Dict[str, Any]:
-        action = message.get("action", "get")
-        moniker = message.get("moniker", "")
-
-        if action == "get":
-            if not moniker:
-                return {"type": "error", "code": "invalid_request", "message": "Moniker required"}
-            tier = self.member_service.get_tier(moniker)
-            return {"type": "member_tier_result", "success": True, "moniker": moniker, "tier": tier}
-
-        return {"type": "error", "code": "invalid_action", "message": "Invalid action"}
-
-    async def _handle_referral_code(self, message: Dict[str, Any]) -> Dict[str, Any]:
-        moniker = message.get("moniker", "")
-        if not moniker:
-            return {"type": "error", "code": "invalid_request", "message": "Moniker required"}
-
-        refcode = self.member_service.get_referral_code(moniker)
-        return {"type": "member_referral_code_result", "success": True, "moniker": moniker, "refcode": refcode}
-
-    async def _handle_referrals(self, message: Dict[str, Any]) -> Dict[str, Any]:
-        moniker = message.get("moniker", "")
-        if not moniker:
-            return {"type": "error", "code": "invalid_request", "message": "Moniker required"}
-
-        referrals = self.member_service.get_referrals(moniker)
-        return {"type": "member_referrals_result", "success": True, "moniker": moniker, "referrals": referrals}
-
-
 class IslandServiceHandler(BaseService):
     """Handle island/colony management messages."""
 
@@ -763,7 +699,6 @@ class MessageRouter:
         self.channel_state = ChannelState()
 
         self.auth_service = AuthService(args, self.sessions, self.channel_state)
-        self.member_service = MemberServiceHandler(args, self.sessions)
         self.island_service = IslandServiceHandler(args, self.sessions, self.channel_state)
         self.ship_service = ShipServiceHandler(args, self.sessions, self.channel_state)
         self.town_service = TownServiceHandler(args, self.sessions)
@@ -775,9 +710,6 @@ class MessageRouter:
     def register_all(self, server: Any) -> None:
         """Register all services with the WebSocketServer."""
         server.register_service(self.auth_service, ["auth", "ping"])
-        server.register_service(self.member_service, [
-            "member_profile", "member_tier", "member_referral_code", "member_referrals"
-        ])
         server.register_service(self.island_service, [
             "list_islands", "join_island", "leave_island", "island_info", "list_colonies"
         ])
