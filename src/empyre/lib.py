@@ -545,8 +545,8 @@ def buildargs(args=None, **kwargs: dict):
     )
 
     defaults = {
-        "databasename": "zoid6test",
-        "databasehost": "127.0.0.1",
+        "databasename": "zoid6",
+        "databasehost": "localhost",
         "databaseuser": None,
         "databaseport": 5432,
         "databasepassword": None,
@@ -559,7 +559,7 @@ def buildargs(args=None, **kwargs: dict):
         dest="trade_fee",
         help="Transaction fee percentage on trades (default: 0)",
     )
-    database.buildargs(parser, defaults, suppress=True)
+    database.buildargs(parser, defaults, suppress=False)
 
     subparsers = parser.add_subparsers(dest="_subparser", help="Available subcommands")
 
