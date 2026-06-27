@@ -58,6 +58,7 @@ request/reply protocol.
 - [ ] Write `empyre/BED_PROTOCOL.md` defining every message `type`, request/reply pair, error envelope `{type:"error", code, message}`, listbox frame protocol, cancellation/timeout rules, and the connection section (clients connect to `--bed-host:--bed-port` per `--bed-path`). Reference `bed/TODO.md` for the auth/bearer-token messages and the `menu` / `help` / `key_f2` message types.
 - [ ] Add `MessageKind` registry in `empyre.api.handler` mirroring the constants pattern used in `bbsengine6.services`. Include the `help` / `help_result` / `help_error` (F1, per-menu) and `key_f2` / `key_f2_result` / `key_f2_empty` / `key_f2_error` (F2, session-level) types as cross-project primitives owned by `bed`.
 - [ ] Extend `databasebuildargs` and `empyre.lib.buildargs` with `--thick/--thin`, `--bed-router`, `--bed-port`. (Client flags `--bed-host`, `--bed-port`, `--bed-path`, `--uri` go in `empyre/client/__main__.py`.)
+- [ ] When `empyre/client/__main__.py` lands (Phase 5), register `--bed-host` (default `localhost`), `--bed-port` (default `8765`), `--bed-path` (default `/`), `--uri`, `--moniker`, `--password` (plus `--password-file` / `--password-env`), `--script`, `--tls` / `--insecure`, `--reconnect`. Defaults match bed's own `bedping` defaults so a local `bed` daemon is reachable with no extra args.
 
 ### Phase 1 — IO shim (`empyre/io_bridge.py`)
 
