@@ -869,10 +869,11 @@ class completePlayerName(object):
         return results[state]
 
 
-def verifyPlayerNameFound(args, moniker: str, **kwargs) -> bool:
+def verifyPlayerNameFound(moniker: str, **kwargs) -> bool:
+    args = kwargs.get("args", None)
     pool = kwargs.get("pool", None)
-    if pool is None:
-        io.echo("verifyPlayerNameFound.100: no pool", level="error")
+    if args is None or pool is None:
+        io.echo("verifyPlayerNameFound.100: no args or pool", level="error")
         return False
     with database.connect(args, pool=pool) as conn:
         with database.cursor(conn) as cur:
@@ -884,10 +885,11 @@ def verifyPlayerNameFound(args, moniker: str, **kwargs) -> bool:
             return True
 
 
-def verifyPlayerNameNotFound(args, moniker: str, **kwargs) -> bool:
+def verifyPlayerNameNotFound(moniker: str, **kwargs) -> bool:
+    args = kwargs.get("args", None)
     pool = kwargs.get("pool", None)
-    if pool is None:
-        io.echo("verifyPlayerNameNotFound.100: no pool", level="error")
+    if args is None or pool is None:
+        io.echo("verifyPlayerNameNotFound.100: no args or pool", level="error")
         return False
     with database.connect(args, pool=pool) as conn:
         with database.cursor(conn) as cur:
@@ -1264,7 +1266,7 @@ def count(args, membermoniker: str, **kwargs) -> int:
 
 
 def inputplayername(prompt: str = "player name: ", oldvalue: str = "", **kwargs: dict):
-    args = kwargs["args"] if "args" in kwargs else argparse.Namespace()
+    args = kwargs.get("args", argparse.Namespace())
     pool = kwargs.get("pool", None)
     verify = kwargs.pop("verify", verifyPlayerNameFound)
     name = io.inputstring(
