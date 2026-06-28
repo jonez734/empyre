@@ -261,3 +261,98 @@ empyre-client --bed-host 127.0.0.1 --bed-port 8765 \
 - [x] Check quests to make sure they route through the bank
 - [x] Check all empyre modules for direct manipulation of player.coins or member.coins
 - [x] Add integrated tests for bank routing via BED (127.0.0.1:8765)
+
+> **Cross-reference:** empyre's `coins` column is a separate
+> ledger from the casino's `engine.__member.credits` and is
+> unaffected by the casino's "Rework: route per-hand money
+> through the bank" plan (see `casino/TODO.md`). The
+> nullable nature of `coins` noted in this section is
+> intentional and not related to the casino's NULL-credits
+> work (the casino's `engine.__member.credits` is the
+> per-member wallet; empyre's `coins` is a separate,
+> empyre-internal currency concept).
+
+## Bed integration (empyre 0.0.x)
+
+Empyre adopts `bed` as a hard dependency and ships its own thin-client
+WebSocket integration. This work unblocks the Phase 0/1/2 thin-client
+work in the plan above by establishing the bed side of the integration
+without the full client/server rewrite.
+
+- [x] Register `--bed-host` (default `localhost`), `--bed-port` (default
+  `8765`), `--bed-path` (default `/`), `--bed-probe-timeout`,
+  `--bed-call-timeout`, `--bed-disable` in `empyre.lib.buildargs`.
+- [x] `--database*` flags are hidden from `--help` (`suppress=True`)
+  but still accepted. They remain functional so the local-DB fallback
+  in `BankService` / `PlayerService` works when bed is down.
+- [x] `empyre.bed_client` module: `BedConnection` (module-level
+  singleton, lazy connect, reconnect on failure, `force_close` for
+  tests), `BedUnavailable`, `get_bed_connection`, `probe_bed`,
+  `reset_bed_connection`. All websocket transport lives here; no
+  other empyre module imports `websockets` directly. The message-
+  family wrapper `BedBankClient` was removed from this module and now
+  lives in `bed.client.bank` (commit `f758b01`); the shim here
+  re-exports only the transport symbols.
+- [x] `empyre.lib.init` does a one-shot TCP probe and sets
+  `args.bed_reachable`; `empyre.lib.get_player_coins` and
+  `sync_player_coins` consult the probe via `PlayerService`.
+  When `--bed-disable` is set, the probe is skipped and
+  `args.bed_reachable = False` so the direct-DB bank path runs.
+- [x] `BankServiceHandler` is auth-gated, owner-or-sysop, every
+  error path uses `bed.api.errors.error_envelope` so the client
+  sees `recoverable` and can choose between `auth` and `reconnect`.
+  Wire envelopes (`bank_balance`, `bank_added`, `bank_removed`,
+  `bank_history`) match the cross-project family used by
+  bbsengine6-bank, casino, and mistermcfeely.
+- [x] `empyre.services.player.PlayerService` is the single owner of
+  player auth, load, profile, history. Routes through bed when
+  reachable, falls back to local `empyre.player` + `bbsengine6.member`
+  otherwise. SSO via `bbsengine6.services.member.MemberService` is
+  consulted in the local-DB branch. `PlayerServiceUnavailable` is
+  the single exception type callers translate to a recoverable
+  `bed_unavailable` envelope.
+- [x] `MessageRouter` in `empyre.api.handler` wires every service
+  to its message types: `auth`, `ping`, `list_islands`,
+  `join_island`, `leave_island`, `island_info`, `list_colonies`,
+  `list_ships`, `ship_info`, `buy_ship`, `sail_ship`,
+  `list_towns`, `town_info`, `town_tax`, `recruit_soldiers`,
+  `market_prices`, `buy_resource`, `sell_resource`,
+  `chat_island`, `chat_global`, `emote`, `bank_balance`,
+  `bank_add`, `bank_remove`, `bank_history`, `player_load`,
+  `player_auth`, `player_info`, `player_history`,
+  `subscribe_channel`, `unsubscribe_channel`, `get_subscriptions`.
+- [x] `PlayerServiceHandler` replaces the legacy
+  `MemberServiceHandler` stub. Always delegates to
+  `empyre.services.player.PlayerService`; wire messages
+  `player_load` -> `player_load_result`, `player_auth` ->
+  `player_auth_result`, `player_info` -> `player_info_result`,
+  `player_history` -> `player_history_result`. Tests updated
+  (`src/tests/test_api_handler.py`).
+- [x] `pyproject.toml` declares `bed` as a runtime dependency.
+
+### Tests added
+
+- [x] `src/tests/test_bed_flags.py` — covers every `--bed-*`
+  default value, every CLI override, and the `args.bed_reachable`
+  lifecycle in three states (`--bed-disable`, bed unreachable,
+  bed reachable).
+- [x] `src/tests/test_bed_client.py` — unit tests for the
+  `empyre.bed_client` shim. All network is mocked; no real
+  bed daemon, no real websockets.
+- [x] `src/tests/test_bed_end_to_end.py` — module-level
+  pytest skip unless `127.0.0.1:8765` is reachable; exercises
+  the real wire protocol through `BedConnection`,
+  `BedBankClient`, and `PlayerService` (bed-mode branch).
+- [x] `src/tests/test_auth_uses_player_service.py` — regression
+  guard that `AuthService._handle_auth` goes through
+  `empyre.services.player.PlayerService` and not through
+  the (non-existent) `empyre.player.loadplayer` /
+  `empyre.player.checkpassword` paths.
+- [x] `src/tests/test_bank_session.py` — behavioural tests
+  for the refactored `BankServiceHandler` using
+  `unittest.mock`; every success and every error matches
+  the cross-project `bank_*` family.
+
+Future tests to add when the bank schema is verified: full
+add/remove round-trip, `list_services` sanity, `PlayerService`
+end-to-end against a known member.
