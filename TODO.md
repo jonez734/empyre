@@ -106,7 +106,10 @@ envelope; the items below are the empyre-specific pieces.
 - [ ] `screen.setbottombar` / `screen.register_bottombar_fragment` /
   `screen.unregister_bottombar_fragment` will eventually push `echo` frames
   on `stream="bottombar"`. v1 of Phase 1a only handles `stream="main"`.
-  Tracked as a follow-up to Phase 7.
+  Tracked as a follow-up to Phase 7. The bottombar-architecture work
+  (`bbsengine6.bottombar.registry_for(name)`, per-connection
+  `ContextVar`, back-compat shim deprecation) is in
+  `../bbsengine6/TODO-BOTTOMBAR.md` Phase 4a.
 
 #### Backpressure — `flush` semantics
 - [ ] The shim MUST NOT send the next IO request (`inputstring`,
@@ -221,7 +224,7 @@ Run existing pytest + new thin-mode tests after each step.
 - [ ] **inputchoice** — single keystroke + hotkey map.
 - [ ] **inputinteger**, **inputchar**, **inputdate**, **inputfilename**, **inputpassword**.
 - [ ] **listbox** — `Player.select`, ship select, news listbox, member list.
-- [ ] **screen.setbottombar / register_bottombar_fragment** — push-based; mirror the three fragments empyre registers in `lib.init` to the client at `auth` time, re-push on every `register_*` call.
+- [ ] **screen.setbottombar / register_bottombar_fragment** — push-based; mirror the three fragments empyre registers in `lib.init` to the client at `auth` time, re-push on every `register_*` call. (Bottombar architecture: see `../bbsengine6/TODO-BOTTOMBAR.md`.)
 - [ ] **readfile** — streaming listbox-like protocol.
 
 ### Phase 8 — Testing & docs

@@ -259,108 +259,113 @@ class TestSetbottombar:
     def test_returns_none(self):
         from empyre import lib as empyre_lib
 
-        empyre_lib._current_player = None
-        empyre_lib._current_args = None
+        empyre_lib._empyre_registry.player = None
+        empyre_lib._empyre_registry.args = None
         args = MagicMock()
         args.debug = False
-        with patch("bbsengine6.io.screen.setbottombar"):
+        with patch("bbsengine6.bottombar.setbottombar"):
             result = setbottombar(args, "test message")
             assert result is None
 
-    def test_calls_screen_setbottombar_with_buf_only(self):
+    def test_calls_bottombar_setbottombar_with_buf_only(self):
         from empyre import lib as empyre_lib
 
-        empyre_lib._current_player = None
-        empyre_lib._current_args = None
+        empyre_lib._empyre_registry.player = None
+        empyre_lib._empyre_registry.args = None
         args = MagicMock()
         args.debug = False
-        with patch("bbsengine6.io.screen.setbottombar") as mock_sb:
+        with patch("bbsengine6.bottombar.setbottombar") as mock_sb:
             setbottombar(args, "test buffer")
-            mock_sb.assert_called_once_with("test buffer", args=args)
+            mock_sb.assert_called_once_with(args, "test buffer", player=None, pool=None)
 
-    def test_forwards_pool_to_screen_setbottombar(self):
+    def test_forwards_pool_to_bottombar_setbottombar(self):
         from empyre import lib as empyre_lib
 
-        empyre_lib._current_player = None
-        empyre_lib._current_args = None
+        empyre_lib._empyre_registry.player = None
+        empyre_lib._empyre_registry.args = None
         args = MagicMock()
         args.debug = False
         mock_pool = MagicMock()
-        with patch("bbsengine6.io.screen.setbottombar") as mock_sb:
+        with patch("bbsengine6.bottombar.setbottombar") as mock_sb:
             setbottombar(args, "buf", pool=mock_pool)
-            mock_sb.assert_called_once_with("buf", args=args, pool=mock_pool)
+            mock_sb.assert_called_once_with(
+                args, "buf", player=None, pool=mock_pool
+            )
 
-    def test_screen_setbottombar_omits_args_when_none(self):
+    def test_bottombar_setbottombar_omits_args_when_none(self):
         from empyre import lib as empyre_lib
 
-        empyre_lib._current_player = None
-        empyre_lib._current_args = None
-        with patch("bbsengine6.io.screen.setbottombar") as mock_sb:
+        empyre_lib._empyre_registry.player = None
+        empyre_lib._empyre_registry.args = None
+        with patch("bbsengine6.bottombar.setbottombar") as mock_sb:
             setbottombar(None, "buf")
-            mock_sb.assert_called_once_with("buf")
+            mock_sb.assert_called_once_with(None, "buf", player=None, pool=None)
 
     def test_player_kwarg_updates_cached_state(self):
         from empyre import lib as empyre_lib
 
-        empyre_lib._current_player = None
-        empyre_lib._current_args = None
+        empyre_lib._empyre_registry.player = None
+        empyre_lib._empyre_registry.args = None
         args = MagicMock()
         args.debug = False
         mock_player = MagicMock()
-        with patch("bbsengine6.io.screen.setbottombar"):
+        with patch("bbsengine6.bottombar.setbottombar"):
             setbottombar(args, "msg", player=mock_player)
+        assert empyre_lib._empyre_registry.player is mock_player
+        assert empyre_lib._empyre_registry.args is args
+        # Legacy module-level aliases are kept in sync.
         assert empyre_lib._current_player is mock_player
         assert empyre_lib._current_args is args
 
     def test_turns_fragment_renders_count(self):
         from empyre import lib as empyre_lib
 
-        empyre_lib._current_player = None
-        empyre_lib._current_args = None
+        empyre_lib._empyre_registry.player = None
+        empyre_lib._empyre_registry.args = None
         args = MagicMock()
         args.debug = False
         mock_player = MagicMock()
         mock_player.turncount = 3
         with patch("empyre.lib.libplayer.TURNSPERDAY", 10):
-            empyre_lib._current_player = mock_player
-            empyre_lib._current_args = args
+            empyre_lib._empyre_registry.player = mock_player
+            empyre_lib._empyre_registry.args = args
             result = empyre_lib._empyre_turns_fragment()
         assert "7" in result
 
     def test_turns_fragment_empty_when_no_player(self):
         from empyre import lib as empyre_lib
 
-        empyre_lib._current_player = None
-        empyre_lib._current_args = None
+        empyre_lib._empyre_registry.player = None
+        empyre_lib._empyre_registry.args = None
         assert empyre_lib._empyre_turns_fragment() == ""
 
     def test_player_fragment_marks_dirty(self):
         from empyre import lib as empyre_lib
 
-        empyre_lib._current_player = None
-        empyre_lib._current_args = None
+        empyre_lib._empyre_registry.player = None
+        empyre_lib._empyre_registry.args = None
         args = MagicMock()
         args.debug = False
         mock_player = MagicMock()
         mock_player.isdirty.return_value = True
         mock_player.moniker = "alice"
-        empyre_lib._current_player = mock_player
-        empyre_lib._current_args = args
+        empyre_lib._empyre_registry.player = mock_player
+        empyre_lib._empyre_registry.args = args
         result = empyre_lib._empyre_player_fragment()
         assert result == "*alice"
 
     def test_player_fragment_clean_no_marker(self):
         from empyre import lib as empyre_lib
 
-        empyre_lib._current_player = None
-        empyre_lib._current_args = None
+        empyre_lib._empyre_registry.player = None
+        empyre_lib._empyre_registry.args = None
         args = MagicMock()
         args.debug = False
         mock_player = MagicMock()
         mock_player.isdirty.return_value = False
         mock_player.moniker = "alice"
-        empyre_lib._current_player = mock_player
-        empyre_lib._current_args = args
+        empyre_lib._empyre_registry.player = mock_player
+        empyre_lib._empyre_registry.args = args
         result = empyre_lib._empyre_player_fragment()
         assert result == "alice"
         assert "*" not in result
@@ -368,8 +373,8 @@ class TestSetbottombar:
     def test_coins_fragment_includes_debug_suffix(self):
         from empyre import lib as empyre_lib
 
-        empyre_lib._current_player = None
-        empyre_lib._current_args = None
+        empyre_lib._empyre_registry.player = None
+        empyre_lib._empyre_registry.args = None
         args = MagicMock()
         args.debug = True
         mock_player = MagicMock()
@@ -379,16 +384,16 @@ class TestSetbottombar:
             "singular": "coin",
             "plural": "coins",
         }
-        empyre_lib._current_player = mock_player
-        empyre_lib._current_args = args
+        empyre_lib._empyre_registry.player = mock_player
+        empyre_lib._empyre_registry.args = args
         result = empyre_lib._empyre_coins_fragment()
         assert "debug" in result
 
     def test_coins_fragment_omits_debug_when_off(self):
         from empyre import lib as empyre_lib
 
-        empyre_lib._current_player = None
-        empyre_lib._current_args = None
+        empyre_lib._empyre_registry.player = None
+        empyre_lib._empyre_registry.args = None
         args = MagicMock()
         args.debug = False
         mock_player = MagicMock()
@@ -398,8 +403,8 @@ class TestSetbottombar:
             "singular": "coin",
             "plural": "coins",
         }
-        empyre_lib._current_player = mock_player
-        empyre_lib._current_args = args
+        empyre_lib._empyre_registry.player = mock_player
+        empyre_lib._empyre_registry.args = args
         result = empyre_lib._empyre_coins_fragment()
         assert "debug" not in result
 
@@ -407,9 +412,9 @@ class TestSetbottombar:
         from empyre import lib as empyre_lib
 
         empyre_lib._empyre_fragments.clear()
-        with patch("bbsengine6.io.screen.register_bottombar_fragment") as mock_reg:
+        with patch("bbsengine6.bottombar.register_bottombar_fragment") as mock_reg:
             with patch(
-                "bbsengine6.io.screen.unregister_bottombar_fragment"
+                "bbsengine6.bottombar.unregister_bottombar_fragment"
             ) as mock_unreg:
                 empyre_lib._register_empyre_fragments()
                 assert mock_reg.call_count == 3

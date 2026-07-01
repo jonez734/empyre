@@ -5,8 +5,7 @@ from datetime import datetime
 import dateutil.tz
 from enum import Enum
 
-from bbsengine6 import io, member, database, util, module, listbox, bank
-from bbsengine6.io import screen
+from bbsengine6 import io, member, database, util, module, listbox, bank, bottombar
 
 from . import player as libplayer
 
@@ -91,141 +90,80 @@ class Colony(object):
 
 
 # module-level state shared with the registered bottombar fragments.
-# fragments are callables invoked by bbsengine6.io.screen.setbottombar()
-# on every render; they read the current player/args from these vars so
-# callers don't need to pass them through kwargs.
+# fragments are callables invoked by bbsengine6.bottombar on every render;
+# they read the current player/args from the per-package _empyre_registry
+# (a bbsengine6.bottombar.FragmentRegistry). bbsengine6.io.screen still
+# works as a back-compat shim but is no longer the primary API.
 # @since 20260604
-_current_args = None
-_current_player = None
 _empyre_fragments = []
+_empyre_registry = bottombar.FragmentRegistry(name="empyre")
+
+# Legacy module-level aliases preserved so empyre tests (and any external
+# code) that reads `empyre.lib._current_player` / `_current_args` keep
+# working. They are kept in sync with `_empyre_registry` by setbottombar().
+_current_args = _empyre_registry.args
+_current_player = _empyre_registry.player
 
 
 def _empyre_turns_fragment(**kwargs) -> str:
-    if _current_player is None:
+    if _empyre_registry.player is None:
         return ""
-    if _current_player.turncount >= libplayer.TURNSPERDAY:
-        _current_player.turncount = libplayer.TURNSPERDAY
-    turnremain = libplayer.TURNSPERDAY - _current_player.turncount
+    if _empyre_registry.player.turncount >= libplayer.TURNSPERDAY:
+        _empyre_registry.player.turncount = libplayer.TURNSPERDAY
+    turnremain = libplayer.TURNSPERDAY - _empyre_registry.player.turncount
     return util.pluralize(turnremain, "turn remains", "turns remain")
 
 
 def _empyre_player_fragment(**kwargs) -> str:
-    if _current_player is None:
+    if _empyre_registry.player is None:
         return ""
-    isdirty = "*" if _current_player.isdirty() is True else ""
-    return f"{isdirty}{_current_player.moniker}"
+    isdirty = "*" if _empyre_registry.player.isdirty() is True else ""
+    return f"{isdirty}{_empyre_registry.player.moniker}"
 
 
 def _empyre_coins_fragment(**kwargs) -> str:
-    if _current_player is None:
+    if _empyre_registry.player is None:
         return ""
-    coinres = _current_player.getresource("coins")
+    coinres = _empyre_registry.player.getresource("coins")
     coinres["emoji"] = ""
     debug = (
-        " | debug" if _current_args is not None and _current_args.debug is True else ""
+        " | debug"
+        if _empyre_registry.args is not None
+        and _empyre_registry.args.debug is True
+        else ""
     )
-    return f"{util.pluralize(_current_player.coins, **coinres)}{debug}"
+    return f"{util.pluralize(_empyre_registry.player.coins, **coinres)}{debug}"
 
 
 def _register_empyre_fragments() -> None:
     for fn in (_empyre_turns_fragment, _empyre_player_fragment, _empyre_coins_fragment):
         if fn not in _empyre_fragments:
-            screen.register_bottombar_fragment(fn)
+            bottombar.register_bottombar_fragment(fn)
             _empyre_fragments.append(fn)
 
 
 def _unregister_empyre_fragments() -> None:
     for fn in _empyre_fragments:
-        screen.unregister_bottombar_fragment(fn)
+        bottombar.unregister_bottombar_fragment(fn)
     _empyre_fragments.clear()
 
 
 def setbottombar(args, buf, **kwargs) -> None:
     global _current_args, _current_player
-    _current_args = args
-    _current_player = kwargs.get("player", _current_player)
-    # Forward args and pool to bbsengine6.io.screen.setbottombar so that
-    # downstream subsystems (notably bbsengine6.notify) can resolve their
-    # database connection from args.databasename rather than falling back
-    # to the BBSENGINE6_DBNAME env var.
-    screen_kwargs = {}
-    if args is not None:
-        screen_kwargs["args"] = args
+    player = kwargs.get("player", None)
     pool = kwargs.get("pool", None)
-    if pool is not None:
-        screen_kwargs["pool"] = pool
-    screen.setbottombar(buf, **screen_kwargs)
-    return
-
-
-def generatename(args):
-    # @see http://donjon.bin.sh/fantasy/name/#type=me;me=english_male @ty ryan
-    namelist = (
-        "Richye",
-        "Gerey",
-        "Andrew",
-        "Ryany",
-        "Mathye",
-        "Burne",
-        "Enryn",
-        "Andes",
-        "Piersym",
-        "Jordye",
-        "Vyncis",
-        "Gery",
-        "Aryn",
-        "Hone",
-        "Sharcey",
-        "Kater",
-        "Erix",
-        "Abell",
-        "Wene",
-        "Noke",
-        "Jane",
-        "Folcey",
-        "Abel",
-        "Bilia",
-        "Cilia",
-        "Joycie",
-        "Vyncis_Potte",
-        "Berny",
-        "Warder_Eyder",
-        "Lesym_Nery",
-        "Rarder",
-        "Warder_Righte",
-        "Drichye_Nyne",
-        "Rancent",
-        "Ralphye",
-        "Gilew_Drete",
-        "Elean_Flynsor",
-        "Rix",
-        "Sarrey",
-        "Sabil",
-        "Joycie Arron",
-        "Bridget",
-        "Elen",
-        "Jane",
-        "Kathel",
-        "Icell",
-    )
-    return namelist[random.randint(0, len(namelist) - 1)]
-
-
-def newsentry(
-    args: object, message: str, player: object = None, otherplayer: object = None
-):
-    ne = {}
-    ne["message"] = message
-    #    ne["playerid"] = player.id
-    ne["playermoniker"] = player.moniker
-    ne["membermoniker"] = player.membermoniker
-    ne["datecreated"] = datetime.now(dateutil.tz.tzlocal())
-    if args.debug is True:
-        io.echo(f"{ne=}", level="debug")
-    neid = database.insert(args, "empyre.__newsentry", ne, returnid=True, commit=True)
-    if args.debug is True:
-        io.echo(f"{neid=}", level="debug")
-    return
+    # Stash on the per-package registry and on the legacy module globals
+    # so any code that still reads `_current_player` / `_current_args`
+    # continues to work.
+    _empyre_registry.set_context(args=args, player=player, pool=pool)
+    _current_args = _empyre_registry.args
+    _current_player = _empyre_registry.player
+    # Forward args/pool to bbsengine6.bottombar so the centralized shim
+    # can stash them on the default registry and downstream subsystems
+    # (notably bbsengine6.notify) can resolve their database connection
+    # from args.databasename rather than falling back to the
+    # BBSENGINE6_DBNAME env var.
+    return bottombar.setbottombar(args, buf, player=player, pool=pool)
 
 
 def trade(args, player: object, name: str, **kwargs: dict):
