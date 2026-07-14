@@ -25,3 +25,7 @@ sdist: version
 
 backup:
 	rsync --recursive --verbose --exclude=.venv . $(THUMB)work/$(PROJECT)/
+
+deploy: version
+	python3 -m build --outdir dist
+	$(MAKE) -C www prod
