@@ -15,29 +15,26 @@ from bbsengine6.net import (
 )
 
 
-class SessionManager:
-    """Manages WebSocket sessions and authentication state."""
+from bbsengine6.session import SessionManager
+
+
+class EmpyreSessionManager(SessionManager):
+    """Extends base SessionManager with island tracking."""
 
     def __init__(self):
-        self._sessions: Dict[int, Dict[str, Any]] = {}
+        super().__init__()
         self._islands: Dict[str, set] = {}
 
     def register_session(self, session_id: int, moniker: str, is_sysop: bool = False) -> None:
-        self._sessions[session_id] = {"moniker": moniker, "island_moniker": None, "is_sysop": is_sysop}
+        super().register_session(session_id, moniker, is_sysop)
+        self._sessions[session_id]["island_moniker"] = None
 
     def unregister_session(self, session_id: int) -> None:
         if session_id in self._sessions:
             island_moniker = self._sessions[session_id].get("island_moniker")
             if island_moniker and island_moniker in self._islands:
                 self._islands[island_moniker].discard(session_id)
-            del self._sessions[session_id]
-
-    def get_session(self, session_id: int) -> Optional[Dict[str, Any]]:
-        return self._sessions.get(session_id)
-
-    def get_moniker(self, session_id: int) -> Optional[str]:
-        session = self._sessions.get(session_id)
-        return session.get("moniker") if session else None
+        super().unregister_session(session_id)
 
     def get_island_moniker(self, session_id: int) -> Optional[str]:
         session = self._sessions.get(session_id)
@@ -47,10 +44,6 @@ class SessionManager:
         io.echo(f"set_island_moniker: session_id={session_id}, island_moniker={island_moniker}", level="info")
         if session_id in self._sessions:
             self._sessions[session_id]["island_moniker"] = island_moniker
-
-    def get_is_sysop(self, session_id: int) -> bool:
-        session = self._sessions.get(session_id)
-        return session.get("is_sysop", False) if session else False
 
 
 class BaseService:
@@ -695,7 +688,7 @@ class MessageRouter:
 
     def __init__(self, args: Any) -> None:
         self.args = args
-        self.sessions = SessionManager()
+        self.sessions = EmpyreSessionManager()
         self.channel_state = ChannelState()
 
         self.auth_service = AuthService(args, self.sessions, self.channel_state)
