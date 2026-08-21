@@ -356,6 +356,13 @@ without the full client/server rewrite.
   `unittest.mock`; every success and every error matches
   the cross-project `bank_*` family.
 
+## Build infrastructure
+
+- [ ] PREPARE_BUILD protection for in-tree `build/` (@since 20260820)
+  - Problem: `empyre/Makefile` `deploy` target (line 30) runs `python3 -m build --outdir dist` against the project root. There is no `PREPARE_BUILD` macro before the invocation, so a foreign-owned in-tree `build/` (left over from a prior `jam` build, for example) causes setuptools to EPERM on the `chown` it does when populating `dist-info/`.
+  - Solution: add a `PREPARE_BUILD` macro to `empyre/Makefile` mirroring `bed/Makefile:163-185` and call it before the `python -m build` line in the `deploy` target. (Separate, pre-existing bug: `empyre/Makefile` runs `python -m build` from the project root but `pyproject.toml` lives under `src/`; fix or work around independently. PREPARE_BUILD should land regardless.)
+  - Cross-ref: `bed/Makefile:163-185`, `zoid6/TODO.md` "PREPARE_BUILD standardization".
+
 Future tests to add when the bank schema is verified: full
 add/remove round-trip, `list_services` sanity, `PlayerService`
 end-to-end against a known member.
