@@ -15,6 +15,16 @@ request/reply protocol.
 - [ ] Editor: stub for v1 (single string in/out, no multi-frame interaction).
 - [ ] Keep both menu-driven thin flow and existing service handlers (Island/Ship/Town/Market/Bank/Channel/Chat) as a non-menu API for bots/tooling on the same BED instance.
 - [ ] SSO via bbsengine6 `MemberService`; keep local `AuthService` (moniker+password via `empyre.player.loadplayer` + `checkpassword`) as fallback for legacy empyre-only accounts.
+
+  > **Note (2026-08-22, password column hardening follow-up):**
+  > The `checkpassword` fallback path benefits from the
+  > `bbsengine6.member.audit_password_hash` per-auth diagnostic wired
+  > into `bbsengine6.member.checkpassword` on 2026-08-22. Any legacy
+  > empyre account with a `$1$` MD5-crypt hash in
+  > `engine.__member.password` will surface a `level="warning"` log
+  > line at the first `loadplayer` call instead of a silent False
+  > return. No code change required in empyre's `player.py` — the
+  > signal comes from bbsengine6.
 - [ ] Pure JSON wire format for all IO types (no SETBOTTOMBAR binary packet).
 - [ ] Server-side cursor tracking for listbox (v1); client-side cursor is a future opt-in.
 - [ ] Reconnect via short-lived bearer token issued at `auth` time; no password resend on reconnect.
