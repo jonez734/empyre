@@ -36,32 +36,8 @@ request/reply protocol.
 - [ ] When `bed`'s `AuthService` lands, empyre adopts it instead of rolling its own `AuthService`. The empyre `AuthService` in `empyre/api/handler.py` is reduced to a thin `credential_provider` that calls `empyre.player.loadplayer` + `checkpassword` (legacy empyre accounts) or delegates to `bbsengine6.services.member.MemberService` (SSO).
 - [ ] Empyre's `empyre/BED_PROTOCOL.md` documents token lifetimes, refresh, revocation, and the `reconnect` message type, but does not redefine the wire format — `bed`'s protocol doc is the source of truth.
 
-### Phase 0b — `bbsengine6.io` sink + `MessageRouterMixin` adoption (cross-project prerequisite)
-
-- [ ] Wait on `bbsengine6/TODO.md` "`bbsengine6.io` sink
-  infrastructure for thin-client BED conversion" Phases 0–5:
-  `bbsengine6.io.sink.Sink` protocol, `set_io_sink` / `reset_io_sink`
-  contextvar API, `bbsengine6.io.echo_render` public function,
-  `bbsengine6.io.mci.parse` / `mci.render`, `echo()` returns
-  `str`, and the `MessageRouter` / `MessageRouterMixin` in
-  `bbsengine6/net/router.py`.
-- [ ] When the sink infrastructure lands, empyre's
-  `empyre.api.handler.MessageRouter` adopts `MessageRouterMixin` (a
-  one-line change to its class declaration:
-  `class MessageRouter(MessageRouterMixin):`). This gives the
-  empyre per-game router the `get_session` / `get_pending_request` /
-  `resolve_pending_request` / `cleanup_session` / `next_request_id`
-  API without changing the existing class hierarchy.
-- [ ] The empyre `MessageRouter` is then ready to be the
-  incoming-dispatch side of the BED wire format. The
-  `BEDSink` (defined in `bed/TODO.md` "BED `Sink` integration with
-  `bbsengine6.io`") is the outgoing-send side; it references the
-  empyre `MessageRouter` for session access.
-- [ ] **Backward compat**: door mode (no `BEDSink` installed) uses
-  the default `DefaultSink` behavior, which is the current
-  `bbsengine6.io` behavior byte-for-byte. The
-  `bbsengine6/tests/test_io_backward_compat.py` suite passes for the
-  empyre door-mode pytest corpus.
+> Bottombar architecture — see `bbsengine6/TODO-BOTTOMBAR.md`. Per-game
+> call-site review for empyre lives below.
 
 ### Phase 0 — Spec & wire format
 
@@ -72,7 +48,7 @@ request/reply protocol.
 
 ### Phase 1 — IO shim (`empyre/io_bridge.py`)
 
-- [ ] Re-export every name empyre uses: `echo`, `inputchoice`, `inputstring`, `inputboolean`, `inputinteger`, `inputchar`, `inputdate`, `inputfilename`, `inputpassword`, `screen.setbottombar`, `screen.register_bottombar_fragment`, `screen.unregister_bottombar_fragment`, `listbox.*`, `readfile.display`.
+- [ ] Re-export every name empyre uses: `echo`, `inputchoice`, `inputstring`, `inputboolean`, `inputinteger`, `inputchar`, `inputdate`, `inputfilename`, `inputpassword`, `listbox.*`, `readfile.display`. (`screen.setbottombar` / `register_*` / `unregister_*` reach the wire via `echo{stream:"bottombar"}` — see `bbsengine6/TODO-BOTTOMBAR.md` Phase 5b.)
 - [ ] Implement **thick mode** as passthrough to `bbsengine6.io.*` (zero regression).
 - [ ] Implement **thin mode** that returns a request envelope to the active `MessageRouter` and `await`s the matching `*_reply`.
 - [ ] Select shim at `empyre.lib.init(args, thin=...)` time via `sys.modules` swap of `bbsengine6.io`.
@@ -112,14 +88,11 @@ envelope; the items below are the empyre-specific pieces.
   `bbsengine6.io.echo(...)` indirectly (via the swapped `sys.modules`
   module) reaches the shim without a context-var lookup on every call.
 
-#### Bottom-bar echo (out of scope for v1, noted for follow-up)
-- [ ] `screen.setbottombar` / `screen.register_bottombar_fragment` /
-  `screen.unregister_bottombar_fragment` will eventually push `echo` frames
-  on `stream="bottombar"`. v1 of Phase 1a only handles `stream="main"`.
-  Tracked as a follow-up to Phase 7. The bottombar-architecture work
-  (`bbsengine6.bottombar.registry_for(name)`, per-connection
-  `ContextVar`, back-compat shim deprecation) is in
-  `../bbsengine6/TODO-BOTTOMBAR.md` Phase 4a.
+#### Bottom-bar echo
+`screen.setbottombar` / `register_*` / `unregister_*` push `echo`
+frames on `stream="bottombar"` (see `bbsengine6/TODO-BOTTOMBAR.md`
+Phase 5b for the wire payload shape). Out of scope for empyre's
+Phase 1a, which only handles `stream="main"`.
 
 #### Backpressure — `flush` semantics
 - [ ] The shim MUST NOT send the next IO request (`inputstring`,
@@ -234,7 +207,7 @@ Run existing pytest + new thin-mode tests after each step.
 - [ ] **inputchoice** — single keystroke + hotkey map.
 - [ ] **inputinteger**, **inputchar**, **inputdate**, **inputfilename**, **inputpassword**.
 - [ ] **listbox** — `Player.select`, ship select, news listbox, member list.
-- [ ] **screen.setbottombar / register_bottombar_fragment** — push-based; mirror the three fragments empyre registers in `lib.init` to the client at `auth` time, re-push on every `register_*` call. (Bottombar architecture: see `../bbsengine6/TODO-BOTTOMBAR.md`.)
+- [ ] **screen.setbottombar / register_bottombar_fragment** — push-based; mirror the three fragments empyre registers in `lib.init` to the client at `auth` time, re-push on every `register_*` call. Wire shape: `echo{stream:"bottombar"}` (see `bbsengine6/TODO-BOTTOMBAR.md` Phase 5b).
 - [ ] **readfile** — streaming listbox-like protocol.
 
 ### Phase 8 — Testing & docs
