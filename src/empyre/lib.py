@@ -289,7 +289,7 @@ def trade(args, player: object, name: str, **kwargs: dict):
                 f"sell{{F6}}{{var:labelcolor}}The barbarians will buy your {plural} for {{var:valuecolor}}{util.pluralize(price, **coinres)}{{var:labelcolor}} each."
             )
             quantity = io.inputinteger(
-                "{{promptcolor}}sell how many?: {{inputcolor}}", **kwargs
+                f"{{promptcolor}}sell how many?: {{inputcolor}}", **kwargs
             )
             if quantity is None or quantity < 1:
                 break
