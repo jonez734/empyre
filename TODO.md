@@ -349,3 +349,31 @@ without the full client/server rewrite.
 Future tests to add when the bank schema is verified: full
 add/remove round-trip, `list_services` sanity, `PlayerService`
 end-to-end against a known member.
+
+## Connection pool lifetime and test suite
+
+Pool lifetime rule: [`../specs/CONN_POOL_PATTERN.md`](../specs/CONN_POOL_PATTERN.md), "Pool
+Lifetime". bbsengine6 provides `database.context_pool`, which yields the process's cached pool and
+never closes it.
+
+### Done
+
+- [x] Five `with database.getpool(...)` scopes use `database.context_pool` (`c93fe4a`). The
+      `player.py`, `startup.py`, `main.py`, and `empyre_test_disaster.py` sites are included.
+- [x] `src/tests/conftest.py` closes the process's cached pools once, in `pytest_sessionfinish`
+      (`027f104`). The full run finishes with no `PythonFinalizationError`; HEAD shows it.
+- [x] Five combat tests in `src/tests/test_combat_main.py` hung until the run was killed, because
+      they patched `io.inputchar` with a constant key and the loop exits only on `Q` or `6`. They
+      now answer the key once, then `Q` (`18857d4`).
+
+### Open
+
+- [ ] **122 tests fail on HEAD and on the working tree**, with the same IDs. Not caused by the pool
+      work. Categorise them (missing names, stale fixtures, behaviour changes) before using the
+      suite as a regression check.
+- [ ] **Five collection errors** exclude five files from the run: `test_api_handler.py`,
+      `test_bed_client.py`, `test_bed_end_to_end.py`, `test_lib.py`, and
+      `test_player_service_handler.py`. They import names that no longer exist in `empyre.bed_client`,
+      `empyre.lib`, and `empyre.api.handler`.
+- [ ] **Pool-only verification.** The shutdown check is a suite run, not a run of the real entry
+      point against a database. Run `empyre` once against `zoid6test` and confirm it exits cleanly.
