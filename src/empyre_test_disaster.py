@@ -5,7 +5,7 @@ from bbsengine6 import database
 
 def main(args, **kwargs):
     currentplayer = empyre.player.load(args, "jam")
-    with database.getpool(args) as pool:
+    with database.context_pool(args) as pool:
         libempyre.runmodule(
             args, "disaster", disaster=2, save=False, player=currentplayer, pool=pool
         )

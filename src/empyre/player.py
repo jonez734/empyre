@@ -969,7 +969,7 @@ def exists(moniker, *, args):
 
     if hasattr(args, "pool") is False:
         io.echo("player.exists.120: pool not passed", level="debug")
-        with database.getpool(args) as pool:
+        with database.context_pool(args) as pool:
             with database.connect(args, pool=pool) as conn:
                 return _work(conn)
     else:

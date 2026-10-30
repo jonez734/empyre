@@ -67,7 +67,7 @@ def main(args, **kwargs):
         return False
 
     try:
-        with database.getpool(args, dbname=args.databasename) as pool:
+        with database.context_pool(args, dbname=args.databasename) as pool:
             if session.start(args, pool=pool) is False:
                 io.echo(f"empyre.main.240: session.start() failed", level="error")
                 return False

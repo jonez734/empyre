@@ -24,7 +24,7 @@ def buildargs(args, **kwargs):
 
 
 def main(args, **kwargs):
-    with database.getpool(args, dbname=database.DEFAULTDATABASE) as pool:
+    with database.context_pool(args, dbname=database.DEFAULTDATABASE) as pool:
         with database.connect(args, pool=pool) as conn:
             io.echo(
                 f"database {{var:valuecolor}}{args.databasename}{{var:labelcolor}}: ",
@@ -41,7 +41,7 @@ def main(args, **kwargs):
             else:
                 io.echo(f" ok ", level="ok", flush=True)
 
-    with database.getpool(args, dbname=args.databasename) as pool:
+    with database.context_pool(args, dbname=args.databasename) as pool:
         with database.connect(args, pool=pool) as conn:
             io.echo(f"schema {{var:valuecolor}}empyre{{var:labelcolor}}: ", end="")
             if database.schemaexists(args, "empyre", conn=conn) is False:
