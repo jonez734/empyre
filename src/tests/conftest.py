@@ -150,3 +150,13 @@ def clean_tables(db_conn):
     except psycopg.errors.UndefinedTable:
         db_conn.rollback()
     yield
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """Close the process's cached connection pools once, after the last test.
+
+    bbsengine6 caches one pool per database. ``test_pool`` closes the one it opens, but other code
+    paths reuse the cache, and a pool whose worker threads are still running at interpreter exit
+    crashes the shutdown with PythonFinalizationError. The session owns the cache, so it closes it.
+    """
+    database.reset_pool_cache()
