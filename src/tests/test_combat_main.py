@@ -40,7 +40,7 @@ def mock_otherplayer():
 class TestCombatMain:
     def test_selects_opponent_then_exits_on_q(self, test_args, mock_player, mock_otherplayer):
         with patch("empyre.combat.main.libplayer.select", return_value=mock_otherplayer):
-            with patch("empyre.combat.main.io.inputchar", return_value="Q"):
+            with patch("empyre.combat.main.io.inputchar", side_effect=["Q", "Q"]):
                 with patch("empyre.combat.main.io.echo"):
                     with patch("empyre.combat.main.util.heading"):
                         with patch("empyre.combat.main.lib.runmodule"):
@@ -55,7 +55,7 @@ class TestCombatMain:
 
     def test_routes_to_attackarmy_on_key_1(self, test_args, mock_player, mock_otherplayer):
         with patch("empyre.combat.main.libplayer.select", return_value=mock_otherplayer):
-            with patch("empyre.combat.main.io.inputchar", return_value="1"):
+            with patch("empyre.combat.main.io.inputchar", side_effect=["1", "Q"]):
                 with patch("empyre.combat.main.io.echo"):
                     with patch("empyre.combat.main.util.heading"):
                         with patch("empyre.combat.main.lib.runmodule") as mock_rm:
@@ -75,7 +75,7 @@ class TestCombatMain:
 
     def test_routes_to_attackpalace_on_key_2(self, test_args, mock_player, mock_otherplayer):
         with patch("empyre.combat.main.libplayer.select", return_value=mock_otherplayer):
-            with patch("empyre.combat.main.io.inputchar", return_value="2"):
+            with patch("empyre.combat.main.io.inputchar", side_effect=["2", "Q"]):
                 with patch("empyre.combat.main.io.echo"):
                     with patch("empyre.combat.main.util.heading"):
                         with patch("empyre.combat.main.lib.runmodule") as mock_rm:
@@ -95,7 +95,7 @@ class TestCombatMain:
 
     def test_routes_to_senddiplomat_on_key_4(self, test_args, mock_player, mock_otherplayer):
         with patch("empyre.combat.main.libplayer.select", return_value=mock_otherplayer):
-            with patch("empyre.combat.main.io.inputchar", return_value="4"):
+            with patch("empyre.combat.main.io.inputchar", side_effect=["4", "Q"]):
                 with patch("empyre.combat.main.io.echo"):
                     with patch("empyre.combat.main.util.heading"):
                         with patch("empyre.combat.main.lib.runmodule") as mock_rm:
@@ -115,7 +115,7 @@ class TestCombatMain:
 
     def test_routes_to_joust_on_key_5(self, test_args, mock_player, mock_otherplayer):
         with patch("empyre.combat.main.libplayer.select", return_value=mock_otherplayer):
-            with patch("empyre.combat.main.io.inputchar", return_value="5"):
+            with patch("empyre.combat.main.io.inputchar", side_effect=["5", "Q"]):
                 with patch("empyre.combat.main.io.echo"):
                     with patch("empyre.combat.main.util.heading"):
                         with patch("empyre.combat.main.lib.runmodule") as mock_rm:
@@ -135,7 +135,7 @@ class TestCombatMain:
 
     def test_key_3_attacknobles_calls_missing_module(self, test_args, mock_player, mock_otherplayer):
         with patch("empyre.combat.main.libplayer.select", return_value=mock_otherplayer):
-            with patch("empyre.combat.main.io.inputchar", return_value="3"):
+            with patch("empyre.combat.main.io.inputchar", side_effect=["3", "Q"]):
                 with patch("empyre.combat.main.io.echo") as mock_echo:
                     with patch("empyre.combat.main.util.heading"):
                         with patch("empyre.combat.main.lib.runmodule") as mock_rm:
@@ -194,7 +194,7 @@ class TestCombatMain:
 
     def test_quits_on_key_6(self, test_args, mock_player, mock_otherplayer):
         with patch("empyre.combat.main.libplayer.select", return_value=mock_otherplayer):
-            with patch("empyre.combat.main.io.inputchar", return_value="6"):
+            with patch("empyre.combat.main.io.inputchar", side_effect=["6", "Q"]):
                 with patch("empyre.combat.main.io.echo"):
                     with patch("empyre.combat.main.util.heading"):
                         with patch("empyre.combat.main.lib.runmodule"):
