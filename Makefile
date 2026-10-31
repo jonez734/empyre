@@ -39,14 +39,14 @@ venv:
 	"$(VENV_DIR)/bin/python" -m pip install --upgrade --force-reinstall --no-deps "$$whl" && \
 	echo "empyre installed into $(VENV_DIR)"
 
-install:
-	./setup.py build && sudo ./setup.py install
-
 build: version
-	./setup.py build
+	$(VENV_PYTHON) -m build --outdir dist src
 
 sdist: version
-	./setup.py sdist
+	$(VENV_PYTHON) -m build --sdist --outdir dist src
+
+install: build
+	sudo $(VENV_PYTHON) -m pip install --force-reinstall --no-deps dist/*.whl
 
 backup:
 	rsync --recursive --verbose --exclude=.venv . $(THUMB)work/$(PROJECT)/
