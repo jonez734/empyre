@@ -8,3 +8,6 @@ dist/
 *~
 .sass-cache/
 .venv/
+
+# build version stamp (rewritten by every build; not tracked)
+_version.py
