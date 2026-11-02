@@ -1,6 +1,6 @@
 PROJECT = empyre
 THUMB = /run/media/jam/BEA6-BBCE/
-VENV_DIR ?= .venv
+VENV_DIR ?= $(or $(DEPLOY_PREFIX),$(HOME)/.venv)
 VENV_PYTHON ?= python3.12
 # bbsengine6 is a sibling checkout; its own venv target installs the engine wheel into VENV_DIR.
 BBSENGINE6_DIR ?= ../bbsengine6
