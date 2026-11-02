@@ -14,9 +14,12 @@ clean:
 push:
 	git push
 
+# Rewrites src/empyre/_version.py from the date and git hash. src/pyproject.toml reads the version
+# through setuptools dynamic attr `empyre._version.__version__`, so the wheel gets this version.
 version:
-	@echo '__version__ = "'`git log -1 --format='%H' | cut -c 1-16`'"' > empyre/_version.py
-	@echo '__datestamp__ = "'`date +%Y%m%d-%H%M`-`whoami`'"' >> empyre/_version.py
+	@echo '__version__ = "0.0.1.dev'`date +%Y%m%d%H%M`'"' > src/empyre/_version.py
+	@echo 'githash = "'`git log -1 --format='%H' 2>/dev/null | cut -c 1-16`'"' >> src/empyre/_version.py
+	@echo 'datestamp = "'`date +%Y%m%d%H%M`'"' >> src/empyre/_version.py
 
 # venv: a local .venv with empyre installed from a wheel built out of src/. The build runs in
 # a scratch copy so the tree is not touched (no _version.py rewrite, no build/ or egg-info left).
@@ -27,6 +30,7 @@ venv:
 	fi
 	"$(VENV_DIR)/bin/python" -m pip install --upgrade pip
 	"$(VENV_DIR)/bin/python" -m pip install --upgrade build
+	@$(MAKE) version
 	@work="$$(mktemp -d)" && \
 	trap 'rm -rf "$$work"' EXIT && \
 	mkdir "$$work/src" && \
