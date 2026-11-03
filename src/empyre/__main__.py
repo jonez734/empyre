@@ -1,7 +1,7 @@
 import time
 import locale
 
-from bbsengine6 import io, screen
+from bbsengine6 import bottombar, io
 
 from . import lib as libempyre
 
@@ -13,7 +13,7 @@ def main():
     if args._subparser is not None:
         args.modules = [args._subparser]
 
-    screen.init()
+    bottombar.init()
     libempyre.init(args)
 
     locale.setlocale(locale.LC_ALL, "")
@@ -32,9 +32,7 @@ def main():
     except EOFError:
         io.echo("{/all}*EOF*")
     finally:
-        io.echo(
-            f"{{savecursor}}{{curpos:{io.terminal.height()},0}}{{el}}{{reset}}{{restorecursor}}"
-        )
+        bottombar.shutdown()
 
 
 if __name__ == "__main__":
