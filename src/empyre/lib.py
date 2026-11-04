@@ -470,7 +470,7 @@ SUBCOMMANDS = (
 DEFAULT_MODULES = SUBCOMMANDS
 
 
-def buildargs(args=None, **kwargs: dict):
+def buildargs(args: argparse.Namespace, **kwargs: dict) -> argparse.ArgumentParser | None:
     parser = argparse.ArgumentParser("empyre")
     parser.add_argument("--verbose", action="store_true", dest="verbose")
     parser.add_argument("--debug", action="store_true", dest="debug")
